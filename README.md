@@ -8,6 +8,8 @@ Repository mới có tài liệu yêu cầu và bộ khung thư mục. Các ch�
 
 Tài liệu hiện tại: [PRD Saigon Stories SQLite](PRD_Saigon_Stories_Quan1_SQLite.docx). Nhóm cần đối chiếu thêm quy định đồ án cuối khóa của trường và giảng viên.
 
+Xem [mô tả từng thư mục và tệp](CAU_TRUC_DU_AN.md) để biết nơi đặt code và tài liệu.
+
 ## Cấu trúc dự án
 
 | Thư mục | Trách nhiệm |
