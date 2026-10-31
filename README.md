@@ -4,7 +4,7 @@
 
 ## Trạng thái
 
-Repository mới có tài liệu yêu cầu và bộ khung thư mục. Các chức năng, API, cơ sở dữ liệu và hướng dẫn chạy ứng dụng **chưa được triển khai**.
+Repository có tài liệu yêu cầu, bộ khung thư mục và schema SQLite ban đầu. Các chức năng, API và ứng dụng **chưa được triển khai**. Xem [hướng dẫn khởi tạo database](backend/README.md).
 
 Tài liệu hiện tại: [PRD Saigon Stories SQLite](PRD_Saigon_Stories_Quan1_SQLite.docx). Nhóm cần đối chiếu thêm quy định đồ án cuối khóa của trường và giảng viên.
 
