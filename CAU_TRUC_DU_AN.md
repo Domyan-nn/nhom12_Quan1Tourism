@@ -1,6 +1,6 @@
 # Mô tả cấu trúc dự án
 
-Tài liệu này mô tả các thư mục và tệp hiện có của Saigon Stories Quận 1. Dự án hiện là **bộ khung**, chưa có ứng dụng, API, migration hay dữ liệu mẫu đã triển khai. Các thư mục chức năng nêu bên dưới thể hiện nơi dự kiến đặt code.
+Tài liệu này mô tả các thư mục và tệp hiện có của Saigon Stories Quận 1. Dự án có **bộ khung và schema SQLite ban đầu**, chưa có ứng dụng, API hay dữ liệu mẫu đã triển khai. Các thư mục chức năng nêu bên dưới thể hiện nơi dự kiến đặt code.
 
 ## Thư mục gốc
 
@@ -32,10 +32,12 @@ Tài liệu này mô tả các thư mục và tệp hiện có của Saigon Stor
 | `backend/app/schemas/` | Các cấu trúc kiểm tra dữ liệu đầu vào và đầu ra của API. |
 | `backend/app/services/` | Quy tắc nghiệp vụ như công bố địa điểm, xác thực và thống kê. |
 | `backend/data/` | Vị trí dự kiến lưu tệp SQLite cục bộ. |
-| `backend/data/saigon_stories.db` | Tệp SQLite cục bộ hiện có kích thước 0 byte, chưa khởi tạo; không được đưa lên Git theo `.gitignore`. |
+| `backend/data/saigon_stories.db` | Tệp SQLite cục bộ; không được đưa lên Git theo `.gitignore`. |
 | `backend/migrations/` | Nơi dự kiến lưu lịch sử thay đổi cấu trúc database. |
+| `backend/migrations/001_initial.sql` | Schema SQLite ban đầu gồm bảy bảng theo báo cáo. |
 | `backend/scripts/` | Nơi dự kiến đặt script tạo Admin, nạp dữ liệu mẫu và các tác vụ vận hành. |
 | `backend/scripts/README.md` | Yêu cầu dự kiến đối với dữ liệu mẫu và việc ghi nguồn nội dung, hình ảnh. |
+| `backend/scripts/init_db.py` | Khởi tạo schema trong database chưa có bảng hoặc view, không ghi đè dữ liệu có sẵn. |
 | `backend/tests/` | Nơi dự kiến đặt kiểm thử tự động cho backend. |
 
 Chỉ cần một database SQLite sử dụng khi chạy. `app/db/`, `models/`, `migrations/` và `scripts/` là các phần code hoặc hướng dẫn liên quan, không phải database riêng.
