@@ -15,4 +15,4 @@
 | UC11 | Xem số phiên khách đang hoạt động |
 | UC12 | Đồng ý hoặc rút đồng ý thống kê |
 
-Đặc tả chi tiết, luồng ngoại lệ và quy tắc nghiệp vụ nằm trong PRD. Các use case chưa được xác nhận đã triển khai hoặc kiểm thử.
+Đặc tả chi tiết, luồng ngoại lệ và quy tắc nghiệp vụ nằm trong PRD. Backend UC05 và UC06 đã có kiểm thử API; giao diện và toàn bộ luồng người dùng chưa được kiểm thử. Các use case khác chưa được xác nhận triển khai.

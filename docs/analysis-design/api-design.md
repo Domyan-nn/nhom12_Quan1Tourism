@@ -1,6 +1,6 @@
 # Thiết kế API
 
-Tài liệu hợp đồng API sẽ được bổ sung khi thiết kế backend. Các nhóm chức năng cần có:
+Các nhóm chức năng cần có:
 
 1. Địa điểm, danh mục và nội dung công khai cho khách.
 2. Đăng nhập, đăng xuất và kiểm tra phiên Admin.
@@ -8,9 +8,15 @@ Tài liệu hợp đồng API sẽ được bổ sung khi thiết kế backend. 
 4. Nhận tín hiệu thống kê và yêu cầu rút đồng ý.
 5. Thống kê lượt truy cập và phiên đang hoạt động dành cho Admin.
 
-## Đề xuất hợp đồng v0.1 — chưa triển khai, cần nhóm thống nhất
+## Hợp đồng v0.1 — phần đã triển khai và đề xuất cần thống nhất
 
-Các đường dẫn, cấu trúc JSON, quyền và mã lỗi bên dưới là **thiết kế dự kiến**, không phải endpoint đã hoạt động. Các mã `id` trong ví dụ được rút gọn cho dễ đọc; thực tế dự kiến dùng UUID. Prefix `/api/v1`; thời gian UTC ISO 8601. Không lưu lịch sử tọa độ khách. Client không được dựa vào việc ẩn nút để bảo vệ API quản trị.
+Ngoại trừ các route được liệt kê ngay dưới đây, các đường dẫn và dữ liệu trong tài liệu là **thiết kế dự kiến**, cần nhóm thống nhất. Các mã `id` trong ví dụ được rút gọn cho dễ đọc; thực tế dùng UUID. Prefix `/api/v1`; thời gian UTC ISO 8601. Không lưu lịch sử tọa độ khách. Client không được dựa vào việc ẩn nút để bảo vệ API quản trị.
+
+### Đã triển khai trong backend bước đầu
+
+`GET /api/v1/health` kiểm tra tiến trình. `POST /api/v1/admin/login`, `GET /api/v1/admin/me`, `POST /api/v1/admin/logout` và `GET/POST/PATCH/DELETE /api/v1/admin/categories` (PATCH/DELETE có `/{id}`) đã được kiểm thử bằng `TestClient`. Các route quản trị trừ login yêu cầu `Authorization: Bearer <token>`. Response 204 không có body; các lỗi định dạng `{"error":{"code":"...","message":"...","details":[]}}`. Với endpoint đã triển khai: body không hợp lệ trả `422 VALIDATION_ERROR`; không có/sai/hết hạn/thu hồi token trả `401 AUTH_REQUIRED`; thông tin đăng nhập sai hoặc tài khoản bị khóa trả cùng `401 INVALID_CREDENTIALS`; danh mục trùng trả `409 CATEGORY_DUPLICATE`, đang được dùng trả `409 CATEGORY_IN_USE`, không tìm thấy trả `404 CATEGORY_NOT_FOUND`. Không có `429` vì chưa có rate limiting.
+
+Login nhận `{"username":"...","password":"..."}`, trả `{"access_token":"...","expires_at":"..."}` và `Cache-Control: no-store`; token là bearer ngẫu nhiên, lưu hash SHA-256 và hết hạn sau 8 giờ. API chưa có đăng ký Admin. Phía web cần thống nhất nơi giữ token, xử lý 401 và logout, bảo vệ HTTPS và CORS; chưa có cơ chế rate limiting hoặc dọn phiên hết hạn. `name` danh mục tối đa 200 ký tự trước khi trim; `username` tối đa 150 và mật khẩu tối đa 1024 ký tự. Health không xác nhận database đã sẵn sàng. Các giới hạn này là lựa chọn hiện tại cho nhóm xem xét, không phải cam kết production.
 
 Phản hồi lỗi đề xuất: `{"error":{"code":"VALIDATION_ERROR","message":"Dữ liệu không hợp lệ","details":[]}}`. Quy ước: `400` JSON/tham số sai, `401` chưa xác thực hoặc phiên hết hạn, `403` thiếu quyền, `404` không tìm thấy hoặc POI không công khai, `409` xung đột/trạng thái không hợp lệ, `422` dữ liệu vi phạm quy tắc, `429` quá nhiều lần thử nếu có giới hạn, `500` lỗi máy chủ. Không trả token, hash hoặc nội dung lỗi nội bộ trong thông báo. Đây là quy ước đề xuất, có thể điều chỉnh sau khi nhóm chọn cơ chế validation.
 
@@ -26,7 +32,7 @@ Danh sách POI cung cấp tọa độ để client vẽ bản đồ; lọc và T
 
 ### Xác thực và quản trị
 
-Đề xuất token phiên ngẫu nhiên dùng `Authorization: Bearer <token>`; chỉ lưu hash token phía server, thu hồi khi đăng xuất. Web cần thống nhất cách lưu phiên an toàn, HTTPS và bảo vệ tương ứng; không có đăng ký Admin công khai. Tài khoản seed dùng PBKDF2 được mô tả trong [script README](../../backend/scripts/README.md), việc xác minh chưa triển khai.
+Token phiên dùng `Authorization: Bearer <token>`; chỉ lưu hash token phía server, thu hồi khi đăng xuất. Web cần thống nhất cách lưu phiên an toàn, HTTPS và bảo vệ tương ứng; không có đăng ký Admin công khai. Tài khoản seed dùng PBKDF2 được mô tả trong [script README](../../backend/scripts/README.md), API đã có xác minh định dạng này.
 
 | Phương thức và đường dẫn | Quyền / chức năng; body ví dụ | Thành công; lỗi điển hình |
 | --- | --- | --- |
