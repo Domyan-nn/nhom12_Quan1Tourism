@@ -1,0 +1,32 @@
+// Hình 4 – Deployment Diagram (PRD mục 7.4). Ký pháp UML 2.5.1: node, execution environment, artifact, communication path.
+digraph G {
+  rankdir=LR; compound=true; nodesep=0.4; ranksep=1.3; fontname="Helvetica";
+  node [fontname="Helvetica", fontsize=11, shape=note, style=filled, fillcolor="#FFFFFF"];
+  edge [fontname="Helvetica", fontsize=10, arrowhead=none];
+
+  subgraph cluster_web { label="«device»\nThiết bị web"; style=filled; fillcolor="#F3F3F3";
+    subgraph cluster_browser { label="«execution environment»\nTrình duyệt"; style=filled; fillcolor="#FFFFFF";
+      a_guest [label="«artifact»\nguest-web"]; a_admin [label="«artifact»\nadmin-web"]; } }
+
+  subgraph cluster_phone { label="«device»\nĐiện thoại (Android / iOS)"; style=filled; fillcolor="#F3F3F3";
+    subgraph cluster_os { label="«execution environment»\nHệ điều hành + Expo"; style=filled; fillcolor="#FFFFFF";
+      a_mobile [label="«artifact»\nmobile-app"]; } }
+
+  subgraph cluster_server { label="«device»\nMáy chủ ứng dụng"; style=filled; fillcolor="#F3F3F3";
+    subgraph cluster_py { label="«execution environment»\nPython, web server"; style=filled; fillcolor="#FFFFFF";
+      s_api [label="«artifact»\nsaigon-api"]; s_guest [label="«artifact»\nguest-web"]; s_admin [label="«artifact»\nadmin-web"]; s_media [label="«artifact»\npoi-media"]; }
+    subgraph cluster_db { label="«node» Tệp dữ liệu SQLite"; style=filled; fillcolor="#FFFFFF";
+      s_db [label="«artifact»\nsaigon_stories.db"]; } }
+
+  subgraph cluster_maps { label="«execution environment»\nHạ tầng bản đồ bên ngoài"; style=filled; fillcolor="#F3F3F3";
+    m [shape=plaintext, style="", label="(không giả định\nhiện vật nội bộ)"]; }
+
+  a_guest  -> s_api    [label="HTTPS", ltail=cluster_web, lhead=cluster_py];
+  a_mobile -> s_api    [label="HTTPS", ltail=cluster_phone, lhead=cluster_py];
+  s_api    -> s_db     [label="truy cập tệp cục bộ (SQLite nhúng)", lhead=cluster_db];
+  a_guest  -> m        [label="HTTPS (dịch vụ bản đồ)", ltail=cluster_web, lhead=cluster_maps];
+  a_mobile -> m        [label="HTTPS (dịch vụ bản đồ)", ltail=cluster_phone, lhead=cluster_maps];
+
+  labelloc=b; fontsize=10;
+  label="Hình 4. Deployment Diagram (UML 2.5.1). SQLite chạy nhúng, không cần máy chủ CSDL riêng hay cổng mạng.\nGPS/TTS dùng trực tiếp trên thiết bị. Sơ đồ là thiết kế đề xuất, không khẳng định đã triển khai.";
+}

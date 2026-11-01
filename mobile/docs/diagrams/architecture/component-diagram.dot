@@ -1,0 +1,39 @@
+// Hình 3 – Component Diagram (PRD mục 7.3). Ký pháp UML 2.5.1: component, giao diện cung cấp (hình tròn) và yêu cầu.
+digraph G {
+  rankdir=LR; splines=true; nodesep=0.5; ranksep=0.9; fontname="Helvetica";
+  node [fontname="Helvetica", fontsize=11];
+  edge [arrowhead=none, fontname="Helvetica", fontsize=9];
+
+  node [shape=component, style=filled, fillcolor="#FFFFFF"];
+  guest   [label="«component»\nWeb khách\n(guest-web)"];
+  mobile  [label="«component»\nMobile\n(mobile-app)"];
+  admin   [label="«component»\nWeb Admin\n(admin-web)"];
+  backend [label="«component»\nBackend FastAPI\n(saigon-api, modular monolith)"];
+  data    [label="«component»\nTruy cập dữ liệu SQLite"];
+  images  [label="«component»\nLưu trữ ảnh\n(poi-media)"];
+  maps    [label="«component»\nDịch vụ bản đồ bên ngoài"];
+  tts     [label="«component»\nTTS nền tảng\n(Web Speech API / Expo Speech)"];
+  gps     [label="«component»\nGPS thiết bị"];
+
+  node [shape=circle, label="", width=0.22, fixedsize=true, style=filled, fillcolor="#FFFFFF"];
+  IAppAPI    [xlabel="IAppAPI"];
+  IDataStore [xlabel="IDataStore"];
+  IImageStore[xlabel="IImageStore"];
+  IMap       [xlabel="IMap"];
+  ITTS       [xlabel="ITTS"];
+  ILocation  [xlabel="ILocation"];
+
+  // Bố cục trái -> phải: bên cung cấp -> giao diện -> bên sử dụng.
+  // Đường liền + hình tròn = giao diện cung cấp; mũi tên mở = thành phần sử dụng (socket).
+  edge [dir=back, arrowtail=vee];
+  data -> IDataStore [dir=none];  IDataStore -> backend;
+  images -> IImageStore [dir=none]; IImageStore -> backend;
+  backend -> IAppAPI [dir=none];
+  IAppAPI -> guest; IAppAPI -> mobile; IAppAPI -> admin;
+  maps -> IMap [dir=none]; IMap -> guest; IMap -> mobile;
+  tts -> ITTS [dir=none]; ITTS -> guest; ITTS -> mobile;
+  gps -> ILocation [dir=none]; ILocation -> mobile;
+
+  labelloc=b; fontsize=10;
+  label="Hình 3. Component Diagram (UML 2.5.1). Đường liền + hình tròn: giao diện cung cấp; mũi tên mở: thành phần sử dụng.\nQuyền Admin được kiểm tra tại backend; backend là một ứng dụng FastAPI, không phải microservice.";
+}

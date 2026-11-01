@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Saigon Stories Q1",
+    "slug": "saigon-stories-q1",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": { "image": "./assets/splash.png", "resizeMode": "contain", "backgroundColor": "#0F4C5C" },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "vn.edu.nhom12.saigonstories",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Saigon Stories dùng vị trí của bạn để hiển thị trên bản đồ và tự phát thuyết minh khi bạn đến gần địa điểm (chỉ khi ứng dụng đang mở). Vị trí không được lưu hay gửi đi."
+      }
+    },
+    "android": {
+      "package": "vn.edu.nhom12.saigonstories",
+      "adaptiveIcon": { "foregroundImage": "./assets/icon.png", "backgroundColor": "#0F4C5C" },
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      "usesCleartextTraffic": true
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Saigon Stories dùng vị trí của bạn để hiển thị trên bản đồ và tự phát thuyết minh khi bạn đến gần địa điểm (chỉ khi ứng dụng đang mở)."
+        }
+      ]
+    ]
+  }
+}
