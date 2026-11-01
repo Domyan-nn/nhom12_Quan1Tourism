@@ -4,7 +4,7 @@
 
 ## Trạng thái
 
-Repository có tài liệu yêu cầu, bộ khung thư mục và schema SQLite ban đầu. Các chức năng, API và ứng dụng **chưa được triển khai**. Xem [hướng dẫn khởi tạo database](backend/README.md).
+Repository có tài liệu yêu cầu, schema SQLite, script khởi tạo và seed dữ liệu nháp cùng kiểm thử. Các chức năng, API và ứng dụng **chưa được triển khai**. Xem [hướng dẫn SQLite và PowerShell](backend/README.md), [nội dung mẫu](backend/scripts/README.md) và [hợp đồng API dự kiến](docs/analysis-design/api-design.md).
 
 Tài liệu hiện tại: [PRD Saigon Stories SQLite](PRD_Saigon_Stories_Quan1_SQLite.docx). Nhóm cần đối chiếu thêm quy định đồ án cuối khóa của trường và giảng viên.
 
