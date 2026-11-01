@@ -1,6 +1,6 @@
 # Mô tả cấu trúc dự án
 
-Tài liệu này mô tả các thư mục và tệp hiện có của Saigon Stories Quận 1. Dự án có **bộ khung và schema SQLite ban đầu**, chưa có ứng dụng, API hay dữ liệu mẫu đã triển khai. Các thư mục chức năng nêu bên dưới thể hiện nơi dự kiến đặt code.
+Tài liệu này mô tả các thư mục và tệp hiện có của Saigon Stories Quận 1. Dự án có bộ khung, schema SQLite và script dữ liệu nháp; chưa có ứng dụng hay API. Các thư mục chức năng nêu bên dưới thể hiện nơi dự kiến đặt code.
 
 ## Thư mục gốc
 
@@ -35,8 +35,11 @@ Tài liệu này mô tả các thư mục và tệp hiện có của Saigon Stor
 | `backend/data/saigon_stories.db` | Tệp SQLite cục bộ; không được đưa lên Git theo `.gitignore`. |
 | `backend/migrations/` | Nơi dự kiến lưu lịch sử thay đổi cấu trúc database. |
 | `backend/migrations/001_initial.sql` | Schema SQLite ban đầu gồm bảy bảng theo báo cáo. |
-| `backend/scripts/` | Nơi dự kiến đặt script tạo Admin, nạp dữ liệu mẫu và các tác vụ vận hành. |
-| `backend/scripts/README.md` | Yêu cầu dự kiến đối với dữ liệu mẫu và việc ghi nguồn nội dung, hình ảnh. |
+| `backend/scripts/` | Script khởi tạo và nạp dữ liệu mẫu, gồm Admin demo. |
+| `backend/scripts/README.md` | Giới hạn dữ liệu mẫu và yêu cầu kiểm tra nguồn nội dung, hình ảnh. |
+| `backend/scripts/seed_db.py` | Nạp dữ liệu nháp và Admin demo mà không cập nhật bản ghi đã có. |
+| `backend/app/db/connection.py` | Mở kết nối SQLite hiện có, bật khóa ngoại cho mỗi kết nối. |
+| `backend/tests/test_database.py` | Kiểm thử khởi tạo, ràng buộc và seed trên database tạm. |
 | `backend/scripts/init_db.py` | Khởi tạo schema trong database chưa có bảng hoặc view, không ghi đè dữ liệu có sẵn. |
 | `backend/tests/` | Nơi dự kiến đặt kiểm thử tự động cho backend. |
 
