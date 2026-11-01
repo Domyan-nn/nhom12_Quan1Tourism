@@ -1,6 +1,16 @@
 # Kết quả kiểm thử
 
-Kết quả thực tế cho thay đổi WBS-01/WBS-02 trong workspace, ngày 01/11/2026. Python 3.12.15 trên Windows; database dùng file tạm, không dùng database cá nhân. Chưa có commit để gắn phiên bản.
+## Bổ sung ngày 01/11/2026
+
+| Kiểm tra thực tế | Kết quả |
+| --- | --- |
+| Python 3.12.15, `python -m unittest discover -s backend/tests -v` | Đạt 15 test: 6 database, 8 Admin và 1 API công khai. Database tạm; gồm kiểm tra lọc, kết hợp tìm kiếm, Unicode và ẩn draft/hidden. |
+| Node 22.22.0, `npm.cmd run build` | Đạt với React 19.3.1 và Vite 7.3.7; `npm ci` cũng đã cài thành công trong thư mục thử nghiệm sạch. |
+| Edge headless, Vite + Uvicorn localhost | Đạt luồng tìm kiếm, chi tiết, chọn bài vi/en, đổi giao diện VI/EN giữ ngôn ngữ bài, đăng nhập, thêm/sửa/xóa danh mục và đăng xuất. Database thử nghiệm riêng có một bản ghi được đánh dấu published chỉ trong test. Không có lỗi JavaScript được ghi nhận. |
+
+Giao diện chưa được kiểm thử thủ công trên nhiều trình duyệt/thiết bị, hoặc toàn bộ trạng thái lỗi và hết hạn phiên qua trình duyệt; các trường hợp token tương ứng đã được kiểm tra ở API. Việc nhập mật khẩu qua `getpass` của người dùng thật chưa kiểm tra tương tác. Kết quả build không xác nhận khả năng triển khai production.
+
+Các kết quả lịch sử trước bổ sung trên cho thay đổi WBS-01/WBS-02 trong workspace, ngày 01/11/2026. Python 3.12.15 trên Windows; database dùng file tạm, không dùng database cá nhân. Chưa có commit để gắn phiên bản.
 
 | Ca kiểm thử | Phiên bản | Môi trường / thiết bị | Ngày | Kết quả | Minh chứng / lỗi |
 | --- | --- | --- | --- | --- | --- |

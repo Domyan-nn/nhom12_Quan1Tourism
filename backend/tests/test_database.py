@@ -80,6 +80,8 @@ class DatabaseTests(unittest.TestCase):
             counts = [db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] for table in ("categories", "pois", "poi_narrations", "admin_accounts")]
             self.assertEqual(counts, [2, 5, 6, 1])
             self.assertEqual(db.execute("SELECT COUNT(*) FROM pois WHERE status='draft' AND image_url IS NULL").fetchone()[0], 5)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM pois p WHERE NOT EXISTS (SELECT 1 FROM poi_narrations n WHERE n.poi_id=p.id)").fetchone()[0], 0)
+            self.assertEqual(db.execute("SELECT COUNT(DISTINCT locale) FROM poi_narrations WHERE poi_id=?", (stable_id("poi:dinh-doc-lap"),)).fetchone()[0], 2)
             stored = db.execute("SELECT password_hash FROM admin_accounts").fetchone()[0]
             algorithm, iterations, salt, digest = stored.split("$")
             self.assertEqual(algorithm, "pbkdf2_sha256")

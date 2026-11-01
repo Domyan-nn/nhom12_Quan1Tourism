@@ -4,7 +4,42 @@
 
 ## Trạng thái
 
-Repository có SQLite, seed dữ liệu nháp và FastAPI bước đầu cho đăng nhập Admin và quản lý danh mục. Web, mobile và các API khác chưa được triển khai. Xem [hướng dẫn PowerShell](backend/README.md), [nội dung mẫu](backend/scripts/README.md) và [hợp đồng API](docs/analysis-design/api-design.md).
+Repository có SQLite, seed dữ liệu nháp, FastAPI cho đăng nhập Admin, danh mục và địa điểm công khai, cùng web React tối thiểu cho khách và Admin. Mobile, GPS, bản đồ, TTS, thống kê và quản trị địa điểm chưa triển khai. Xem [hướng dẫn PowerShell](backend/README.md), [nội dung mẫu](backend/scripts/README.md), [hợp đồng API](docs/analysis-design/api-design.md) và [kết quả kiểm thử](docs/testing/test-results.md).
+
+## Chạy thử trên Windows 11
+
+Cần Python 3.12, Node.js 20.19+ hoặc 22.12+ và npm. Các lệnh chạy từ gốc repo trong PowerShell, không cần Docker. Chọn tên database **mới**; không dùng hay xóa database hiện có:
+
+Trước khi chạy phần web, kiểm tra `node --version` và `npm.cmd --version`. Nếu PowerShell không nhận lệnh, cài Node.js LTS từ [nodejs.org](https://nodejs.org/) rồi mở lại PowerShell; hoặc nếu đã có bản Node portable, thêm thư mục chứa `node.exe` và `npm.cmd` vào `PATH` cho cửa sổ hiện tại: `$env:Path = 'ĐƯỜNG_DẪN_TỚI_THƯ_MỤC_NODE;' + $env:Path`. Thay phần đường dẫn bằng vị trí thực tế, sau đó kiểm tra lại hai lệnh trên. Thay đổi này chỉ có hiệu lực trong cửa sổ PowerShell hiện tại.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements-dev.txt
+$db = 'backend/data/demo-wbs-new.db'
+if (Test-Path -LiteralPath $db) { throw 'Database đã tồn tại: chọn tên mới' }
+.\.venv\Scripts\python.exe backend/scripts/init_db.py --database $db
+.\.venv\Scripts\python.exe backend/scripts/seed_db.py --database $db --username demo-admin
+$env:SAIGON_DATABASE = (Resolve-Path -LiteralPath $db).Path
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+```
+
+Nhập mật khẩu demo riêng tại lời nhắc ẩn; không đặt mật khẩu trong lệnh hoặc Git. Mở PowerShell thứ hai tại gốc repo:
+
+```powershell
+cd web
+npm.cmd install
+npm.cmd run dev
+```
+
+Mở URL Vite hiển thị trong terminal. Proxy phát triển chuyển `/api` tới `127.0.0.1:8000`; cả hai tiến trình cần chạy cùng máy. Đăng nhập bằng tên và mật khẩu đã seed. Token chỉ ở bộ nhớ trang, mất khi tải lại; đăng xuất gọi API thu hồi. Chuyển ngôn ngữ giao diện không đổi ngôn ngữ bài đang chọn. Dữ liệu seed đều là `draft`, nên trang khách ban đầu trống; không tự công bố dữ liệu chưa kiểm duyệt. Test API sử dụng dữ liệu `published` riêng trong database tạm.
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s backend/tests -v
+cd web
+npm.cmd run build
+```
+
+Đoạn lệnh trên bắt đầu từ gốc repo; nếu đang ở `web`, chạy `npm.cmd run build` trực tiếp. Build tĩnh cần máy chủ web cấu hình chuyển tiếp `/api` về FastAPI; proxy Vite chỉ dành cho phát triển. Phiên bearer trong bộ nhớ vẫn có nguy cơ bị mã độc/XSS đọc, chưa có rate limiting, chính sách triển khai HTTPS, dọn phiên hay CORS cho các origin độc lập: chưa sẵn sàng production. Các địa chỉ, tọa độ, nội dung và quyền ảnh mẫu chưa xác minh; xem [danh sách](backend/scripts/README.md).
 
 Tài liệu hiện tại: [PRD Saigon Stories SQLite](PRD_Saigon_Stories_Quan1_SQLite.docx). Nhóm cần đối chiếu thêm quy định đồ án cuối khóa của trường và giảng viên.
 
