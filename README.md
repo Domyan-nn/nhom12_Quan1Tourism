@@ -4,7 +4,7 @@
 
 ## Trạng thái
 
-Repository có SQLite, seed dữ liệu nháp, FastAPI cho đăng nhập Admin, danh mục và địa điểm công khai, cùng web React tối thiểu cho khách và Admin. Mobile, GPS, bản đồ, TTS, thống kê và quản trị địa điểm chưa triển khai. Xem [hướng dẫn PowerShell](backend/README.md), [nội dung mẫu](backend/scripts/README.md), [hợp đồng API](docs/analysis-design/api-design.md) và [kết quả kiểm thử](docs/testing/test-results.md).
+Repository có SQLite, seed dữ liệu nháp, FastAPI cho đăng nhập Admin, danh mục và địa điểm công khai; ứng dụng React Admin và khung web khách được tách riêng. Web khách hiện dùng dữ liệu giả lập mặc định, chưa kết nối được API hiện tại. Mobile, GPS, bản đồ, TTS, thống kê và quản trị địa điểm chưa triển khai. Xem [hướng dẫn PowerShell](backend/README.md), [nội dung mẫu](backend/scripts/README.md), [hợp đồng API](docs/analysis-design/api-design.md) và [kết quả kiểm thử](docs/testing/test-results.md).
 
 ## Chạy thử trên Windows 11
 
@@ -31,7 +31,9 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-Mở URL Vite hiển thị trong terminal. Proxy phát triển chuyển `/api` tới `127.0.0.1:8000`; cả hai tiến trình cần chạy cùng máy. Đăng nhập bằng tên và mật khẩu đã seed. Token chỉ ở bộ nhớ trang, mất khi tải lại; đăng xuất gọi API thu hồi. Chuyển ngôn ngữ giao diện không đổi ngôn ngữ bài đang chọn. Dữ liệu seed đều là `draft`, nên trang khách ban đầu trống; không tự công bố dữ liệu chưa kiểm duyệt. Test API sử dụng dữ liệu `published` riêng trong database tạm.
+Mở URL Vite hiển thị trong terminal (mặc định `http://localhost:5174`) để dùng Admin. Proxy phát triển chuyển `/api` tới `127.0.0.1:8000`; cả hai tiến trình cần chạy cùng máy. Đăng nhập bằng tên và mật khẩu đã seed. Token chỉ ở bộ nhớ trang, mất khi tải lại; đăng xuất gọi API thu hồi. Dữ liệu seed đều là `draft`; không tự công bố dữ liệu chưa kiểm duyệt. Test API sử dụng dữ liệu `published` riêng trong database tạm.
+
+Web khách là ứng dụng riêng trong [web/guest-web](web/guest-web/README.md), chạy mặc định tại cổng 5173 và dùng dữ liệu giả lập. Chế độ API thật của ứng dụng khách cần được điều chỉnh theo `/api/v1` và định dạng phản hồi của backend trước khi tích hợp.
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s backend/tests -v
@@ -50,7 +52,7 @@ Xem [mô tả từng thư mục và tệp](CAU_TRUC_DU_AN.md) để biết nơi 
 | Thư mục | Trách nhiệm |
 | --- | --- |
 | `backend/` | FastAPI, nghiệp vụ, xác thực, migration và kiểm thử API |
-| `web/` | React cho khách và Admin |
+| `web/` | Ứng dụng React Admin; `web/guest-web/` là ứng dụng React riêng cho khách |
 | `mobile/` | React Native/Expo cho khách, GPS và TTS |
 | `docs/` | Yêu cầu, thiết kế, kiểm thử, triển khai và báo cáo |
 | `backend/data/` | Tệp SQLite cục bộ khi chạy; không đưa dữ liệu vận hành lên Git |
