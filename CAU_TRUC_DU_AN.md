@@ -1,6 +1,6 @@
 # Mô tả cấu trúc dự án
 
-Tài liệu này mô tả các thư mục và tệp hiện có của Saigon Stories Quận 1. Dự án có bộ khung, schema SQLite và script dữ liệu nháp; chưa có ứng dụng hay API. Các thư mục chức năng nêu bên dưới thể hiện nơi dự kiến đặt code.
+Tài liệu này mô tả các thư mục và tệp hiện có của Saigon Stories Quận 1. Dự án có schema SQLite, script dữ liệu nháp và API bước đầu cho Admin; web/mobile và các API khác chưa được triển khai.
 
 ## Thư mục gốc
 
