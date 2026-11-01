@@ -1,0 +1,76 @@
+:root {
+  --ink: #17211d;
+  --muted: #5d6b65;
+  --bg: #f4f7f5;
+  --surface: #ffffff;
+  --line: #d6dfda;
+  --green: #1f5e4b;
+  --green-dark: #144434;
+  --yellow: #f0b323;
+  --danger: #a3341f;
+  --radius: 10px;
+  font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+  color: var(--ink);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); line-height: 1.55; }
+h1 { font-size: 1.75rem; line-height: 1.2; margin: 0 0 .5rem; }
+h2 { font-size: 1.25rem; margin: 0 0 .5rem; }
+h3 { font-size: 1.05rem; margin: 0 0 .25rem; }
+a { color: var(--green); }
+:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.muted { color: var(--muted); margin: 0; }
+.lead { margin-bottom: 1.25rem; max-width: 60ch; }
+
+.shell { min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center;
+  justify-content: space-between; gap: 1rem; padding: .75rem 1.25rem;
+  background: var(--green); color: #fff; border-bottom: 4px solid var(--yellow); }
+.brand { color: #fff; font-weight: 700; text-decoration: none; font-size: 1.1rem; }
+.brand span { font-weight: 400; opacity: .8; margin-left: .25rem; }
+.nav { display: flex; gap: .25rem; }
+.nav a { color: #fff; text-decoration: none; padding: .4rem .8rem; border-radius: 999px; }
+.nav a.active { background: rgba(255,255,255,.18); font-weight: 600; }
+.content { flex: 1; width: 100%; max-width: 1040px; margin: 0 auto; padding: 1.5rem 1.25rem 2rem; }
+
+.filters { display: grid; gap: .75rem; margin-bottom: 1.25rem; }
+input[type='search'] { width: 100%; padding: .7rem .9rem; font: inherit; border: 1px solid var(--line);
+  border-radius: var(--radius); background: var(--surface); }
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; margin: .75rem 0; }
+.filters .chips { margin: 0; }
+.chip { font: inherit; padding: .4rem .9rem; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); cursor: pointer; }
+.chip.on { background: var(--green); border-color: var(--green); color: #fff; }
+
+.grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.card { display: flex; gap: .9rem; padding: .9rem; background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); text-decoration: none; color: inherit; }
+.card:hover { border-color: var(--green); }
+.card-thumb { flex: none; width: 64px; height: 64px; border-radius: 8px; background: var(--green);
+  color: var(--yellow); display: grid; place-items: center; font-size: 1.6rem; font-weight: 700; overflow: hidden; }
+.card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0 0; font-size: .85rem; }
+.tag { background: #e3efe9; color: var(--green-dark); padding: .1rem .55rem; border-radius: 999px; }
+
+.state { padding: 2rem 1rem; text-align: center; color: var(--muted); }
+.state strong { display: block; color: var(--ink); margin-bottom: .25rem; }
+.state-error strong { color: var(--danger); }
+.btn { font: inherit; padding: .6rem 1.1rem; border: 0; border-radius: var(--radius);
+  background: var(--green); color: #fff; cursor: pointer; font-weight: 600; margin-top: .75rem; }
+.btn:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; }
+.back { display: inline-block; margin-bottom: 1rem; }
+.narration { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--yellow);
+  border-radius: var(--radius); padding: 1.1rem 1.25rem; max-width: 70ch; }
+.map-slot { min-height: 50vh; border: 1px dashed var(--line); border-radius: var(--radius); display: grid; place-items: center; }
+.prose { max-width: 65ch; }
+
+/* Điện thoại: thanh điều hướng chuyển xuống dưới màn hình */
+@media (max-width: 640px) {
+  .nav { position: fixed; bottom: 0; left: 0; right: 0; justify-content: space-around; z-index: 20;
+    background: var(--green-dark); padding: .35rem .5rem calc(.35rem + env(safe-area-inset-bottom)); }
+  .nav a { flex: 1; text-align: center; font-size: .9rem; }
+  .content { padding-bottom: 5rem; }
+  h1 { font-size: 1.5rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
