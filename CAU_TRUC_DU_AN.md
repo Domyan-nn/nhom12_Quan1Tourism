@@ -1,6 +1,6 @@
 # Mô tả cấu trúc dự án
 
-Tài liệu này mô tả các thư mục và tệp hiện có của Saigon Stories Quận 1. Dự án có schema SQLite, script dữ liệu nháp và API bước đầu cho Admin; web/mobile và các API khác chưa được triển khai.
+Tài liệu này mô tả các thư mục và tệp của Saigon Stories Quận 1. Dự án có schema SQLite, script dữ liệu nháp, API bước đầu, ứng dụng web Admin và khung web khách; mobile và một số API vẫn chưa được triển khai.
 
 ## Thư mục gốc
 
@@ -13,7 +13,7 @@ Tài liệu này mô tả các thư mục và tệp hiện có của Saigon Stor
 | `.editorconfig` | Quy ước định dạng cơ bản như mã hóa, xuống dòng và thụt lề. |
 | `.git/` | Dữ liệu nội bộ của Git: lịch sử, nhánh và cấu hình repository. Không chỉnh sửa thủ công khi làm đồ án. |
 | `backend/` | Bộ khung backend dự kiến dùng FastAPI và SQLite. |
-| `web/` | Bộ khung ứng dụng React dành cho khách và Admin. |
+| `web/` | Ứng dụng React Admin; `web/guest-web/` là ứng dụng riêng dành cho khách. |
 | `mobile/` | Bộ khung ứng dụng React Native/Expo dành cho khách. |
 | `docs/` | Tài liệu yêu cầu, thiết kế, kiểm thử, triển khai và báo cáo. |
 | `storage/uploads/poi-images/` | Vị trí dự kiến lưu ảnh địa điểm tải lên trên máy chạy ứng dụng; dữ liệu trong `storage/` bị Git bỏ qua. |
@@ -49,16 +49,13 @@ Chỉ cần một database SQLite sử dụng khi chạy. `app/db/`, `models/`, 
 
 | Đường dẫn | Công dụng |
 | --- | --- |
-| `web/README.md` | Giới thiệu bộ khung web và trạng thái triển khai. |
+| `web/README.md` | Giới thiệu ứng dụng web Admin và trạng thái triển khai. |
+| `web/guest-web/` | Ứng dụng web khách riêng với cấu hình, mã nguồn và hướng dẫn chạy riêng. |
 | `web/public/` | Tài nguyên tĩnh dự kiến phục vụ trực tiếp cho web. |
 | `web/src/` | Nơi dự kiến đặt mã nguồn React. |
 | `web/src/app/` | Khởi tạo ứng dụng, bố cục tổng thể và định tuyến. |
 | `web/src/components/` | Các thành phần giao diện dùng chung. |
 | `web/src/features/` | Các chức năng được nhóm theo nghiệp vụ. |
-| `web/src/features/places/` | Tìm kiếm, lọc, danh sách và chi tiết địa điểm cho khách. |
-| `web/src/features/map/` | Giao diện bản đồ địa điểm. |
-| `web/src/features/narration/` | Chọn ngôn ngữ, hiển thị và nghe thuyết minh. |
-| `web/src/features/privacy/` | Lựa chọn đồng ý hoặc rút đồng ý thống kê. |
 | `web/src/features/admin/` | Các chức năng dành cho Admin. |
 | `web/src/features/admin/auth/` | Đăng nhập, đăng xuất và giao diện liên quan đến phiên Admin. |
 | `web/src/features/admin/categories/` | Quản lý danh mục. |
