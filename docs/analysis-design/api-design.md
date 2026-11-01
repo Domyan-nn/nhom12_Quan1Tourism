@@ -22,13 +22,15 @@ Phản hồi lỗi đề xuất: `{"error":{"code":"VALIDATION_ERROR","message":
 
 ### Khách, không cần đăng nhập
 
+Ba route bên dưới đã triển khai. Danh sách và chi tiết chỉ đọc `published`; địa điểm không tồn tại, nháp hoặc ẩn đều trả `404 POI_NOT_FOUND` ở chi tiết. `q` tìm chuỗi con theo tên sau NFC và casefold, có thể kết hợp `category_id`. Danh sách có thêm `narration_locales`; chi tiết có cả `narration_locales` và `narrations` gồm `locale`, `title`, `body`. API chưa phân trang, tìm kiếm tên lọc trong bộ nhớ nên cần xem xét lại khi dữ liệu lớn.
+
 | Phương thức và đường dẫn | Chức năng; dữ liệu gửi | Thành công; lỗi điển hình |
 | --- | --- | --- |
 | `GET /api/v1/categories` | Danh mục; không body | `200 {"items":[{"id":"cat-1","name":"Di tích"}]}`; `500` |
 | `GET /api/v1/pois?q=...&category_id=...` | Tìm tên, lọc danh mục, kết hợp được; chỉ `published`; tham số tùy chọn | `200 {"items":[{"id":"poi-1","name":"Dinh Độc Lập","category_id":"cat-1","address":"...","latitude":10.777,"longitude":106.6953,"radius_m":100,"image_url":null}]}`; rỗng `items:[]`; `400` |
 | `GET /api/v1/pois/{id}` | Chi tiết công khai và bài khả dụng; không body | `200 {"id":"poi-1","name":"Dinh Độc Lập","category_id":"cat-1","address":"...","latitude":10.777,"longitude":106.6953,"radius_m":100,"image_url":null,"narrations":[{"locale":"vi","title":"...","body":"..."}]}`; `404` |
 
-Danh sách POI cung cấp tọa độ để client vẽ bản đồ; lọc và TTS do client xử lý theo PRD. Không công khai địa điểm nháp hoặc ẩn. Đây là hình dạng đề xuất, có thể bổ sung phân trang sau khi nhóm thống nhất.
+Danh sách POI cung cấp tọa độ để client tương lai vẽ bản đồ; tìm kiếm và lọc được xử lý ở API, còn TTS chưa triển khai. Không công khai địa điểm nháp hoặc ẩn.
 
 ### Xác thực và quản trị
 

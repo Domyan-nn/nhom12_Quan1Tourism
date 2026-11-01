@@ -1,6 +1,6 @@
 # Backend
 
-Hiện có FastAPI, endpoint tình trạng, đăng nhập/đăng xuất Admin và quản lý danh mục, cùng migration, seed và kiểm thử SQLite. Các chức năng địa điểm, thống kê và giao diện chưa được triển khai.
+Hiện có FastAPI, endpoint tình trạng, đăng nhập/đăng xuất Admin, quản lý danh mục và đọc địa điểm công khai, cùng migration, seed và kiểm thử SQLite. Web React tối thiểu đã có mã nguồn; quản trị địa điểm và thống kê chưa triển khai. Xem hướng dẫn web ở README gốc.
 
 - `app/db/`: code kết nối SQLite; `app/models/`: định nghĩa các bảng.
 - `migrations/`: lịch sử thay đổi cấu trúc cơ sở dữ liệu.
@@ -60,6 +60,6 @@ Nếu không đặt `SAIGON_DATABASE`, API dùng `backend/data/saigon_stories.db
 .\.venv\Scripts\python.exe -m unittest discover -s backend/tests -v
 ```
 
-Token là bearer ngẫu nhiên, chỉ hash được lưu, hết hạn sau 8 giờ và bị thu hồi khi đăng xuất; mỗi request quản trị đều kiểm tra phiên và trạng thái Admin. Chưa có giới hạn đăng nhập/rate limiting, chính sách lưu token phía web, dọn phiên hết hạn hoặc CORS; chưa phù hợp triển khai production. Không gửi token qua URL, dùng HTTPS khi truy cập từ mạng công khai và thống nhất cơ chế lưu token an toàn với nhóm. Chưa có đăng ký Admin công khai. Xem [các route đã triển khai và hợp đồng dự kiến](../docs/analysis-design/api-design.md).
+Token là bearer ngẫu nhiên, chỉ hash được lưu, hết hạn sau 8 giờ và bị thu hồi khi đăng xuất; mỗi request quản trị đều kiểm tra phiên và trạng thái Admin. Web giữ token trong bộ nhớ và cần đăng nhập lại khi tải trang. Chưa có giới hạn đăng nhập/rate limiting, dọn phiên hết hạn hoặc CORS cho origin độc lập; chưa phù hợp triển khai production. Không gửi token qua URL, dùng HTTPS khi truy cập từ mạng công khai. Chưa có đăng ký Admin công khai. Xem [các route đã triển khai và hợp đồng dự kiến](../docs/analysis-design/api-design.md).
 
 File `*.db`, `*.sqlite`, `*.sqlite3` và các file SQLite phụ được `.gitignore` bỏ qua; không thêm database hoặc bí mật lên Git. Kiểm tra file tên khác hoặc file đã tracked trước khi commit.
