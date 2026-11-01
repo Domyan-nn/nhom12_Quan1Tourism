@@ -1,0 +1,40 @@
+{
+  "name": "saigon-stories-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "setup": "npm install --legacy-peer-deps && npx expo install --fix",
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "*",
+    "@react-native-community/netinfo": "*",
+    "@react-navigation/bottom-tabs": "^7.0.0",
+    "@react-navigation/native": "^7.0.0",
+    "@react-navigation/native-stack": "^7.0.0",
+    "expo": "~56.0.0",
+    "expo-constants": "*",
+    "expo-crypto": "*",
+    "expo-location": "*",
+    "expo-speech": "*",
+    "expo-status-bar": "*",
+    "react": "*",
+    "react-native": "*",
+    "react-native-maps": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-screens": "*"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.0",
+    "jest": "*",
+    "jest-expo": "*"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "testMatch": ["<rootDir>/tests/**/*.test.js"]
+  }
+}
