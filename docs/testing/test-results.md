@@ -1,5 +1,20 @@
 # Kết quả kiểm thử
 
+## Sửa tích hợp ngày 02/11/2026
+
+Nền mã nguồn: main tại 3bf8256, đã đối chiếu GitHub trước khi sửa. Python 3.12.15, Node 22.22.0, Windows, Microsoft Edge headless. Tệp retest-2026-11-02.md là kết quả trước sửa và được giữ nguyên; bản bàn giao sau sửa tại [integration-fixes-2026-11-02.md](integration-fixes-2026-11-02.md).
+
+| Kiểm tra thực tế | Kết quả | Giới hạn |
+| --- | --- | --- |
+| unittest backend | Đạt 24/24: 8 Admin, 6 database/seed, 2 public API, 8 migration | Chỉ dùng DB tạm; chưa áp dụng lên DB cá nhân |
+| Node test runner guest | Đạt 4/4 ca | Fetch giả lập cho test adapter; bằng chứng API thật ở bộ backend/browser riêng |
+| Playwright + Edge | Đạt 7/7 ca: mock và API thật, response/locale, tìm/lọc, rỗng, lỗi/thử lại, 404/draft/hidden, UI độc lập bài, trạng thái riêng tư | FastAPI thật + Vite, fixture published/draft/hidden và VI/EN/FR trong DB tạm; chưa xác nhận mọi trình duyệt/thiết bị |
+| npm ci guest sạch | Đạt, lockfile có Playwright | Chạy trong bản sao source ở thư mục tạm vì môi trường hạn chế ghi vào node_modules trong workspace |
+| Build guest | Đạt với Vite 8.3.5 | Source/lockfile sao chép từ workspace; output ở thư mục tạm |
+| Build Admin | Đạt với Vite 7.3.7 | Dùng --configLoader runner và outDir tạm để tránh EPERM của môi trường |
+
+Các ca/điều kiện ở [test-cases.md](test-cases.md). API analytics, dashboard, dọn retention, GPS/TTS và bản đồ không được triển khai hoặc đánh dấu hoàn tất trong đợt này. Không kiểm thử mobile, production hoặc nâng cấp database đang dùng. Các kết quả bên dưới là lịch sử, không thay cho kết quả mới này.
+
 ## Bổ sung ngày 01/11/2026
 
 | Kiểm tra thực tế | Kết quả |

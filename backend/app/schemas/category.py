@@ -9,8 +9,9 @@ class CategoryInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(max_length=200)
+    name_en: str = Field(max_length=200)
 
-    @field_validator("name")
+    @field_validator("name", "name_en")
     @classmethod
     def normalize_name(cls, value: str) -> str:
         value = unicodedata.normalize("NFC", value.strip())

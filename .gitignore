@@ -21,6 +21,8 @@ build/
 coverage/
 .expo/
 web/.vite/
+web/guest-web/test-results/
+web/guest-web/playwright-report/
 
 # Runtime databases, uploads and local backups
 storage/

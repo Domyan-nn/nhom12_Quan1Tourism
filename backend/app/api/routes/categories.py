@@ -17,7 +17,7 @@ def list_categories(db: sqlite3.Connection = Depends(get_db)):
 @router.post("", status_code=201)
 def create_category(body: CategoryInput, db: sqlite3.Connection = Depends(get_db)):
     try:
-        return categories.create_category(db, body.name)
+        return categories.create_category(db, body.name, body.name_en)
     except categories.CategoryDuplicate:
         raise HTTPException(status_code=409, detail="CATEGORY_DUPLICATE")
 
@@ -25,7 +25,7 @@ def create_category(body: CategoryInput, db: sqlite3.Connection = Depends(get_db
 @router.patch("/{category_id}")
 def update_category(category_id: str, body: CategoryInput, db: sqlite3.Connection = Depends(get_db)):
     try:
-        return categories.update_category(db, category_id, body.name)
+        return categories.update_category(db, category_id, body.name, body.name_en)
     except categories.CategoryNotFound:
         raise HTTPException(status_code=404, detail="CATEGORY_NOT_FOUND")
     except categories.CategoryDuplicate:

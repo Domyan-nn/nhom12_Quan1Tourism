@@ -2,10 +2,15 @@
 
 import argparse
 import sqlite3
+import sys
+from contextlib import closing
 from pathlib import Path
 
-
 BACKEND_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(BACKEND_DIR))
+from scripts.migrate_db import upgrade_connection
+from scripts.prepare_category_bilingual import upgrade_connection as upgrade_categories
+
 DEFAULT_DATABASE = BACKEND_DIR / "data" / "saigon_stories.db"
 MIGRATION = BACKEND_DIR / "migrations" / "001_initial.sql"
 
@@ -17,7 +22,7 @@ def main() -> None:
     database = args.database.resolve()
     database.parent.mkdir(parents=True, exist_ok=True)
 
-    with sqlite3.connect(database) as connection:
+    with closing(sqlite3.connect(database)) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
         existing = connection.execute(
             "SELECT name FROM sqlite_master WHERE type IN ('table', 'view') "
@@ -30,6 +35,8 @@ def main() -> None:
             )
         try:
             connection.executescript(MIGRATION.read_text(encoding="utf-8"))
+            upgrade_connection(connection)
+            upgrade_categories(connection)
         except sqlite3.Error:
             connection.rollback()
             raise

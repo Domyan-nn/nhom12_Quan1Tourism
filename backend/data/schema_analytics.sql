@@ -1,41 +1,23 @@
 -- =====================================================================
 -- Saigon Stories Quận 1 – Schema thống kê ẩn danh (PRD mục 7.1.6, 7.1.7)
--- Phụ trách: Nguyễn Quốc An (WBS-08, WBS-09). Nguyên gộp vào schema chung.
+-- REFERENCE ONLY: DDL thống nhất tại migrations/002_analytics_constraints.sql.
+-- Database mới: chạy scripts/init_db.py (001 rồi 002).
+-- Database cũ: scripts/migrate_db.py --database <file> --check, rồi
+--             --database <file> --backup <file-backup-moi>.
+-- Không chạy CREATE TABLE IF NOT EXISTS để nâng cấp: lệnh đó không bổ sung
+-- CHECK cho bảng đã tồn tại. Tệp này chỉ giữ truy vấn thiết kế, không tạo bảng.
+-- Schema/migration không đồng nghĩa WBS-08/WBS-09, API hay dashboard đã xong.
 -- Quy ước (PRD 5.6): UUID lưu TEXT; thời gian lưu TEXT theo ISO 8601 UTC,
 -- ĐỊNH DẠNG CỐ ĐỊNH 'YYYY-MM-DDTHH:MM:SS.mmmZ' (độ dài 24) để so sánh chuỗi
 -- đúng thứ tự thời gian; giá trị logic lưu INTEGER 0/1.
 -- Mỗi kết nối phải chạy:  PRAGMA foreign_keys = ON;  (NFR03)
 -- =====================================================================
 
--- 7.1.6  Phiên khách đã đồng ý thống kê. Không chứa thông tin nhận diện.
-CREATE TABLE IF NOT EXISTS anonymous_sessions (
-    session_id       TEXT PRIMARY KEY NOT NULL
-                     CHECK (length(session_id) = 36),          -- UUID v4 do client sinh
-    consent_granted  INTEGER NOT NULL DEFAULT 1
-                     CHECK (consent_granted IN (0, 1)),        -- 0 = đã rút đồng ý
-    created_at       TEXT NOT NULL CHECK (length(created_at) = 24),
-    last_seen_at     TEXT NOT NULL CHECK (length(last_seen_at) = 24),
-    CHECK (last_seen_at >= created_at)
-);
-
--- Đếm "số khách đang hoạt động" (BR17) và dọn phiên cũ.
-CREATE INDEX IF NOT EXISTS idx_anonymous_sessions_last_seen
-    ON anonymous_sessions (last_seen_at);
-
--- 7.1.7  Lượt truy cập ẩn danh. session_id = NULL sau khi khách rút đồng ý (BR18).
-CREATE TABLE IF NOT EXISTS visit_events (
-    id          TEXT PRIMARY KEY NOT NULL CHECK (length(id) = 36),
-    session_id  TEXT NULL
-                REFERENCES anonymous_sessions (session_id) ON DELETE SET NULL,
-    started_at  TEXT NOT NULL CHECK (length(started_at) = 24)
-);
-
--- Tổng hợp theo ngày VN và dọn quá 30 ngày (BR16).
-CREATE INDEX IF NOT EXISTS idx_visit_events_started_at
-    ON visit_events (started_at);
--- Khóa ngoại phía con: cần cho UPDATE ... SET session_id = NULL khi rút đồng ý.
-CREATE INDEX IF NOT EXISTS idx_visit_events_session
-    ON visit_events (session_id);
+-- 002 kiểm tra UUID v4 chữ thường chuẩn cho session_id/id, INTEGER 0/1 cho
+-- consent_granted (mặc định 1), UTC hợp lệ đủ 24 ký tự, last_seen >= created.
+-- visit_events.session_id cho phép NULL, còn lại phải tham chiếu phiên tồn tại;
+-- ON DELETE SET NULL. Chỉ mục chuẩn: idx_anonymous_sessions_last_seen_at,
+-- idx_visit_events_session_id, idx_visit_events_started_at.
 
 -- =====================================================================
 -- TRUY VẤN THAM CHIẾU (tham số dạng :tên). Thời điểm :now, :cutoff… do

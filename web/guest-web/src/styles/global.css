@@ -64,6 +64,10 @@ input[type='search'] { width: 100%; padding: .7rem .9rem; font: inherit; border:
   border-radius: var(--radius); padding: 1.1rem 1.25rem; max-width: 70ch; }
 .map-slot { min-height: 50vh; border: 1px dashed var(--line); border-radius: var(--radius); display: grid; place-items: center; }
 .prose { max-width: 65ch; }
+.topbar { flex-wrap: wrap; }
+.language-picker { display: flex; align-items: center; gap: .5rem; font-size: .85rem; }
+.language-picker select { font: inherit; padding: .3rem; border-radius: 5px; }
+.mode-notice { background: #fff4d6; color: var(--ink); padding: .6rem .9rem; border-radius: var(--radius); }
 
 /* Điện thoại: thanh điều hướng chuyển xuống dưới màn hình */
 @media (max-width: 640px) {

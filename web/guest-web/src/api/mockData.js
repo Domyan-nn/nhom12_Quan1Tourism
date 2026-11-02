@@ -1,8 +1,8 @@
 // Dữ liệu giả lập theo hình dạng API công khai (chỉ địa điểm status = published, BR01).
 // Nội dung thuyết minh chỉ để dựng giao diện; nhóm thay bằng bộ seed chuẩn (WBS-02).
 export const categories = [
-  { id: 'cat-1', name: 'Di tích và kiến trúc' },
-  { id: 'cat-2', name: 'Văn hóa và mua sắm' },
+  { id: 'cat-1', name: 'Di tích và kiến trúc', name_en: 'Heritage and architecture' },
+  { id: 'cat-2', name: 'Văn hóa và mua sắm', name_en: 'Culture and shopping' },
 ];
 
 export const pois = [

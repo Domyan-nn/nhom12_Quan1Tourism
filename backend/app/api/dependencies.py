@@ -1,21 +1,19 @@
 """Request-scoped database connection and Admin authentication."""
 
-import os
 import sqlite3
 from typing import Iterator
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.db.connection import DEFAULT_DATABASE, connect
+from app.db.connection import configured_database, connect
 from app.services import auth
 
 bearer = HTTPBearer(auto_error=False)
 
 
 def get_db() -> Iterator[sqlite3.Connection]:
-    database = os.environ.get("SAIGON_DATABASE") or DEFAULT_DATABASE
-    db = connect(database)
+    db = connect(configured_database())
     try:
         yield db
     finally:

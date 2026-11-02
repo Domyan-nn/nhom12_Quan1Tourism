@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 export default function PoiCard({ poi, categoryName }) {
-  const locales = (poi.narrations || []).map((n) => n.locale.toUpperCase()).join(' / ');
+  const { t } = useLanguage();
+  const locales = (poi.narration_locales || []).map((locale) => locale.toUpperCase()).join(' / ');
   return (
     <Link to={`/poi/${poi.id}`} className="card">
       <div className="card-thumb" aria-hidden="true">
@@ -12,7 +14,7 @@ export default function PoiCard({ poi, categoryName }) {
         <p className="muted">{poi.address}</p>
         <p className="meta">
           {categoryName && <span className="tag">{categoryName}</span>}
-          {locales && <span className="muted">Thuyết minh: {locales}</span>}
+          {locales && <span className="muted">{t.narration}: {locales}</span>}
         </p>
       </div>
     </Link>
