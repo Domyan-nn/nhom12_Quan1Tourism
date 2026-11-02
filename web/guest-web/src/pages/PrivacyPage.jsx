@@ -1,11 +1,14 @@
-// UC12 – WBS-08: nút Đồng ý / Rút đồng ý sẽ được gắn vào trang này.
+import { useLanguage } from '../i18n/LanguageContext.jsx';
+
+// Consent and retention are pending implementation.
 export default function PrivacyPage() {
+  const { t } = useLanguage();
   return (
     <section className="prose">
-      <h1>Quyền riêng tư</h1>
-      <p>Bạn không cần đăng nhập để dùng Saigon Stories.</p>
-      <p>Nếu bạn đồng ý, ứng dụng ghi lượt truy cập ẩn danh bằng một mã ngẫu nhiên để thống kê. Ứng dụng không thu tên, số điện thoại hay tọa độ GPS. Dữ liệu lượt truy cập được lưu tối đa 30 ngày.</p>
-      <p>Bạn có thể từ chối hoặc rút đồng ý bất cứ lúc nào và vẫn xem được toàn bộ nội dung công khai.</p>
+      <h1>{t.privacy}</h1>
+      <p>{t.privacyIntro}</p>
+      <p>{t.privacyCurrent}</p>
+      <p>{t.privacyPending}</p>
     </section>
   );
 }

@@ -1,6 +1,7 @@
 """FastAPI entry point."""
 
 import sqlite3
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -8,8 +9,16 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.routes import auth, categories, public
+from app.db.connection import configured_database, validate_category_schema
 
-app = FastAPI(title="Saigon Stories API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    validate_category_schema(configured_database())
+    yield
+
+
+app = FastAPI(title="Saigon Stories API", version="0.1.0", lifespan=lifespan)
 app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(public.router)

@@ -1,33 +1,37 @@
-import { apiGet, USE_MOCK } from './client.js';
+import { ApiError } from './client.js';
 import { categories, pois } from './mockData.js';
 
-const wait = (ms = 300) => new Promise((r) => setTimeout(r, ms));
 const normalize = (s) => s.trim().normalize('NFC').toLowerCase();
 
-// GET /api/public/categories
-export async function listCategories() {
-  if (!USE_MOCK) return apiGet('/public/categories');
-  await wait(150);
-  return categories;
-}
+const asItems = (data) => {
+  if (!Array.isArray(data?.items)) throw new ApiError('Phản hồi không hợp lệ.', 200, 'INVALID_RESPONSE');
+  return data.items;
+};
 
-// GET /api/public/pois?q=&category_id=   (BR01, BR02)
-export async function listPois({ q = '', categoryId = '' } = {}) {
-  if (!USE_MOCK) return apiGet('/public/pois', { q, category_id: categoryId });
-  await wait();
-  const key = normalize(q);
-  return pois.filter(
-    (p) =>
-      (!categoryId || p.category_id === categoryId) &&
-      (!key || normalize(p.name).includes(key))
-  );
-}
-
-// GET /api/public/pois/{id}
-export async function getPoi(id) {
-  if (!USE_MOCK) return apiGet(`/public/pois/${id}`);
-  await wait();
-  const poi = pois.find((p) => p.id === id);
-  if (!poi) throw Object.assign(new Error('Không tìm thấy địa điểm.'), { status: 404 });
-  return poi;
+// Return arrays to the UI in both modes; mock lists match the public API shape.
+export function createPublicApi({ apiGet, useMock }) {
+  return {
+    async listCategories() {
+      return useMock ? categories.map((c) => ({ ...c })) : asItems(await apiGet('/categories'));
+    },
+    async listPois({ q = '', categoryId = '' } = {}) {
+      if (!useMock) return asItems(await apiGet('/pois', { q, category_id: categoryId }));
+      const key = normalize(q);
+      return pois.filter((p) => (!categoryId || p.category_id === categoryId) &&
+        (!key || normalize(p.name).includes(key))).map(({ narrations, ...poi }) => ({
+          ...poi, narration_locales: narrations.map((n) => n.locale),
+        }));
+    },
+    async getPoi(id) {
+      if (!useMock) {
+        const poi = await apiGet(`/pois/${encodeURIComponent(id)}`);
+        if (!poi || !Array.isArray(poi.narrations)) throw new ApiError('Phản hồi không hợp lệ.', 200, 'INVALID_RESPONSE');
+        return poi;
+      }
+      const poi = pois.find((p) => p.id === id);
+      if (!poi) throw new ApiError('Không tìm thấy địa điểm.', 404, 'POI_NOT_FOUND');
+      return { ...poi, narration_locales: poi.narrations.map((n) => n.locale),
+        narrations: poi.narrations.map((n) => ({ ...n })) };
+    },
+  };
 }

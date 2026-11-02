@@ -27,7 +27,7 @@ PLACES = (
     ("cho-ben-thanh", "Chợ Bến Thành", "Lê Lợi, Quận 1", 10.7720, 106.6980, "culture"),
     ("nha-hat", "Nhà hát Thành phố", "Công trường Lam Sơn, Quận 1", 10.7768, 106.7031, "culture"),
 )
-CATEGORIES = (("history", "Di tích"), ("culture", "Văn hóa"))
+CATEGORIES = (("history", "Di tích", "Heritage"), ("culture", "Văn hóa", "Culture"))
 
 
 def stable_id(value: str) -> str:
@@ -63,15 +63,15 @@ def seed(database: Path, username: str, password: str) -> None:
             else:
                 print("Demo admin already exists: username and password were not changed.")
 
-            for key, name in CATEGORIES:
+            for key, name, name_en in CATEGORIES:
                 category_id = stable_id("category:" + key)
                 normalized = unicodedata.normalize("NFC", name.strip()).casefold()
                 conflict = connection.execute("SELECT id FROM categories WHERE normalized_name = ?", (normalized,)).fetchone()
                 if conflict and conflict["id"] != category_id:
                     raise ValueError(f"Category '{name}' already exists with another ID; review it before seeding")
                 connection.execute(
-                    "INSERT INTO categories (id, name, normalized_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING",
-                    (category_id, name, normalized, now, now),
+                    "INSERT INTO categories (id, name, normalized_name, name_en, normalized_name_en, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING",
+                    (category_id, name, normalized, name_en, name_en.casefold(), now, now),
                 )
 
             for key, name, address, lat, lon, category in PLACES:

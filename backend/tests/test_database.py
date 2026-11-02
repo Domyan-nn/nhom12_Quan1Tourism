@@ -33,7 +33,7 @@ class DatabaseTests(unittest.TestCase):
         with closing(connect(self.database)) as db, db:
             tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             self.assertEqual(tables, TABLES)
-            db.execute("INSERT INTO categories VALUES ('keep','Keep','keep','now','now')")
+            db.execute("INSERT INTO categories (id, name, normalized_name, created_at, updated_at) VALUES ('keep','Keep','keep','now','now')")
         result = subprocess.run([sys.executable, str(INIT), "--database", str(self.database)], capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
         with closing(connect(self.database)) as db:
@@ -55,7 +55,7 @@ class DatabaseTests(unittest.TestCase):
     def test_constraints_and_delete_rules(self):
         db = connect(self.database)
         self.addCleanup(db.close)
-        db.execute("INSERT INTO categories VALUES ('c','Name','name','now','now')")
+        db.execute("INSERT INTO categories (id, name, normalized_name, created_at, updated_at) VALUES ('c','Name','name','now','now')")
         statement = "INSERT INTO pois VALUES (?, ?, 'Place', 'Address', ?, ?, ?, NULL, 'draft', 'now', 'now')"
         for lat, lon, radius in [(91, 0, 100), (-91, 0, 100), (0, 181, 100), (0, -181, 100), (0, 0, 19), (0, 0, 1001)]:
             with self.subTest(lat=lat, lon=lon, radius=radius), self.assertRaises(sqlite3.IntegrityError):
@@ -100,7 +100,7 @@ class DatabaseTests(unittest.TestCase):
     def test_collision_rolls_back_whole_seed(self):
         db = connect(self.database)
         with db:
-            db.execute("INSERT INTO categories VALUES ('other','Di tích','di tích','now','now')")
+            db.execute("INSERT INTO categories (id, name, normalized_name, created_at, updated_at) VALUES ('other','Di tích','di tích','now','now')")
         db.close()
         with self.assertRaises(ValueError):
             seed(self.database, "demo", secrets.token_urlsafe(24))

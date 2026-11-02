@@ -1,39 +1,43 @@
 import { useState } from 'react';
 import useAsync from '../hooks/useAsync.js';
-import { listCategories, listPois } from '../api/publicApi.js';
+import { listCategories, listPois } from '../api/index.js';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 import PoiCard from '../components/PoiCard.jsx';
 import { Loading, Empty, ErrorState } from '../components/StateViews.jsx';
 
 // UC01: tìm theo tên, lọc theo danh mục, kết hợp cả hai (BR02).
 export default function ExplorePage() {
+  const { t, language } = useLanguage();
   const [q, setQ] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const cats = useAsync(() => listCategories(), []);
   const pois = useAsync(() => listPois({ q, categoryId }), [q, categoryId]);
-  const catName = (id) => cats.data?.find((c) => c.id === id)?.name;
+  const localizedName = (category) => language === 'en' ? category?.name_en || category?.name : category?.name;
+  const catName = (id) => localizedName(cats.data?.find((c) => c.id === id));
 
   return (
     <section>
-      <h1>Khám phá Quận 1</h1>
-      <p className="muted lead">Tìm địa điểm, xem vị trí và nghe thuyết minh bằng ngôn ngữ của bạn.</p>
+      <h1>{t.exploreTitle}</h1>
+      <p className="muted lead">{t.exploreHint}</p>
 
       <div className="filters">
-        <label className="sr-only" htmlFor="q">Tìm theo tên địa điểm</label>
-        <input id="q" type="search" placeholder="Tìm theo tên địa điểm" value={q}
+        <label className="sr-only" htmlFor="q">{t.search}</label>
+        <input id="q" type="search" placeholder={t.search} value={q}
                onChange={(e) => setQ(e.target.value)} />
-        <div className="chips" role="group" aria-label="Lọc theo danh mục">
-          <button className={`chip ${categoryId === '' ? 'on' : ''}`} onClick={() => setCategoryId('')}>Tất cả</button>
+        {cats.status === 'error' && <ErrorState message={t.categoriesError} onRetry={cats.retry} />}
+        <div className="chips" role="group" aria-label={t.filter}>
+          <button className={`chip ${categoryId === '' ? 'on' : ''}`} onClick={() => setCategoryId('')}>{t.all}</button>
           {cats.data?.map((c) => (
             <button key={c.id} className={`chip ${categoryId === c.id ? 'on' : ''}`}
-                    onClick={() => setCategoryId(c.id)}>{c.name}</button>
+                    onClick={() => setCategoryId(c.id)}>{localizedName(c)}</button>
           ))}
         </div>
       </div>
 
       {pois.status === 'loading' && <Loading />}
-      {pois.status === 'error' && <ErrorState onRetry={pois.retry} />}
+      {pois.status === 'error' && <ErrorState error={pois.error} onRetry={pois.retry} />}
       {pois.status === 'success' && pois.data.length === 0 && (
-        <Empty title="Không có địa điểm phù hợp" hint="Đổi từ khóa hoặc chọn danh mục khác." />
+        <Empty title={t.empty} hint={t.emptyHint} />
       )}
       {pois.status === 'success' && pois.data.length > 0 && (
         <div className="grid">

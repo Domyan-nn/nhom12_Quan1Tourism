@@ -9,6 +9,26 @@ from scripts.seed_db import stable_id
 class PublicAPITests(unittest.TestCase):
     setUp = test_admin_api.AdminAPITests.setUp
 
+    def test_public_response_contract_and_empty_results(self):
+        response = self.client.get('/api/v1/categories')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(set(response.json()), {'items'})
+        self.assertTrue(all(set(c) == {'id', 'name', 'name_en'} for c in response.json()['items']))
+        self.assertEqual(self.client.get('/api/v1/pois').json(), {'items': []})
+        palace = stable_id('poi:dinh-doc-lap')
+        with closing(connect(self.database)) as db, db:
+            db.execute("UPDATE pois SET status='published' WHERE id=?", (palace,))
+        summary = self.client.get('/api/v1/pois').json()['items'][0]
+        self.assertEqual(set(summary), {'id', 'name', 'category_id', 'address', 'latitude', 'longitude', 'radius_m', 'image_url', 'narration_locales'})
+        detail = self.client.get('/api/v1/pois/' + palace).json()
+        self.assertEqual(set(detail), set(summary) | {'narrations'})
+        self.assertEqual(detail['narration_locales'], [n['locale'] for n in detail['narrations']])
+        self.assertTrue(all(set(n) == {'locale', 'title', 'body'} for n in detail['narrations']))
+        self.assertEqual(self.client.get('/api/v1/pois', params={'category_id': 'missing'}).json(), {'items': []})
+        response = self.client.get('/api/v1/pois/missing')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()['error']['code'], 'POI_NOT_FOUND')
+
     def test_public_visibility_search_and_detail(self):
         palace = stable_id("poi:dinh-doc-lap")
         church = stable_id("poi:nha-tho-duc-ba")

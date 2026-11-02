@@ -4,16 +4,26 @@
 
 ## Trạng thái
 
-Repository có SQLite, seed dữ liệu nháp, FastAPI cho đăng nhập Admin, danh mục và địa điểm công khai; ứng dụng React Admin và khung web khách được tách riêng. Web khách hiện dùng dữ liệu giả lập mặc định, chưa kết nối được API hiện tại. Mobile, GPS, bản đồ, TTS, thống kê và quản trị địa điểm chưa triển khai. Xem [hướng dẫn PowerShell](backend/README.md), [nội dung mẫu](backend/scripts/README.md), [hợp đồng API](docs/analysis-design/api-design.md) và [kết quả kiểm thử](docs/testing/test-results.md).
+Repository có SQLite, seed dữ liệu nháp, FastAPI cho đăng nhập Admin, danh mục và địa điểm công khai; ứng dụng React Admin và web khách được tách riêng. Guest web hỗ trợ mock và API thật `/api/v1`, có UI VI/EN độc lập với ngôn ngữ thuyết minh. Mobile đã có mã Expo nhưng tích hợp và thiết bị cần kiểm thử riêng. Bản đồ/TTS web, API thống kê, dashboard và quản trị địa điểm còn chờ triển khai. Xem [hướng dẫn Windows](docs/deployment/setup.md), [nội dung mẫu](backend/scripts/README.md), [hợp đồng API](docs/API_CONTRACT.md) và [kết quả kiểm thử](docs/testing/test-results.md).
 
 ## Chạy thử trên Windows 11
 
-Cần Python 3.12, Node.js 20.19+ hoặc 22.12+ và npm. Các lệnh chạy từ gốc repo trong PowerShell, không cần Docker. Chọn tên database **mới**; không dùng hay xóa database hiện có:
+Có thể dùng database demo hiện có `backend/data/preview-thu-nghiem-5826e873.db` mà không khởi tạo hoặc seed lại. Từ gốc repo, sau khi cài các phụ thuộc backend, chạy:
+
+```powershell
+.\.venv\Scripts\python.exe backend/scripts/start_demo.py
+```
+
+Chạy Admin và guest web theo hướng dẫn bên dưới; đặt `VITE_USE_MOCK=false` cho guest web để hai giao diện cùng dùng API này. Database `backend/data/saigon_stories.db` dành cho dữ liệu chính; không dùng trong demo. Hai địa điểm `published` trong preview là dữ liệu thử nghiệm, không phải nội dung đã kiểm duyệt.
+
+Khi khởi động, backend kiểm tra bảng danh mục của database được chọn. Nếu database chưa có cột song ngữ, backend dừng và thông báo đường dẫn cùng hướng dẫn nâng cấp; không tự thay đổi dữ liệu.
+
+Cần Python 3.12, Node.js 22.12+ và npm. Các lệnh chạy từ gốc repo trong PowerShell, không cần Docker. Chọn tên database **mới**; không dùng hay xóa database hiện có:
 
 Trước khi chạy phần web, kiểm tra `node --version` và `npm.cmd --version`. Nếu PowerShell không nhận lệnh, cài Node.js LTS từ [nodejs.org](https://nodejs.org/) rồi mở lại PowerShell; hoặc nếu đã có bản Node portable, thêm thư mục chứa `node.exe` và `npm.cmd` vào `PATH` cho cửa sổ hiện tại: `$env:Path = 'ĐƯỜNG_DẪN_TỚI_THƯ_MỤC_NODE;' + $env:Path`. Thay phần đường dẫn bằng vị trí thực tế, sau đó kiểm tra lại hai lệnh trên. Thay đổi này chỉ có hiệu lực trong cửa sổ PowerShell hiện tại.
 
 ```powershell
-python -m venv .venv
+if (-not (Test-Path -LiteralPath .venv)) { python -m venv .venv }
 .\.venv\Scripts\python.exe -m pip install -r backend/requirements-dev.txt
 $db = 'backend/data/demo-wbs-new.db'
 if (Test-Path -LiteralPath $db) { throw 'Database đã tồn tại: chọn tên mới' }
@@ -27,13 +37,15 @@ Nhập mật khẩu demo riêng tại lời nhắc ẩn; không đặt mật kh�
 
 ```powershell
 cd web
-npm.cmd install
+npm.cmd ci
 npm.cmd run dev
 ```
 
 Mở URL Vite hiển thị trong terminal (mặc định `http://localhost:5174`) để dùng Admin. Proxy phát triển chuyển `/api` tới `127.0.0.1:8000`; cả hai tiến trình cần chạy cùng máy. Đăng nhập bằng tên và mật khẩu đã seed. Token chỉ ở bộ nhớ trang, mất khi tải lại; đăng xuất gọi API thu hồi. Dữ liệu seed đều là `draft`; không tự công bố dữ liệu chưa kiểm duyệt. Test API sử dụng dữ liệu `published` riêng trong database tạm.
 
-Web khách là ứng dụng riêng trong [web/guest-web](web/guest-web/README.md), chạy mặc định tại cổng 5173 và dùng dữ liệu giả lập. Chế độ API thật của ứng dụng khách cần được điều chỉnh theo `/api/v1` và định dạng phản hồi của backend trước khi tích hợp.
+Web khách là ứng dụng riêng trong [web/guest-web](web/guest-web/README.md), chạy mặc định tại cổng 5173. Đặt `VITE_USE_MOCK=false` và `VITE_API_BASE_URL=/api/v1`, rồi khởi động lại Vite để gọi backend thật. Mặc định dùng mock có thông báo trên trang; lỗi API thật không chuyển sang mock. Seed vẫn là draft nên danh sách công khai có thể rỗng. Xem [các lệnh đầy đủ](docs/deployment/setup.md).
+
+Database mới được init qua migration 001, 002 và bước bổ sung cột danh mục song ngữ. Database đã có cần dùng script nâng cấp riêng có kiểm tra dữ liệu và backup; xem [backend README](backend/README.md). Không chạy lại init hoặc schema tham chiếu để nâng cấp.
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s backend/tests -v

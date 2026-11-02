@@ -1,5 +1,8 @@
-export function Loading({ label = 'Đang tải…' }) {
-  return <p className="state" role="status">{label}</p>;
+import { useLanguage } from '../i18n/LanguageContext.jsx';
+
+export function Loading({ label }) {
+  const { t } = useLanguage();
+  return <p className="state" role="status">{label || t.loading}</p>;
 }
 
 export function Empty({ title, hint }) {
@@ -11,12 +14,15 @@ export function Empty({ title, hint }) {
   );
 }
 
-export function ErrorState({ message = 'Không tải được dữ liệu.', onRetry }) {
+export function ErrorState({ message, error, onRetry }) {
+  const { t } = useLanguage();
+  const fallback = error?.code === 'NETWORK_ERROR' ? t.networkError :
+    error?.code === 'INVALID_RESPONSE' ? t.invalidResponse : t.loadError;
   return (
     <div className="state state-error" role="alert">
-      <strong>{message}</strong>
-      <p>Kiểm tra kết nối mạng rồi thử lại.</p>
-      {onRetry && <button className="btn" onClick={onRetry}>Thử lại</button>}
+      <strong>{message || fallback}</strong>
+      <p>{t.retryHint}</p>
+      {onRetry && <button className="btn" onClick={onRetry}>{t.retry}</button>}
     </div>
   );
 }

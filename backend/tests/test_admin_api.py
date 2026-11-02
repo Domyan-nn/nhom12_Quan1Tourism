@@ -110,25 +110,31 @@ class AdminAPITests(unittest.TestCase):
 
     def test_create_update_and_normalized_duplicates(self):
         headers = self.headers(self.login())
-        response = self.client.post("/api/v1/admin/categories", headers=headers, json={"name": "  Café  "})
+        response = self.client.post("/api/v1/admin/categories", headers=headers, json={"name": "  Café  ", "name_en": "  Coffee  "})
         self.assertEqual(response.status_code, 201)
         item = response.json()
         self.assertEqual(item["name"], "Café")
-        duplicate = self.client.post("/api/v1/admin/categories", headers=headers, json={"name": " CAFE\u0301 "})
+        self.assertEqual(item["name_en"], "Coffee")
+        duplicate_en = self.client.post("/api/v1/admin/categories", headers=headers, json={"name": "Unique", "name_en": " COFFEE "})
+        self.assertEqual(duplicate_en.status_code, 409)
+        self.assertIn(item, self.client.get("/api/v1/categories").json()["items"])
+        duplicate = self.client.post("/api/v1/admin/categories", headers=headers, json={"name": " CAFE\u0301 ", "name_en": "Other"})
         self.assertEqual(duplicate.status_code, 409)
-        response = self.client.patch("/api/v1/admin/categories/" + item["id"], headers=headers, json={"name": "  Mới  "})
+        response = self.client.patch("/api/v1/admin/categories/" + item["id"], headers=headers, json={"name": "  Mới  ", "name_en": " New "})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["name"], "Mới")
-        duplicate = self.client.patch("/api/v1/admin/categories/" + item["id"], headers=headers, json={"name": " DI TÍCH "})
+        duplicate = self.client.patch("/api/v1/admin/categories/" + item["id"], headers=headers, json={"name": " DI TÍCH ", "name_en": "Other"})
         self.assertEqual(duplicate.status_code, 409)
         names = [row["name"] for row in self.client.get("/api/v1/admin/categories", headers=headers).json()["items"]]
         self.assertIn("Mới", names)
 
     def test_empty_invalid_and_missing(self):
         headers = self.headers(self.login())
+        self.assertEqual(self.client.post("/api/v1/admin/categories", headers=headers, json={"name": "Name"}).status_code, 422)
+        self.assertEqual(self.client.post("/api/v1/admin/categories", headers=headers, json={"name": "Name", "name_en": "  "}).status_code, 422)
         for value in ("", "  \t ", "x" * 201):
-            self.assertEqual(self.client.post("/api/v1/admin/categories", headers=headers, json={"name": value}).status_code, 422)
-        self.assertEqual(self.client.patch("/api/v1/admin/categories/missing", headers=headers, json={"name": "Name"}).status_code, 404)
+            self.assertEqual(self.client.post("/api/v1/admin/categories", headers=headers, json={"name": value, "name_en": "Valid"}).status_code, 422)
+        self.assertEqual(self.client.patch("/api/v1/admin/categories/missing", headers=headers, json={"name": "Name", "name_en": "Name"}).status_code, 404)
         self.assertEqual(self.client.delete("/api/v1/admin/categories/missing", headers=headers).status_code, 404)
         response = self.client.post("/api/v1/admin/login", json={"username": "admin", "password": self.password, "unexpected": self.password})
         self.assertEqual(response.status_code, 422)
@@ -140,7 +146,7 @@ class AdminAPITests(unittest.TestCase):
         response = self.client.delete("/api/v1/admin/categories/" + used, headers=headers)
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.json()["error"]["code"], "CATEGORY_IN_USE")
-        created = self.client.post("/api/v1/admin/categories", headers=headers, json={"name": "Unused"}).json()["id"]
+        created = self.client.post("/api/v1/admin/categories", headers=headers, json={"name": "Unused", "name_en": "Unused"}).json()["id"]
         self.assertEqual(self.client.delete("/api/v1/admin/categories/" + created, headers=headers).status_code, 204)
         self.assertEqual(self.client.delete("/api/v1/admin/categories/" + created, headers=headers).status_code, 404)
 
