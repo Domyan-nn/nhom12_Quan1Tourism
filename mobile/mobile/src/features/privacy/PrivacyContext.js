@@ -1,7 +1,5 @@
-import NetInfo from '@react-native-community/netinfo';
 import * as Crypto from 'expo-crypto';
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState } from 'react-native';
 import { analyticsApi, storage } from '../../services';
 import { AnalyticsClient } from './AnalyticsClient';
 
@@ -18,26 +16,14 @@ export function PrivacyProvider({ children }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    let visible = AppState.currentState === 'active';
-    let online = true;
-    const sync = () => client.setRunning(visible && online); // BR15: chỉ gửi khi hiển thị và có mạng
     const unsub = client.subscribe(setSnap);
+    let mounted = true;
     client.init().then(() => {
-      setReady(true);
-      sync();
-    });
-    const appSub = AppState.addEventListener('change', (s) => {
-      visible = s === 'active';
-      sync();
-    });
-    const netSub = NetInfo.addEventListener((s) => {
-      online = s.isConnected !== false && s.isInternetReachable !== false;
-      sync();
+      if (mounted) setReady(true);
     });
     return () => {
+      mounted = false;
       unsub();
-      appSub.remove();
-      netSub();
       client.setRunning(false);
     };
   }, [client]);

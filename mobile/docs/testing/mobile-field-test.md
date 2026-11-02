@@ -2,6 +2,17 @@
 
 Người thực hiện: Lê Nam Thuận. **Chưa thực hiện** – điền bảng khi thử trên thiết bị thật; không suy ra kết quả từ test đơn vị.
 
+## Checklist tối thiểu – chưa kiểm thử trên điện thoại
+
+- [ ] Cấp và từ chối quyền vị trí; bản đồ và nghe thủ công vẫn dùng được khi từ chối.
+- [ ] Bật/tắt tự phát, chuyển ứng dụng xuống nền khi đang xin quyền hoặc khởi tạo watcher, rồi mở lại.
+- [ ] Kiểm tra mạng chậm, API lỗi, danh sách rỗng và bản đồ sẵn sàng chậm; thử lại khi có lỗi.
+- [ ] Đổi giao diện VI/EN độc lập với ngôn ngữ thuyết minh; thử địa điểm chưa có bài phù hợp.
+- [ ] Kiểm tra TTS khi có, không có và không liệt kê được giọng đúng ngôn ngữ.
+- [ ] Kết nối điện thoại và backend thật trên cùng mạng, dùng địa chỉ LAN và `EXPO_PUBLIC_USE_MOCK=false`.
+
+Các ca analytics gửi heartbeat/rút đồng ý dưới đây hiện **chưa áp dụng**: backend chưa có API, mobile không gửi thống kê và giữ lại yêu cầu rút đang chờ nếu có.
+
 | Thiết bị / OS | Expo Go / bản build | Ngày | Người thử |
 | --- | --- | --- | --- |
 | | | | |

@@ -4,12 +4,15 @@ import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View
 import { Banner, Chip, EmptyState, ErrorState, Loading } from '../../components/StateViews';
 import PoiCard from '../../components/PoiCard';
 import { useData } from '../../context/DataContext';
+import { useSettings } from '../../context/SettingsContext';
+import { categoryName, errorText } from '../../context/translations';
 import { USE_MOCK, publicApi } from '../../services';
 import { filterPois } from '../../services/publicApi';
 import { colors, radius, space } from '../../theme';
 
 export default function ExploreScreen({ navigation }) {
   const data = useData();
+  const { t, uiLanguage } = useSettings();
   const [q, setQ] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [result, setResult] = useState({ status: 'loading', items: [], offline: false, error: null });
@@ -25,9 +28,9 @@ export default function ExploreScreen({ navigation }) {
       if (id !== seq.current) return;
       // NFR02/UC01-E2: lỗi truy cập -> nếu đã có dữ liệu tải trước thì vẫn cho xem (lọc cục bộ), kèm báo lỗi.
       if (data.pois.length > 0) {
-        setResult({ status: 'ready', items: filterPois(data.pois, { q, categoryId }), offline: true, error: err.message });
+        setResult({ status: 'ready', items: filterPois(data.pois, { q, categoryId }), offline: true, error: err });
       } else {
-        setResult({ status: 'error', items: [], offline: false, error: err.message });
+        setResult({ status: 'error', items: [], offline: false, error: err });
       }
     }
   }, [q, categoryId, data.pois]);
@@ -35,11 +38,11 @@ export default function ExploreScreen({ navigation }) {
   // Debounce 300 ms khi gõ từ khóa.
   useEffect(() => {
     const t = setTimeout(search, 300);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); seq.current++; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, categoryId]);
+  }, [search]);
 
-  const catName = (id) => data.categories.find((c) => c.id === id)?.name;
+  const catName = (id) => categoryName(data.categories.find((c) => c.id === id), uiLanguage);
   const open = (poi) => navigation.navigate('PoiDetail', { id: poi.id, name: poi.name });
 
   return (
@@ -48,28 +51,29 @@ export default function ExploreScreen({ navigation }) {
         <TextInput
           value={q}
           onChangeText={setQ}
-          placeholder="Tìm địa điểm theo tên…"
+          placeholder={t.search}
           placeholderTextColor={colors.muted}
           style={styles.input}
           returnKeyType="search"
-          accessibilityLabel="Tìm địa điểm theo tên"
+          accessibilityLabel={t.search}
           autoCorrect={false}
         />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          <Chip label="Tất cả" selected={!categoryId} onPress={() => setCategoryId('')} />
+          <Chip label={t.all} selected={!categoryId} onPress={() => setCategoryId('')} />
           {data.categories.map((c) => (
-            <Chip key={c.id} label={c.name} selected={categoryId === c.id} onPress={() => setCategoryId(c.id)} />
+            <Chip key={c.id} label={categoryName(c, uiLanguage)} selected={categoryId === c.id} onPress={() => setCategoryId(c.id)} />
           ))}
         </ScrollView>
       </View>
 
-      {USE_MOCK ? <Banner>Đang dùng dữ liệu giả lập (EXPO_PUBLIC_USE_MOCK=true).</Banner> : null}
-      {result.offline ? <Banner kind="error">{`${result.error} Đang hiển thị dữ liệu đã tải trước đó.`}</Banner> : null}
+      {USE_MOCK ? <Banner>{t.mock}</Banner> : null}
+      {result.offline ? <Banner kind="error">{`${errorText(t, result.error)} ${t.cached}`}</Banner> : null}
+      {data.status === 'error' && result.status === 'ready' ? <ErrorState message={errorText(t, data.error)} onRetry={data.reload} /> : null}
 
       {result.status === 'loading' ? (
         <Loading />
       ) : result.status === 'error' ? (
-        <ErrorState message={result.error} onRetry={() => { data.reload(); search(); }} />
+        <ErrorState message={errorText(t, result.error)} onRetry={() => { data.reload(); search(); }} />
       ) : (
         <FlatList
           data={result.items}
@@ -79,7 +83,7 @@ export default function ExploreScreen({ navigation }) {
           refreshControl={<RefreshControl refreshing={false} onRefresh={() => { data.reload(); search(); }} />}
           ListEmptyComponent={
             // UC01-E1: không có kết quả -> thông báo; khách đổi điều kiện ngay trên màn hình.
-            <EmptyState title="Không tìm thấy địa điểm phù hợp" hint="Hãy đổi từ khóa hoặc chọn danh mục khác." />
+            <EmptyState title={t.emptyPlaces} hint={t.emptyHint} />
           }
         />
       )}

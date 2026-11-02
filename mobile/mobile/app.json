@@ -11,7 +11,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "vn.edu.nhom12.saigonstories",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Saigon Stories dùng vị trí của bạn để hiển thị trên bản đồ và tự phát thuyết minh khi bạn đến gần địa điểm (chỉ khi ứng dụng đang mở). Vị trí không được lưu hay gửi đi."
+        "NSLocationWhenInUseUsageDescription": "Saigon Stories dùng vị trí để hiển thị trên bản đồ và tự phát khi ứng dụng đang mở; không lưu hoặc gửi vị trí. / Saigon Stories uses your location to show it on the map and play nearby stories while the app is open; location is not stored or sent."
       }
     },
     "android": {
@@ -24,7 +24,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Saigon Stories dùng vị trí của bạn để hiển thị trên bản đồ và tự phát thuyết minh khi bạn đến gần địa điểm (chỉ khi ứng dụng đang mở)."
+          "locationWhenInUsePermission": "Saigon Stories dùng vị trí để hiển thị trên bản đồ và tự phát khi ứng dụng đang mở; không lưu hoặc gửi vị trí. / Saigon Stories uses your location to show it on the map and play nearby stories while the app is open; location is not stored or sent."
         }
       ]
     ]

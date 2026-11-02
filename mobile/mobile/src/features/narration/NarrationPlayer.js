@@ -64,13 +64,10 @@ export class NarrationPlayer {
     }
     if (token !== this._token) return false; // đã bị dừng/phát bài khác trong lúc chờ
 
-    if (voices.length > 0) {
-      voice = pickVoice(voices, locale);
-      if (!voice) {
-        return this._fail(token, PLAYER_ERRORS.NO_VOICE, `Thiết bị chưa có giọng đọc cho ngôn ngữ "${locale}". Bạn có thể đọc văn bản bên dưới.`, poiId, locale);
-      }
+    voice = pickVoice(voices, locale);
+    if (!voice?.identifier) {
+      return this._fail(token, PLAYER_ERRORS.NO_VOICE, `Không xác nhận được giọng đọc phù hợp cho "${locale}". Bạn có thể đọc văn bản bên dưới.`, poiId, locale);
     }
-    // voices rỗng: một số máy Android không liệt kê giọng; thử phát với mã ngôn ngữ và dựa vào onError.
 
     return new Promise((resolve) => {
       let started = false;
@@ -79,8 +76,11 @@ export class NarrationPlayer {
         if (settled) return;
         settled = true;
         this._clearTimeout(watchdog);
+        if (this._cancelPending === cancelPending) this._cancelPending = null;
         resolve(ok);
       };
+      const cancelPending = () => settle(false);
+      this._cancelPending = cancelPending;
       const watchdog = this._setTimeout(() => {
         if (!started && token === this._token) {
           this.speech.stop?.();
@@ -145,6 +145,7 @@ export class NarrationPlayer {
 
   stop({ silent = false } = {}) {
     this._token++;
+    this._cancelPending?.();
     try {
       this.speech.stop?.();
     } catch {

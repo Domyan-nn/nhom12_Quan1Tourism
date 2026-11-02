@@ -42,6 +42,7 @@ export function createApiClient({ baseUrl, fetchImpl = fetch, timeoutMs = 10_000
         code: data?.error?.code ?? 'HTTP_ERROR',
       });
     }
+    if (data === null) throw new ApiError('Phản hồi không hợp lệ.', { status: res.status, code: 'INVALID_RESPONSE' });
     return data;
   }
   return {

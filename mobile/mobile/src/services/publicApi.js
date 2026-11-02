@@ -5,6 +5,7 @@
 // Khi nhóm thống nhất một kiểu, chỉ cần đổi EXPO_PUBLIC_API_STYLE.
 
 import { categories as mockCategories, pois as mockPois } from './mockData';
+import { ApiError } from './apiClient';
 
 const PATHS = {
   v1: { categories: '/v1/categories', pois: '/v1/pois' },
@@ -15,7 +16,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 /** BR02: cắt khoảng trắng, chuẩn hóa NFC, không phân biệt hoa/thường. */
 export const normalizeText = (s) => String(s ?? '').trim().normalize('NFC').toLocaleLowerCase('vi');
 
-const asList = (data) => (Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []);
+const asList = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  throw new ApiError('Phản hồi danh sách không hợp lệ.', { code: 'INVALID_RESPONSE' });
+};
 
 function normalizePoi(p) {
   const narrations = Array.isArray(p.narrations) ? p.narrations : undefined;
@@ -53,7 +58,9 @@ export function createPublicApi({ client, useMock, style = 'v1' }) {
         if (!poi) throw Object.assign(new Error('Địa điểm không còn khả dụng.'), { status: 404, code: 'NOT_FOUND' });
         return normalizePoi(poi);
       }
-      return normalizePoi(await client.get(`${paths.pois}/${encodeURIComponent(id)}`));
+      const data = await client.get(`${paths.pois}/${encodeURIComponent(id)}`);
+      if (!data || !Array.isArray(data.narrations)) throw new ApiError('Phản hồi chi tiết không hợp lệ.', { code: 'INVALID_RESPONSE' });
+      return normalizePoi(data);
     },
   };
 }
