@@ -9,6 +9,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { getNarration } from '../narration/narrationUtils';
 import { player } from '../narration/player';
 import { AutoPlayEngine } from './autoPlayEngine';
+import { createLocationWatcher } from './locationWatcher';
 
 const AutoPlayContext = createContext(null);
 export const useAutoPlay = () => useContext(AutoPlayContext);
@@ -29,13 +30,16 @@ export function AutoPlayProvider({ children }) {
   const poisRef = useRef(pois);
   const localeRef = useRef(locale);
   const startingRef = useRef(false);
+  const watcherRef = useRef(null);
   poisRef.current = pois;
   localeRef.current = locale;
 
-  const log = useCallback((text) => setEvents((e) => [{ id: `${Date.now()}-${Math.random()}`, time: fmtTime(), text }, ...e].slice(0, MAX_EVENTS)), []);
+  const log = useCallback((code, name, errorCode) => setEvents((e) => [{ id: `${Date.now()}-${Math.random()}`, time: fmtTime(), code, name, errorCode }, ...e].slice(0, MAX_EVENTS)), []);
 
   const onLocation = useCallback(
     async (loc) => {
+      const owner = watcherRef.current;
+      const generation = owner?.currentGeneration();
       const sample = {
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
@@ -63,18 +67,19 @@ export function AutoPlayProvider({ children }) {
       startingRef.current = true;
       try {
         const detail = await getDetail(poi.id);
+        if (watcherRef.current !== owner || !owner?.isCurrent(generation)) return;
         const n = getNarration(detail, localeRef.current);
-        if (!n) throw new Error('Không có bài thuyết minh ở ngôn ngữ đã chọn.');
+        if (!n) { log('missingNarration', poi.name); return; }
         const ok = await player.play({ text: `${n.title}. ${n.body}`, locale: localeRef.current, poiId: poi.id });
         if (ok) {
           engine.recordPlaySuccess(poi.id, Date.now()); // chỉ ghi nhận khi TTS đã thực sự bắt đầu
-          log(`Đã phát: ${poi.name}`);
+          log('logPlayed', poi.name);
         } else {
-          log(`Không phát được "${poi.name}": ${player.state.message ?? 'lỗi TTS'}`); // UC04-E2
+          log('logFailed', poi.name, player.state.errorCode);
         }
       } catch (err) {
-        if (err?.status === 404) log(`"${poi.name}" không còn công khai.`);
-        else log(`Lỗi khi tải bài "${poi.name}".`);
+        if (err?.status === 404) log('logGone', poi.name);
+        else log('logLoad', poi.name);
       } finally {
         startingRef.current = false;
       }
@@ -84,65 +89,33 @@ export function AutoPlayProvider({ children }) {
 
   useEffect(() => {
     if (!enabled) {
-      setTracking('off');
+      setTracking((previous) => previous === 'denied' ? 'denied' : 'off');
       setNearest(null);
       engine.reset();
       return undefined;
     }
-    let sub = null;
-    let cancelled = false;
-
-    const stopWatching = () => {
-      sub?.remove();
-      sub = null;
-    };
-    const startWatching = async () => {
-      if (sub || cancelled) return;
-      setTracking('requesting');
-      try {
-        const perm = await Location.requestForegroundPermissionsAsync();
-        if (cancelled) return;
-        if (!perm.granted) {
-          // UC04-E1: từ chối quyền -> báo lỗi và kết thúc; vẫn nghe thủ công ở UC03.
-          setTracking('denied');
-          setMessage('Bạn chưa cấp quyền vị trí nên không thể tự phát. Bạn vẫn có thể nghe thủ công trong chi tiết địa điểm.');
-          setEnabledState(false);
-          return;
-        }
-        const s = await Location.watchPositionAsync(
-          { accuracy: Location.Accuracy.High, timeInterval: 1000, distanceInterval: 0 },
-          onLocation
-        );
-        if (cancelled) return s.remove();
-        sub = s;
-        setMessage(null);
-        setTracking('tracking');
-      } catch {
-        if (!cancelled) {
-          setTracking('error');
-          setMessage('Không đọc được GPS. Hãy bật dịch vụ vị trí rồi thử lại.');
-        }
-      }
-    };
-
-    if (AppState.currentState === 'active') startWatching();
+    const watcher = createLocationWatcher({ location: Location, onLocation, onStatus: (status) => {
+      setTracking(status);
+      if (status === 'denied') { setMessage('locationDenied'); setEnabledState(false); }
+      else if (status === 'error') setMessage('locationError');
+      else if (status === 'tracking') setMessage(null);
+    } });
+    watcherRef.current = watcher;
+    if (AppState.currentState === 'active') watcher.setActive(true);
     else setTracking('background');
 
     const appSub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') startWatching();
-      else {
-        stopWatching(); // BR07: ứng dụng ẩn -> dừng theo dõi
-        setTracking('background');
-      }
+      watcher.setActive(state === 'active');
     });
     return () => {
-      cancelled = true;
+      watcher.dispose();
+      if (watcherRef.current === watcher) watcherRef.current = null;
       appSub.remove();
-      stopWatching();
     };
   }, [enabled, engine, onLocation]);
 
   const setEnabled = useCallback((v) => {
+    if (!v) { watcherRef.current?.dispose(); watcherRef.current = null; setTracking('off'); }
     setMessage(null);
     setEnabledState(v);
   }, []);

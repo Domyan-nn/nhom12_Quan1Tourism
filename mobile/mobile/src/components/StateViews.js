@@ -1,22 +1,25 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, space } from '../theme';
+import { useSettings } from '../context/SettingsContext';
 
-export function Loading({ label = 'Đang tải…' }) {
+export function Loading({ label }) {
+  const { t } = useSettings();
   return (
     <View style={styles.center} accessibilityRole="progressbar">
       <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={styles.muted}>{label}</Text>
+      <Text style={styles.muted}>{label || t.loading}</Text>
     </View>
   );
 }
 
 export function ErrorState({ message, onRetry, children }) {
+  const { t } = useSettings();
   return (
     <View style={styles.center}>
-      <Text style={styles.errTitle}>Có lỗi xảy ra</Text>
+      <Text style={styles.errTitle}>{t.error}</Text>
       <Text style={styles.muted}>{message}</Text>
-      {onRetry && <Button title="Thử lại" onPress={onRetry} />}
+      {onRetry && <Button title={t.retry} onPress={onRetry} />}
       {children}
     </View>
   );

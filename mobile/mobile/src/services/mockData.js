@@ -2,8 +2,8 @@
 // Giữ đồng bộ với web/guest-web/src/api/mockData.js. Nội dung chỉ để dựng giao diện;
 // nhóm thay bằng bộ seed chuẩn (WBS-02). Tọa độ là ước lượng, cần kiểm tra lại.
 export const categories = [
-  { id: 'cat-1', name: 'Di tích và kiến trúc' },
-  { id: 'cat-2', name: 'Văn hóa và mua sắm' },
+  { id: 'cat-1', name: 'Di tích và kiến trúc', name_en: 'Heritage and architecture' },
+  { id: 'cat-2', name: 'Văn hóa và mua sắm', name_en: 'Culture and shopping' },
 ];
 
 export const pois = [

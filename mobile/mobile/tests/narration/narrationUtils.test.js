@@ -67,6 +67,21 @@ describe('NarrationPlayer', () => {
     expect(p.state.errorCode).toBe('NO_VOICE');
     expect(speech.spoken).toHaveLength(0);
   });
+  it('không liệt kê được giọng thì không thử phát hoặc báo thành công', async () => {
+    const speech = fakeSpeech({ voices: [] });
+    const p = new NarrationPlayer({ speech });
+    expect(await p.play({ text: 'Xin chào', locale: 'vi' })).toBe(false);
+    expect(p.state.errorCode).toBe('NO_VOICE');
+    expect(speech.spoken).toHaveLength(0);
+  });
+  it('lỗi liệt kê giọng không phát với giọng không xác nhận', async () => {
+    const speech = fakeSpeech();
+    speech.getAvailableVoicesAsync = async () => { throw new Error('unavailable'); };
+    const p = new NarrationPlayer({ speech });
+    expect(await p.play({ text: 'Hello', locale: 'en' })).toBe(false);
+    expect(p.state.errorCode).toBe('NO_VOICE');
+    expect(speech.spoken).toHaveLength(0);
+  });
   it('TTS lỗi: báo TTS_ERROR và trả false (UC04-E2 không ghi nhận thành công)', async () => {
     const p = new NarrationPlayer({ speech: fakeSpeech({ behaviour: 'error' }) });
     expect(await p.play({ text: 'Xin chào', locale: 'vi' })).toBe(false);

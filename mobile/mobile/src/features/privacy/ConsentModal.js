@@ -8,7 +8,7 @@ import { usePrivacy } from './PrivacyContext';
 
 export default function ConsentModal() {
   const { ready, consent, grant, decline } = usePrivacy();
-  const visible = ready && consent === null;
+  const visible = false; // Backend does not provide analytics yet.
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => {}}>
       <View style={styles.backdrop}>

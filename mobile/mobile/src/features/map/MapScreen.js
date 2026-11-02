@@ -7,16 +7,21 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Banner, Button, EmptyState, ErrorState, Loading } from '../../components/StateViews';
 import { useData } from '../../context/DataContext';
+import { useSettings } from '../../context/SettingsContext';
+import { errorText } from '../../context/translations';
 import { colors, radius, shadow, space } from '../../theme';
+import { startMapLoadTimer } from './mapLoadTimer';
 
 const Q1_CENTER = { latitude: 10.7769, longitude: 106.7009, latitudeDelta: 0.025, longitudeDelta: 0.025 };
 const MAP_LOAD_TIMEOUT_MS = 12_000;
 
 export default function MapScreen({ navigation }) {
   const data = useData();
+  const { t } = useSettings();
   const mapRef = useRef(null);
   const [mapReady, setMapReady] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
+  const [mapAttempt, setMapAttempt] = useState(0);
   const [selected, setSelected] = useState(null);
   const [checking, setChecking] = useState(false);
   const [notice, setNotice] = useState(null);
@@ -27,10 +32,16 @@ export default function MapScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    if (mapReady) return undefined;
-    const t = setTimeout(() => setMapFailed(true), MAP_LOAD_TIMEOUT_MS);
-    return () => clearTimeout(t);
-  }, [mapReady]);
+    if (data.status !== 'ready' || data.pois.length === 0) {
+      setMapReady(false);
+      setMapFailed(false);
+    }
+  }, [data.status, data.pois.length]);
+
+  useEffect(() => {
+    return startMapLoadTimer({ dataReady: data.status === 'ready', hasPlaces: data.pois.length > 0,
+      mapReady, onTimeout: () => setMapFailed(true), delay: MAP_LOAD_TIMEOUT_MS });
+  }, [mapReady, data.status, data.pois.length, mapAttempt]);
 
   useEffect(() => {
     if (!mapReady || data.pois.length === 0) return;
@@ -41,10 +52,11 @@ export default function MapScreen({ navigation }) {
   }, [mapReady, data.pois]);
 
   const askLocation = async () => {
-    const res = await Location.requestForegroundPermissionsAsync();
-    setLocGranted(res.granted);
-    if (!res.granted) setNotice('Bạn chưa cấp quyền vị trí nên bản đồ không hiện vị trí của bạn. Vẫn có thể xem các địa điểm.');
-    else setNotice(null);
+    try {
+      const res = await Location.requestForegroundPermissionsAsync();
+      setLocGranted(res.granted);
+      setNotice(res.granted ? null : 'locationDenied');
+    } catch { setNotice('locationError'); }
   };
 
   const onMarker = async (poi) => {
@@ -58,36 +70,30 @@ export default function MapScreen({ navigation }) {
       if (err?.status === 404) {
         data.dropPoi(poi.id);
         setSelected(null);
-        setNotice('Địa điểm này không còn khả dụng. Hãy chọn địa điểm khác.');
+        setNotice('locationGone');
       }
-      // Lỗi mạng: vẫn cho xem tóm tắt từ dữ liệu đã tải.
+      else setNotice(err?.code === 'NETWORK_ERROR' ? 'networkError' : 'serverError');
     } finally {
       setChecking(false);
     }
   };
 
   if (data.status === 'loading') return <Loading />;
-  if (data.status === 'error') return <ErrorState message={data.error} onRetry={data.reload} />;
-  if (mapFailed && !mapReady) {
-    return (
-      <ErrorState message="Không tải được bản đồ. Kiểm tra kết nối hoặc khóa bản đồ, hoặc dùng danh sách địa điểm.">
-        <Button title="Mở danh sách" onPress={() => navigation.navigate('Explore')} />
-      </ErrorState>
-    );
-  }
-  if (data.pois.length === 0) return <EmptyState title="Chưa có địa điểm công khai" hint="Quay lại sau khi Admin công bố địa điểm." />;
+  if (data.status === 'error') return <ErrorState message={errorText(t, data.error)} onRetry={data.reload} />;
+  if (data.pois.length === 0) return <EmptyState title={t.noPublished} hint={t.checkLater} />;
 
   return (
     <View style={styles.screen}>
       <MapView
+        key={mapAttempt}
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         initialRegion={Q1_CENTER}
         showsUserLocation={locGranted}
         showsMyLocationButton={locGranted}
-        onMapReady={() => setMapReady(true)}
+        onMapReady={() => { setMapReady(true); setMapFailed(false); }}
         onPress={() => setSelected(null)}
-        accessibilityLabel="Bản đồ các địa điểm Quận 1"
+        accessibilityLabel={t.mapLabel}
       >
         {data.pois.map((p) => (
           <Marker
@@ -101,10 +107,16 @@ export default function MapScreen({ navigation }) {
       </MapView>
 
       <View style={styles.top} pointerEvents="box-none">
-        {data.stale ? <Banner kind="error">Không cập nhật được dữ liệu; đang dùng dữ liệu đã tải.</Banner> : null}
-        {notice ? <Banner>{notice}</Banner> : null}
-        {!locGranted ? <Button title="Hiện vị trí của tôi" kind="ghost" style={styles.locBtn} onPress={askLocation} /> : null}
+        {data.stale ? <Banner kind="error">{t.cached}</Banner> : null}
+        {notice ? <Banner>{t[notice]}</Banner> : null}
+        {!locGranted ? <Button title={t.showLocation} kind="ghost" style={styles.locBtn} onPress={askLocation} /> : null}
       </View>
+
+      {!mapReady ? <View style={styles.mapState}>{mapFailed ? (
+        <ErrorState message={t.mapFailed} onRetry={() => { setMapFailed(false); setMapAttempt((v) => v + 1); }}>
+          <Button title={t.openList} onPress={() => navigation.navigate('Explore')} />
+        </ErrorState>
+      ) : <Loading label={t.mapLoading} />}</View> : null}
 
       {selected ? (
         <View style={styles.sheet}>
@@ -116,7 +128,7 @@ export default function MapScreen({ navigation }) {
             style={[styles.detailBtn, checking && { opacity: 0.5 }]}
             accessibilityRole="button"
           >
-            <Text style={styles.detailText}>{checking ? 'Đang kiểm tra…' : 'Xem chi tiết'}</Text>
+            <Text style={styles.detailText}>{checking ? t.checking : t.viewDetail}</Text>
           </Pressable>
         </View>
       ) : null}
@@ -126,6 +138,7 @@ export default function MapScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  mapState: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff', justifyContent: 'center' },
   top: { position: 'absolute', top: space.sm, left: 0, right: 0 },
   locBtn: { alignSelf: 'flex-end', marginRight: space.md, backgroundColor: '#fff', paddingVertical: 8 },
   sheet: { position: 'absolute', left: space.md, right: space.md, bottom: space.lg, backgroundColor: colors.card, borderRadius: radius.lg, padding: space.md, gap: 4, ...shadow },

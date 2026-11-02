@@ -1,16 +1,14 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-const env = process.env;
-
 /** Mặc định dùng dữ liệu giả lập, giống guest-web. Đặt EXPO_PUBLIC_USE_MOCK=false để gọi API thật. */
-export const USE_MOCK = env.EXPO_PUBLIC_USE_MOCK !== 'false';
+export const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK !== 'false';
 
 /** 'v1' = backend hiện tại; 'contract' = docs/API_CONTRACT.md (/public/...). */
-export const API_STYLE = env.EXPO_PUBLIC_API_STYLE === 'contract' ? 'contract' : 'v1';
+export const API_STYLE = process.env.EXPO_PUBLIC_API_STYLE === 'contract' ? 'contract' : 'v1';
 
 function detectApiBase() {
-  if (env.EXPO_PUBLIC_API_BASE_URL) return env.EXPO_PUBLIC_API_BASE_URL.replace(/\/+$/, '');
+  if (process.env.EXPO_PUBLIC_API_BASE_URL) return process.env.EXPO_PUBLIC_API_BASE_URL.replace(/\/+$/, '');
   // Khi chạy bằng Expo Go, hostUri là "<IP LAN máy dev>:8081": dùng lại IP đó cho backend (cổng 8000).
   const hostUri = Constants.expoConfig?.hostUri ?? Constants.expoGoConfig?.debuggerHost;
   if (hostUri) return `http://${hostUri.split(':')[0]}:8000/api`;

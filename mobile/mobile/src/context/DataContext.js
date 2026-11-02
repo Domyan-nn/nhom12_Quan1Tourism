@@ -22,7 +22,7 @@ export function DataProvider({ children }) {
         ...s,
         status: s.pois.length ? 'ready' : 'error',
         stale: s.pois.length > 0,
-        error: err?.message ?? 'Không tải được dữ liệu.',
+        error: err,
       }));
     }
   }, []);
