@@ -36,24 +36,45 @@ $env:SAIGON_DATABASE = (Resolve-Path -LiteralPath $db).Path
 Nhập mật khẩu demo riêng tại lời nhắc ẩn; không đặt mật khẩu trong lệnh hoặc Git. Mở PowerShell thứ hai tại gốc repo:
 
 ```powershell
-cd web
+cd apps/admin-web
 npm.cmd ci
 npm.cmd run dev
 ```
 
 Mở URL Vite hiển thị trong terminal (mặc định `http://localhost:5174`) để dùng Admin. Proxy phát triển chuyển `/api` tới `127.0.0.1:8000`; cả hai tiến trình cần chạy cùng máy. Đăng nhập bằng tên và mật khẩu đã seed. Token chỉ ở bộ nhớ trang, mất khi tải lại; đăng xuất gọi API thu hồi. Dữ liệu seed đều là `draft`; không tự công bố dữ liệu chưa kiểm duyệt. Test API sử dụng dữ liệu `published` riêng trong database tạm.
 
-Web khách là ứng dụng riêng trong [web/guest-web](web/guest-web/README.md), chạy mặc định tại cổng 5173. Đặt `VITE_USE_MOCK=false` và `VITE_API_BASE_URL=/api/v1`, rồi khởi động lại Vite để gọi backend thật. Mặc định dùng mock có thông báo trên trang; lỗi API thật không chuyển sang mock. Seed vẫn là draft nên danh sách công khai có thể rỗng. Xem [các lệnh đầy đủ](docs/deployment/setup.md).
+Web khách là ứng dụng riêng trong [apps/guest-web](apps/guest-web/README.md), chạy mặc định tại cổng 5173. Đặt `VITE_USE_MOCK=false` và `VITE_API_BASE_URL=/api/v1`, rồi khởi động lại Vite để gọi backend thật. Mặc định dùng mock có thông báo trên trang; lỗi API thật không chuyển sang mock. Seed vẫn là draft nên danh sách công khai có thể rỗng. Xem [các lệnh đầy đủ](docs/deployment/setup.md).
+
+Mở PowerShell khác từ gốc repo để chạy guest web:
+
+```powershell
+cd apps/guest-web
+npm.cmd ci
+$env:VITE_USE_MOCK = 'false'
+$env:VITE_API_BASE_URL = '/api/v1'
+npm.cmd run dev
+```
+
+Mobile có hướng dẫn riêng tại [apps/mobile](apps/mobile/README.md). Từ gốc repo, chạy trong cửa sổ riêng:
+
+```powershell
+cd apps/mobile
+npm.cmd ci
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
+npx.cmd expo start
+```
+
+Mobile mặc định dùng mock (`EXPO_PUBLIC_USE_MOCK=true`). Muốn gọi API thật, đặt false và cấu hình `EXPO_PUBLIC_API_BASE_URL` kết thúc bằng `/api` trong `.env`, rồi khởi động lại Expo. Điện thoại thật cần địa chỉ LAN phù hợp và backend lắng nghe trên `0.0.0.0`; `localhost` trên điện thoại là chính điện thoại. Kiểm thử thiết bị thật vẫn chưa được thực hiện.
 
 Database mới được init qua migration 001, 002 và bước bổ sung cột danh mục song ngữ. Database đã có cần dùng script nâng cấp riêng có kiểm tra dữ liệu và backup; xem [backend README](backend/README.md). Không chạy lại init hoặc schema tham chiếu để nâng cấp.
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s backend/tests -v
-cd web
+cd apps/admin-web
 npm.cmd run build
 ```
 
-Đoạn lệnh trên bắt đầu từ gốc repo; nếu đang ở `web`, chạy `npm.cmd run build` trực tiếp. Build tĩnh cần máy chủ web cấu hình chuyển tiếp `/api` về FastAPI; proxy Vite chỉ dành cho phát triển. Phiên bearer trong bộ nhớ vẫn có nguy cơ bị mã độc/XSS đọc, chưa có rate limiting, chính sách triển khai HTTPS, dọn phiên hay CORS cho các origin độc lập: chưa sẵn sàng production. Các địa chỉ, tọa độ, nội dung và quyền ảnh mẫu chưa xác minh; xem [danh sách](backend/scripts/README.md).
+Đoạn lệnh trên bắt đầu từ gốc repo; nếu đang ở `apps/admin-web`, chạy `npm.cmd run build` trực tiếp. Build tĩnh cần máy chủ web cấu hình chuyển tiếp `/api` về FastAPI; proxy Vite chỉ dành cho phát triển. Phiên bearer trong bộ nhớ vẫn có nguy cơ bị mã độc/XSS đọc, chưa có rate limiting, chính sách triển khai HTTPS, dọn phiên hay CORS cho các origin độc lập: chưa sẵn sàng production. Các địa chỉ, tọa độ, nội dung và quyền ảnh mẫu chưa xác minh; xem [danh sách](backend/scripts/README.md).
 
 Tài liệu hiện tại: [PRD Saigon Stories SQLite](PRD_Saigon_Stories_Quan1_SQLite.docx). Nhóm cần đối chiếu thêm quy định đồ án cuối khóa của trường và giảng viên.
 
@@ -64,15 +85,45 @@ Xem [mô tả từng thư mục và tệp](CAU_TRUC_DU_AN.md) để biết nơi 
 | Thư mục | Trách nhiệm |
 | --- | --- |
 | `backend/` | FastAPI, nghiệp vụ, xác thực, migration và kiểm thử API |
-| `web/` | Ứng dụng React Admin; `web/guest-web/` là ứng dụng React riêng cho khách |
-| `mobile/` | React Native/Expo cho khách, GPS và TTS |
+| `apps/admin-web/` | Ứng dụng React Admin, cổng Vite mặc định 5174 |
+| `apps/guest-web/` | Ứng dụng React dành cho khách, cổng Vite mặc định 5173 |
+| `apps/mobile/` | React Native/Expo cho khách, GPS và TTS |
 | `docs/` | Yêu cầu, thiết kế, kiểm thử, triển khai và báo cáo |
+| `docs/mobile/` | Tài liệu, sơ đồ và checklist thiết bị của mobile |
 | `backend/data/` | Tệp SQLite cục bộ khi chạy; không đưa dữ liệu vận hành lên Git |
 | `storage/uploads/` | Vị trí dự kiến cho ảnh tải lên; không đưa dữ liệu vận hành lên Git |
 
 Theo thiết kế dự kiến, các ứng dụng dùng chung FastAPI; backend truy cập SQLite cục bộ. GPS tự phát được xử lý trên mobile trong khi ứng dụng hiển thị. Bản đồ và TTS phụ thuộc dịch vụ hoặc thiết bị.
 
 Tệp database dự kiến đặt tại `backend/data/saigon_stories.db`. Kết nối nằm trong `backend/app/db/`, model trong `backend/app/models/`, migration trong `backend/migrations/`, còn script tạo dữ liệu mẫu đặt trong `backend/scripts/`.
+
+## Ánh xạ khi chuyển sang apps
+
+| Đường dẫn cũ | Đường dẫn mới |
+| --- | --- |
+| `web/guest-web/` | `apps/guest-web/` |
+| Phần Admin còn lại trong `web/` | `apps/admin-web/` |
+| `mobile/mobile/` | `apps/mobile/` |
+| `mobile/docs/` | `docs/mobile/` |
+| `mobile/README.md` | `docs/mobile/README.md` |
+| Các tệp khung `.gitkeep` dưới `mobile/src`, `mobile/assets`, `mobile/tests` | Gộp vào thư mục tương ứng của `apps/mobile/` |
+
+Backend, docs hiện có và storage giữ vị trí. Mỗi ứng dụng vẫn có package.json, lockfile, dependency và lệnh chạy độc lập; không có npm workspace chung ở gốc. Các báo cáo kiểm thử lịch sử giữ tên đường dẫn ở thời điểm kiểm tra, còn liên kết trỏ đến vị trí mới.
+
+Sau khi nhóm merge, An và Thuận cần lưu công việc đang làm, đồng bộ nhánh, mở terminal tại đường dẫn mới và chạy `npm.cmd ci` trong ứng dụng phụ trách. Giữ `.env` cá nhân tại đúng thư mục ứng dụng; file này, database, node_modules và output build không được đưa vào Git. Không dùng tiếp tiến trình Vite/Expo khởi động từ đường dẫn cũ.
+
+Các lệnh kiểm tra từ gốc repo:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s backend/tests
+npm.cmd --prefix apps/admin-web run build
+npm.cmd --prefix apps/guest-web test
+npm.cmd --prefix apps/guest-web run build
+npm.cmd --prefix apps/guest-web run test:browser
+npm.cmd --prefix apps/mobile test -- --runInBand
+```
+
+Kiểm tra cấu hình và bundle mobile từ `apps/mobile`: `npx.cmd expo config --type public`, `npx.cmd expo export --platform all --output-dir <THU-MUC-OUTPUT-MOI>`. Kết quả trước/sau và giới hạn kiểm thử nằm trong [báo cáo tái cấu trúc](docs/testing/monorepo-restructure-2026-11-02.md).
 
 ## Bắt đầu phát triển
 

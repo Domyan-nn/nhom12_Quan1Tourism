@@ -1,13 +1,13 @@
 # Guest web – Saigon Stories
 
-Ứng dụng React riêng cho khách, tại `web/guest-web`; Admin vẫn chạy từ `web`. Public API theo [hợp đồng chung](../../docs/API_CONTRACT.md): `/api/v1`, danh sách `items`, danh sách POI có `narration_locales` và chi tiết có `narrations`.
+Ứng dụng React riêng cho khách tại `apps/guest-web`; Admin chạy từ `apps/admin-web`. Public API theo [hợp đồng chung](../../docs/API_CONTRACT.md): `/api/v1`, danh sách `items`, danh sách POI có `narration_locales` và chi tiết có `narrations`.
 
 ## Chạy trên Windows 11 / PowerShell
 
 Cần Node.js 22.12+ (đã thử 22.22.0), npm và backend khi dùng dữ liệu thật; không dùng Docker. Các lệnh bắt đầu từ gốc repository.
 
 ```powershell
-Set-Location web/guest-web
+Set-Location apps/guest-web
 npm.cmd ci
 if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
 npm.cmd run dev
@@ -17,7 +17,7 @@ Vite chạy cổng 5173 và proxy `/api` về `http://127.0.0.1:8000`. Admin m�
 
 ## Chọn mock hoặc API thật
 
-Biến môi trường được Vite đọc khi khởi động/build. Dừng Vite bằng Ctrl+C trước khi đổi. Ví dụ tại `web/guest-web`:
+Biến môi trường được Vite đọc khi khởi động/build. Dừng Vite bằng Ctrl+C trước khi đổi. Ví dụ tại `apps/guest-web`:
 
 ```powershell
 # Dữ liệu giả lập; giao diện hiện thông báo nhận biết, không gọi public API.
@@ -47,7 +47,7 @@ Bản đồ, nghe TTS và consent/thống kê còn chờ tích hợp. Trang riê
 ## Kiểm thử
 
 ```powershell
-# Tại web/guest-web
+# Tại apps/guest-web
 npm.cmd test
 npm.cmd run build
 npm.cmd run test:browser

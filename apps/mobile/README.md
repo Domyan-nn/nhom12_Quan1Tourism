@@ -7,7 +7,7 @@
 Cần Node.js tương thích SDK 56 (Node 22.12+), npm và Expo Go hỗ trợ SDK 56 hoặc môi trường Android/iOS tương ứng. Từ thư mục gốc repo:
 
 ```powershell
-cd mobile/mobile
+cd apps/mobile
 npm.cmd ci
 Copy-Item .env.example .env
 npx.cmd expo start
@@ -51,6 +51,6 @@ npx.cmd expo install --check
 npx.cmd expo export --platform android --output-dir <THU-MUC-OUTPUT-MOI>
 ```
 
-Kiểm thử API thật tùy chọn dùng backend thử nghiệm được tạo riêng; đặt `SAIGON_TEST_API_URL=http://127.0.0.1:18082/api` khi chạy Jest và khởi động fixture `web/guest-web/tests/serve_api.py` từ gốc repo. Không trỏ kiểm thử tới dữ liệu vận hành.
+Kiểm thử API thật tùy chọn dùng backend thử nghiệm được tạo riêng; đặt `SAIGON_TEST_API_URL=http://127.0.0.1:18082/api` khi chạy Jest và khởi động fixture `apps/guest-web/tests/serve_api.py` từ gốc repo. Không trỏ kiểm thử tới dữ liệu vận hành.
 
-Kiểm thử trên thiết bị thật: **chưa kiểm thử**. Xem checklist tại [mobile-field-test.md](../docs/testing/mobile-field-test.md). Bundle thành công không chứng minh GPS, quyền, giọng đọc, bản đồ hoặc kết nối LAN hoạt động trên thiết bị.
+Kiểm thử trên thiết bị thật: **chưa kiểm thử**. Xem checklist tại [mobile-field-test.md](../../docs/mobile/testing/mobile-field-test.md). Bundle thành công không chứng minh GPS, quyền, giọng đọc, bản đồ hoặc kết nối LAN hoạt động trên thiết bị.

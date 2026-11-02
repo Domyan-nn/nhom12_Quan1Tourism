@@ -1,6 +1,35 @@
 # Mô tả cấu trúc dự án
 
-Tài liệu này mô tả các thư mục và tệp của Saigon Stories Quận 1. Dự án có schema SQLite, script dữ liệu nháp, API bước đầu, ứng dụng web Admin và khung web khách; mobile và một số API vẫn chưa được triển khai.
+Tài liệu này mô tả vị trí mã nguồn của Saigon Stories Quận 1. Ba ứng dụng độc lập nằm dưới `apps/`; backend FastAPI/SQLite ở `backend/`. Trạng thái chức năng và giới hạn kiểm thử nằm trong README của từng phần.
+
+```text
+nhom12_Quan1Tourism/
+├── apps/
+│   ├── admin-web/
+│   ├── guest-web/
+│   └── mobile/
+├── backend/
+├── docs/
+│   └── mobile/
+├── storage/                 # Dữ liệu runtime, bị Git bỏ qua
+├── .gitignore
+├── README.md
+├── CAU_TRUC_DU_AN.md
+└── PRD_Saigon_Stories_Quan1_SQLite.docx
+```
+
+Repo chưa có `.github/` hoặc workflow CI; không tạo thêm CI trong lần di chuyển này. Các thư mục cục bộ như `.venv` vẫn có thể tồn tại và bị Git bỏ qua.
+
+| Đường dẫn cũ | Đường dẫn mới |
+| --- | --- |
+| `web/guest-web/` | `apps/guest-web/` |
+| Phần Admin còn lại của `web/` | `apps/admin-web/` |
+| `mobile/mobile/` | `apps/mobile/` |
+| `mobile/docs/` | `docs/mobile/` |
+| `mobile/README.md` | `docs/mobile/README.md` |
+| Các tệp `.gitkeep` khung mobile bên ngoài ứng dụng | Cùng đường dẫn tương ứng dưới `apps/mobile/` |
+
+Package.json và lockfile của cả ba ứng dụng được giữ nguyên nội dung. Imports nội bộ, endpoint, biến môi trường và dữ liệu không đổi theo lần di chuyển này. Hướng dẫn Windows và đồng bộ nhánh nằm tại [README](README.md) và [setup](docs/deployment/setup.md).
 
 ## Thư mục gốc
 
@@ -13,9 +42,11 @@ Tài liệu này mô tả các thư mục và tệp của Saigon Stories Quận 
 | `.editorconfig` | Quy ước định dạng cơ bản như mã hóa, xuống dòng và thụt lề. |
 | `.git/` | Dữ liệu nội bộ của Git: lịch sử, nhánh và cấu hình repository. Không chỉnh sửa thủ công khi làm đồ án. |
 | `backend/` | Bộ khung backend dự kiến dùng FastAPI và SQLite. |
-| `web/` | Ứng dụng React Admin; `web/guest-web/` là ứng dụng riêng dành cho khách. |
-| `mobile/` | Bộ khung ứng dụng React Native/Expo dành cho khách. |
+| `apps/admin-web/` | Ứng dụng React Admin. |
+| `apps/guest-web/` | Ứng dụng React riêng dành cho khách. |
+| `apps/mobile/` | Bộ khung ứng dụng React Native/Expo dành cho khách. |
 | `docs/` | Tài liệu yêu cầu, thiết kế, kiểm thử, triển khai và báo cáo. |
+| `docs/mobile/` | Tài liệu, sơ đồ và checklist mobile được chuyển nguyên từ mobile/docs. |
 | `storage/uploads/poi-images/` | Vị trí dự kiến lưu ảnh địa điểm tải lên trên máy chạy ứng dụng; dữ liệu trong `storage/` bị Git bỏ qua. |
 
 ## Backend
@@ -49,41 +80,41 @@ Chỉ cần một database SQLite sử dụng khi chạy. `app/db/`, `models/`, 
 
 | Đường dẫn | Công dụng |
 | --- | --- |
-| `web/README.md` | Giới thiệu ứng dụng web Admin và trạng thái triển khai. |
-| `web/guest-web/` | Ứng dụng web khách riêng với cấu hình, mã nguồn và hướng dẫn chạy riêng. |
-| `web/public/` | Tài nguyên tĩnh dự kiến phục vụ trực tiếp cho web. |
-| `web/src/` | Nơi dự kiến đặt mã nguồn React. |
-| `web/src/app/` | Khởi tạo ứng dụng, bố cục tổng thể và định tuyến. |
-| `web/src/components/` | Các thành phần giao diện dùng chung. |
-| `web/src/features/` | Các chức năng được nhóm theo nghiệp vụ. |
-| `web/src/features/admin/` | Các chức năng dành cho Admin. |
-| `web/src/features/admin/auth/` | Đăng nhập, đăng xuất và giao diện liên quan đến phiên Admin. |
-| `web/src/features/admin/categories/` | Quản lý danh mục. |
-| `web/src/features/admin/places/` | Quản lý địa điểm và trạng thái công bố. |
-| `web/src/features/admin/narrations/` | Quản lý bài thuyết minh theo ngôn ngữ. |
-| `web/src/features/admin/analytics/` | Giao diện xem lượt truy cập và phiên khách đang hoạt động. |
-| `web/src/services/` | Code dùng chung để giao tiếp với API và dịch vụ cần thiết. |
-| `web/src/styles/` | Kiểu giao diện dùng chung. |
-| `web/tests/` | Nơi dự kiến đặt kiểm thử web. |
+| `apps/admin-web/README.md` | Giới thiệu ứng dụng web Admin và trạng thái triển khai. |
+| `apps/guest-web/` | Ứng dụng web khách riêng với cấu hình, mã nguồn và hướng dẫn chạy riêng. |
+| `apps/admin-web/public/` | Tài nguyên tĩnh dự kiến phục vụ trực tiếp cho web. |
+| `apps/admin-web/src/` | Nơi dự kiến đặt mã nguồn React. |
+| `apps/admin-web/src/app/` | Khởi tạo ứng dụng, bố cục tổng thể và định tuyến. |
+| `apps/admin-web/src/components/` | Các thành phần giao diện dùng chung. |
+| `apps/admin-web/src/features/` | Các chức năng được nhóm theo nghiệp vụ. |
+| `apps/admin-web/src/features/admin/` | Các chức năng dành cho Admin. |
+| `apps/admin-web/src/features/admin/auth/` | Đăng nhập, đăng xuất và giao diện liên quan đến phiên Admin. |
+| `apps/admin-web/src/features/admin/categories/` | Quản lý danh mục. |
+| `apps/admin-web/src/features/admin/places/` | Quản lý địa điểm và trạng thái công bố. |
+| `apps/admin-web/src/features/admin/narrations/` | Quản lý bài thuyết minh theo ngôn ngữ. |
+| `apps/admin-web/src/features/admin/analytics/` | Giao diện xem lượt truy cập và phiên khách đang hoạt động. |
+| `apps/admin-web/src/services/` | Code dùng chung để giao tiếp với API và dịch vụ cần thiết. |
+| `apps/admin-web/src/styles/` | Kiểu giao diện dùng chung. |
+| `apps/admin-web/tests/` | Nơi dự kiến đặt kiểm thử web. |
 
 ## Mobile
 
 | Đường dẫn | Công dụng |
 | --- | --- |
-| `mobile/README.md` | Giới thiệu bộ khung mobile và trạng thái triển khai. |
-| `mobile/assets/` | Hình ảnh, biểu tượng và tài nguyên tĩnh của ứng dụng. |
-| `mobile/src/` | Nơi dự kiến đặt mã nguồn React Native/Expo. |
-| `mobile/src/navigation/` | Điều hướng giữa các màn hình. |
-| `mobile/src/components/` | Thành phần giao diện dùng chung trên mobile. |
-| `mobile/src/features/` | Các chức năng mobile được nhóm theo nghiệp vụ. |
-| `mobile/src/features/places/` | Danh sách, tìm kiếm và chi tiết địa điểm. |
-| `mobile/src/features/map/` | Bản đồ địa điểm. |
-| `mobile/src/features/narration/` | Ngôn ngữ, nội dung và TTS trên thiết bị. |
-| `mobile/src/features/location/` | GPS, kiểm tra vùng và quy tắc tự phát khi ứng dụng đang hiển thị. |
-| `mobile/src/features/privacy/` | Lựa chọn đồng ý hoặc rút đồng ý thống kê. |
-| `mobile/src/services/` | Code dùng chung để giao tiếp với API và dịch vụ cần thiết. |
-| `mobile/tests/` | Nơi dự kiến đặt kiểm thử mobile. |
-| `mobile/tests/location/` | Kiểm thử quy tắc vị trí và tự phát. |
+| `apps/mobile/README.md` | Giới thiệu bộ khung mobile và trạng thái triển khai. |
+| `apps/mobile/assets/` | Hình ảnh, biểu tượng và tài nguyên tĩnh của ứng dụng. |
+| `apps/mobile/src/` | Nơi dự kiến đặt mã nguồn React Native/Expo. |
+| `apps/mobile/src/navigation/` | Điều hướng giữa các màn hình. |
+| `apps/mobile/src/components/` | Thành phần giao diện dùng chung trên mobile. |
+| `apps/mobile/src/features/` | Các chức năng mobile được nhóm theo nghiệp vụ. |
+| `apps/mobile/src/features/places/` | Danh sách, tìm kiếm và chi tiết địa điểm. |
+| `apps/mobile/src/features/map/` | Bản đồ địa điểm. |
+| `apps/mobile/src/features/narration/` | Ngôn ngữ, nội dung và TTS trên thiết bị. |
+| `apps/mobile/src/features/location/` | GPS, kiểm tra vùng và quy tắc tự phát khi ứng dụng đang hiển thị. |
+| `apps/mobile/src/features/privacy/` | Lựa chọn đồng ý hoặc rút đồng ý thống kê. |
+| `apps/mobile/src/services/` | Code dùng chung để giao tiếp với API và dịch vụ cần thiết. |
+| `apps/mobile/tests/` | Nơi dự kiến đặt kiểm thử mobile. |
+| `apps/mobile/tests/location/` | Kiểm thử quy tắc vị trí và tự phát. |
 
 ## Tài liệu đồ án
 
