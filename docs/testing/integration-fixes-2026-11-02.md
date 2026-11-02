@@ -1,5 +1,8 @@
 # Bàn giao sửa tích hợp – 02/11/2026
 
+> Báo cáo lịch sử: tên đường dẫn và lệnh trong nội dung thuộc commit được kiểm tra lúc đó. Đích liên kết đã đổi theo cấu trúc apps; xem [hướng dẫn hiện tại](../deployment/setup.md) để chạy dự án.
+
+
 ## Xác minh trước khi sửa
 
 Nhánh `main`, commit `3bf8256a61e87ec8d5779288e71bccdb7f85e106`; đã đối chiếu head GitHub bằng connector. Git HTTP từ shell bị hạn chế mạng, không fetch/merge. Working tree chỉ có `docs/testing/retest-2026-11-02.md` từ lần kiểm tra trước; tệp đó được giữ nguyên. Không có thay đổi ứng dụng chưa commit nào cần dừng để tránh ghi đè.
@@ -64,34 +67,34 @@ Chưa kiểm tra production, mọi browser/thiết bị hoặc database riêng. 
 | Sửa | [docs/deployment/setup.md](../../docs/deployment/setup.md) |
 | Sửa | [docs/testing/test-cases.md](../../docs/testing/test-cases.md) |
 | Sửa | [docs/testing/test-results.md](../../docs/testing/test-results.md) |
-| Sửa | [web/guest-web/.env.example](../../web/guest-web/.env.example) |
-| Sửa | [web/guest-web/README.md](../../web/guest-web/README.md) |
-| Sửa | [web/guest-web/package-lock.json](../../web/guest-web/package-lock.json) |
-| Sửa | [web/guest-web/package.json](../../web/guest-web/package.json) |
-| Sửa | [web/guest-web/src/api/client.js](../../web/guest-web/src/api/client.js) |
-| Sửa | [web/guest-web/src/api/publicApi.js](../../web/guest-web/src/api/publicApi.js) |
-| Sửa | [web/guest-web/src/components/AppLayout.jsx](../../web/guest-web/src/components/AppLayout.jsx) |
-| Sửa | [web/guest-web/src/components/PoiCard.jsx](../../web/guest-web/src/components/PoiCard.jsx) |
-| Sửa | [web/guest-web/src/components/StateViews.jsx](../../web/guest-web/src/components/StateViews.jsx) |
-| Sửa | [web/guest-web/src/main.jsx](../../web/guest-web/src/main.jsx) |
-| Sửa | [web/guest-web/src/pages/ExplorePage.jsx](../../web/guest-web/src/pages/ExplorePage.jsx) |
-| Sửa | [web/guest-web/src/pages/MapPage.jsx](../../web/guest-web/src/pages/MapPage.jsx) |
-| Sửa | [web/guest-web/src/pages/NotFoundPage.jsx](../../web/guest-web/src/pages/NotFoundPage.jsx) |
-| Sửa | [web/guest-web/src/pages/PoiDetailPage.jsx](../../web/guest-web/src/pages/PoiDetailPage.jsx) |
-| Sửa | [web/guest-web/src/pages/PrivacyPage.jsx](../../web/guest-web/src/pages/PrivacyPage.jsx) |
-| Sửa | [web/guest-web/src/styles/global.css](../../web/guest-web/src/styles/global.css) |
-| Sửa | [web/guest-web/vite.config.js](../../web/guest-web/vite.config.js) |
+| Sửa | [web/guest-web/.env.example](../../apps/guest-web/.env.example) |
+| Sửa | [web/guest-web/README.md](../../apps/guest-web/README.md) |
+| Sửa | [web/guest-web/package-lock.json](../../apps/guest-web/package-lock.json) |
+| Sửa | [web/guest-web/package.json](../../apps/guest-web/package.json) |
+| Sửa | [web/guest-web/src/api/client.js](../../apps/guest-web/src/api/client.js) |
+| Sửa | [web/guest-web/src/api/publicApi.js](../../apps/guest-web/src/api/publicApi.js) |
+| Sửa | [web/guest-web/src/components/AppLayout.jsx](../../apps/guest-web/src/components/AppLayout.jsx) |
+| Sửa | [web/guest-web/src/components/PoiCard.jsx](../../apps/guest-web/src/components/PoiCard.jsx) |
+| Sửa | [web/guest-web/src/components/StateViews.jsx](../../apps/guest-web/src/components/StateViews.jsx) |
+| Sửa | [web/guest-web/src/main.jsx](../../apps/guest-web/src/main.jsx) |
+| Sửa | [web/guest-web/src/pages/ExplorePage.jsx](../../apps/guest-web/src/pages/ExplorePage.jsx) |
+| Sửa | [web/guest-web/src/pages/MapPage.jsx](../../apps/guest-web/src/pages/MapPage.jsx) |
+| Sửa | [web/guest-web/src/pages/NotFoundPage.jsx](../../apps/guest-web/src/pages/NotFoundPage.jsx) |
+| Sửa | [web/guest-web/src/pages/PoiDetailPage.jsx](../../apps/guest-web/src/pages/PoiDetailPage.jsx) |
+| Sửa | [web/guest-web/src/pages/PrivacyPage.jsx](../../apps/guest-web/src/pages/PrivacyPage.jsx) |
+| Sửa | [web/guest-web/src/styles/global.css](../../apps/guest-web/src/styles/global.css) |
+| Sửa | [web/guest-web/vite.config.js](../../apps/guest-web/vite.config.js) |
 | Mới | [backend/migrations/002_analytics_constraints.sql](../../backend/migrations/002_analytics_constraints.sql) |
 | Mới | [backend/scripts/migrate_db.py](../../backend/scripts/migrate_db.py) |
 | Mới | [backend/tests/test_analytics_migration.py](../../backend/tests/test_analytics_migration.py) |
-| Mới | [web/guest-web/playwright.config.js](../../web/guest-web/playwright.config.js) |
-| Mới | [web/guest-web/src/api/index.js](../../web/guest-web/src/api/index.js) |
-| Mới | [web/guest-web/src/i18n/LanguageContext.jsx](../../web/guest-web/src/i18n/LanguageContext.jsx) |
-| Mới | [web/guest-web/src/i18n/translations.js](../../web/guest-web/src/i18n/translations.js) |
-| Mới | [web/guest-web/tests/guest.spec.js](../../web/guest-web/tests/guest.spec.js) |
-| Mới | [web/guest-web/tests/publicApi.test.js](../../web/guest-web/tests/publicApi.test.js) |
-| Mới | [web/guest-web/tests/serve_api.py](../../web/guest-web/tests/serve_api.py) |
-| Mới | [web/guest-web/tests/vite.config.js](../../web/guest-web/tests/vite.config.js) |
+| Mới | [web/guest-web/playwright.config.js](../../apps/guest-web/playwright.config.js) |
+| Mới | [web/guest-web/src/api/index.js](../../apps/guest-web/src/api/index.js) |
+| Mới | [web/guest-web/src/i18n/LanguageContext.jsx](../../apps/guest-web/src/i18n/LanguageContext.jsx) |
+| Mới | [web/guest-web/src/i18n/translations.js](../../apps/guest-web/src/i18n/translations.js) |
+| Mới | [web/guest-web/tests/guest.spec.js](../../apps/guest-web/tests/guest.spec.js) |
+| Mới | [web/guest-web/tests/publicApi.test.js](../../apps/guest-web/tests/publicApi.test.js) |
+| Mới | [web/guest-web/tests/serve_api.py](../../apps/guest-web/tests/serve_api.py) |
+| Mới | [web/guest-web/tests/vite.config.js](../../apps/guest-web/tests/vite.config.js) |
 | Mới | [Bản bàn giao này](integration-fixes-2026-11-02.md) |
 
 Lý do theo nhóm: backend/data/scripts/migrations chuẩn hóa schema và đường nâng cấp; backend/tests bảo vệ public contract và dữ liệu khi migrate; guest api/i18n/components/pages xử lý tích hợp và UI VI/EN; package/config/tests phục vụ kiểm thử Node và Edge (thêm duy nhất @playwright/test vào devDependencies); docs/README thống nhất hợp đồng và lệnh Windows; .gitignore bỏ qua artifact Playwright.
@@ -100,7 +103,7 @@ Diff thu gọn các hợp đồng trùng/mâu thuẫn về một nguồn, bổ s
 
 ## Lệnh tự kiểm tra và chạy
 
-Lệnh backend/Admin/guest đầy đủ ở [setup Windows](../deployment/setup.md), [guest README](../../web/guest-web/README.md) và [backend README](../../backend/README.md). Từ gốc repo:
+Lệnh backend/Admin/guest đầy đủ ở [setup Windows](../deployment/setup.md), [guest README](../../apps/guest-web/README.md) và [backend README](../../backend/README.md). Từ gốc repo:
 
 ```powershell
 git status --short

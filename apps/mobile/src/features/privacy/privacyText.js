@@ -1,5 +1,5 @@
 // Nội dung thông báo UC12 bước 2: mục đích, dữ liệu, thời hạn lưu, các lựa chọn.
-// Giữ khớp với web/guest-web/src/pages/PrivacyPage.jsx.
+// Giữ khớp với apps/guest-web/src/pages/PrivacyPage.jsx.
 export const PRIVACY_NOTICE = [
   'Bạn không cần đăng nhập để dùng Saigon Stories.',
   'Mục đích: thống kê lượt truy cập ẩn danh để cải thiện nội dung. Nếu bạn đồng ý, ứng dụng gửi một mã ngẫu nhiên khi đang mở. Ứng dụng không thu tên, số điện thoại hay tọa độ GPS.',

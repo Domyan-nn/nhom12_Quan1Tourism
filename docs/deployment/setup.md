@@ -27,7 +27,7 @@ Nhập mật khẩu riêng tại lời nhắc ẩn. Init chạy 001+002; seed v�
 ## Admin (PowerShell thứ hai, từ gốc repo)
 
 ```powershell
-Set-Location web
+Set-Location apps/admin-web
 npm.cmd ci
 npm.cmd run dev
 ```
@@ -37,25 +37,39 @@ Mở 5174; đăng nhập tài khoản đã seed. Admin và backend cần chạy 
 ## Guest (PowerShell thứ ba, từ gốc repo)
 
 ```powershell
-Set-Location web/guest-web
+Set-Location apps/guest-web
 npm.cmd ci
 $env:VITE_USE_MOCK = 'false'
 $env:VITE_API_BASE_URL = '/api/v1'
 npm.cmd run dev
 ```
 
-Mở 5173. Đổi VITE_USE_MOCK thành true và khởi động lại Vite để xem mock. Xem [guest README](../../web/guest-web/README.md) cho .env, giới hạn và browser test.
+Mở 5173. Đổi VITE_USE_MOCK thành true và khởi động lại Vite để xem mock. Xem [guest README](../../apps/guest-web/README.md) cho .env, giới hạn và browser test.
+
+## Mobile (PowerShell riêng, từ gốc repo)
+
+```powershell
+Set-Location apps/mobile
+npm.cmd ci
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
+npx.cmd expo start
+```
+
+Mặc định dùng mock. Để dùng API thật, đặt `EXPO_PUBLIC_USE_MOCK=false`, `EXPO_PUBLIC_API_STYLE=v1`, và URL máy chủ kết thúc bằng `/api` trong `EXPO_PUBLIC_API_BASE_URL`, rồi khởi động lại Expo. Điện thoại thật cần IP LAN của máy chủ và backend chạy `--host 0.0.0.0`; không dùng localhost của điện thoại. Xem [mobile README](../../apps/mobile/README.md) và [checklist thiết bị](../mobile/testing/mobile-field-test.md).
 
 ## Kiểm tra (PowerShell riêng, từ gốc repo)
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s backend/tests -v
-npm.cmd --prefix web run build
-npm.cmd --prefix web/guest-web test
-npm.cmd --prefix web/guest-web run build
-# Browser test cần chạy với cwd web/guest-web
-Set-Location web/guest-web
+npm.cmd --prefix apps/admin-web run build
+npm.cmd --prefix apps/guest-web test
+npm.cmd --prefix apps/guest-web run build
+npm.cmd --prefix apps/mobile test -- --runInBand
+# Browser test cần chạy với cwd apps/guest-web
+Set-Location apps/guest-web
 npm.cmd run test:browser
 ```
 
 Không dùng mock để xác nhận database. Proxy Vite chỉ phục vụ dev; triển khai tĩnh cần reverse proxy và SPA fallback. Chưa có cam kết production hoặc triển khai analytics, bản đồ/TTS web hay dashboard.
+
+Mỗi ứng dụng có lockfile riêng và cần cài dependency riêng. Nếu PowerShell chưa nhận node/npm/npx, thêm thư mục Node đã cài vào PATH của cửa sổ hiện tại trước khi chạy. Sau khi thay đổi cấu trúc được merge, lưu thay đổi cá nhân, đồng bộ nhánh, chuyển terminal và `.env` sang `apps/<ứng-dụng>`, rồi cài lại từ lockfile. Không khởi động lại các ứng dụng từ thư mục web/mobile cũ.
