@@ -21,7 +21,8 @@ VISIT_GAP = timedelta(minutes=30)      # BR14
 ACTIVE_WINDOW = timedelta(seconds=90)  # BR17
 RETENTION_DAYS = 30                    # BR16 / mục 5.4
 
-_ISO_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"     # định dạng cố định -> so sánh chuỗi = so sánh thời gian
+# Định dạng cố định 'YYYY-MM-DDTHH:MM:SS.mmmZ' (24 ký tự, mili giây) theo
+# migrations/002_analytics_constraints.sql; so sánh chuỗi = so sánh thời gian.
 
 
 class InvalidSessionId(ValueError):
@@ -32,12 +33,19 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def floor_ms(dt: datetime) -> datetime:
+    """Cắt về mili giây (đúng độ chính xác lưu trong DB) để so sánh trong Python
+    và trong SQL luôn nhất quán."""
+    return dt.replace(microsecond=(dt.microsecond // 1000) * 1000)
+
+
 def to_iso(dt: datetime) -> str:
-    return dt.astimezone(timezone.utc).strftime(_ISO_FMT)
+    dt = floor_ms(dt.astimezone(timezone.utc))
+    return f"{dt:%Y-%m-%dT%H:%M:%S}.{dt.microsecond // 1000:03d}Z"
 
 
 def from_iso(text: str) -> datetime:
-    return datetime.strptime(text, _ISO_FMT).replace(tzinfo=timezone.utc)
+    return datetime.strptime(text, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
 
 
 def normalize_session_id(session_id: str) -> str:
@@ -70,7 +78,7 @@ def record_heartbeat(conn: sqlite3.Connection, session_id: str, now: datetime | 
     - Phiên đã rút (consent_granted=0): không làm gì, không kích hoạt lại.
     """
     sid = normalize_session_id(session_id)
-    now = now or utcnow()
+    now = floor_ms(now or utcnow())
     now_iso = to_iso(now)
     with _immediate(conn):
         row = conn.execute(
@@ -119,9 +127,11 @@ def revoke_session(conn: sqlite3.Connection, session_id: str, now: datetime | No
         detached = conn.execute(
             "UPDATE visit_events SET session_id = NULL WHERE session_id = ?", (sid,)
         ).rowcount
+        # Không đổi last_seen_at: ràng buộc last_seen_at >= created_at có thể bị vi phạm
+        # nếu đồng hồ lệch, và tham chiếu trong schema_analytics.sql cũng chỉ đặt consent_granted=0.
         updated = conn.execute(
-            "UPDATE anonymous_sessions SET consent_granted = 0, last_seen_at = ? WHERE session_id = ?",
-            (now_iso, sid),
+            "UPDATE anonymous_sessions SET consent_granted = 0 WHERE session_id = ?",
+            (sid,),
         ).rowcount
         if updated == 0:
             conn.execute(
@@ -135,7 +145,7 @@ def revoke_session(conn: sqlite3.Connection, session_id: str, now: datetime | No
 def count_active_sessions(conn: sqlite3.Connection, now: datetime | None = None) -> int:
     """BR17: phiên chưa rút, last_seen > now - 90s và không vượt now.
     (Dùng lại cho UC11 vào ngày 4.)"""
-    now = now or utcnow()
+    now = floor_ms(now or utcnow())
     row = conn.execute(
         "SELECT COUNT(*) FROM anonymous_sessions "
         "WHERE consent_granted = 1 AND last_seen_at > ? AND last_seen_at <= ?",
@@ -146,7 +156,7 @@ def count_active_sessions(conn: sqlite3.Connection, now: datetime | None = None)
 
 def retention_cutoff(now: datetime | None = None) -> datetime:
     """Mốc đầu của 'hôm nay - 29 ngày' theo giờ Việt Nam (tính cả hai đầu = 30 ngày)."""
-    local = (now or utcnow()).astimezone(VN_TZ)
+    local = floor_ms(now or utcnow()).astimezone(VN_TZ)
     start_today = local.replace(hour=0, minute=0, second=0, microsecond=0)
     return (start_today - timedelta(days=RETENTION_DAYS - 1)).astimezone(timezone.utc)
 
