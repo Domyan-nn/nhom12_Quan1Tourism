@@ -89,6 +89,39 @@ npm.cmd --prefix apps/mobile test -- --runInBand
 
 Browser test kiểm tra Admin và guest web với dữ liệu tạm; không truy cập database cá nhân. Build tĩnh cần reverse proxy `/api` về FastAPI; guest SPA cần fallback cho route chi tiết. Các lệnh kiểm thử mobile và browser không thay thế kiểm thử GPS/TTS trên thiết bị thật.
 
+Nếu môi trường hạn chế ghi cache/output báo `EPERM`, dùng `--configLoader runner` cho Vite/Vitest và chọn `--outDir dist/<ten-luot-moi>` khi build, `--output=test-results/<ten-luot-moi>` khi chạy Playwright. Nếu vẫn bị chặn, cần quyền ghi từ môi trường thực thi; không xóa thư mục cũ hoặc kết luận build/test thất bại do mã nguồn. Bản đồ web và điều kiện dùng mạng ở [guest README](apps/guest-web/README.md).
+
+## API thật và dữ liệu test riêng cho Gate 2
+
+Fixture sau chỉ tạo SQLite trong thư mục tạm hệ thống, không đọc `SAIGON_DATABASE` có sẵn. Có 2 POI published, 1 draft, 1 hidden, danh mục có VI/EN và bài VI/EN/FR. Nội dung là fixture kiểm thử, không phải nội dung đã được duyệt. Script giữ DB khi server đang chạy và dọn khi thoát bình thường.
+
+PowerShell thứ nhất từ gốc repo (để trống cổng 18082; không chạy đồng thời với Playwright):
+
+```powershell
+.\.venv\Scripts\python.exe -u apps/guest-web/tests/serve_api.py
+```
+
+PowerShell thứ hai từ gốc repo, chạy test mobile qua HTTP thật:
+
+```powershell
+$env:SAIGON_TEST_API_URL = 'http://127.0.0.1:18082/api'
+$env:SAIGON_TEST_FIXTURE = 'gate2'
+npm.cmd --prefix apps/mobile test -- --runInBand
+Remove-Item Env:SAIGON_TEST_API_URL, Env:SAIGON_TEST_FIXTURE
+```
+
+`SAIGON_TEST_FIXTURE=gate2` chỉ dùng với fixture đúng ở trên; nếu chỉ có URL API thì chỉ chạy ca hợp đồng tổng quát, còn ca yêu cầu ID cụ thể được bỏ qua. Chạy `Ctrl+C` để dừng fixture khi xong. Để xem web với fixture, dùng cấu hình proxy test:
+
+```powershell
+$env:VITE_USE_MOCK = 'false'
+$env:VITE_API_BASE_URL = '/api/v1'
+npm.cmd --prefix apps/guest-web run dev -- --config tests/vite.config.js --configLoader runner --host 127.0.0.1 --port 18174 --strictPort
+```
+
+Mở `http://127.0.0.1:18174/map`. Web dùng dữ liệu API thật và tile OSM thật (cần mạng); browser test tự động thay tile bằng fixture. Script test có route riêng `PUT /__test/pois/palace/status?status=hidden` hoặc `published` để mô phỏng ẩn/khôi phục, chỉ thay SQLite tạm. Route này chỉ đăng ký trong `tests/serve_api.py`, không tồn tại trong ứng dụng backend vận hành.
+
+Muốn Thuận thử điện thoại trên cùng LAN, trước khi chạy fixture đặt `$env:SAIGON_TEST_HOST='0.0.0.0'` trong cửa sổ thứ nhất. Điện thoại đặt `EXPO_PUBLIC_USE_MOCK=false`, `EXPO_PUBLIC_API_STYLE=v1`, `EXPO_PUBLIC_API_BASE_URL=http://<IP-LAN>:18082/api`, rồi khởi động lại Expo bằng `npx.cmd expo start --clear` từ `apps/mobile/`. Chỉ mở fixture chứa dữ liệu và tài khoản kiểm thử trên mạng phát triển tin cậy; tắt server sau khi thử. Chi tiết các bước và trạng thái chưa kiểm thử ở [checklist](docs/mobile/testing/day2-gate2-mobile.md).
+
 ## Nâng cấp database cũ
 
 Dừng backend và mọi tiến trình ghi. Sao lưu database trước khi nâng cấp; không chạy lại `init_db.py` trên file có dữ liệu. Kiểm tra danh mục song ngữ bằng `prepare_category_bilingual.py --database <database> --check`, rồi chạy cùng script với `--backup <backup-moi>` khi đã xác nhận đường dẫn nguồn và backup mới. Với ràng buộc analytics, chạy `migrate_db.py --database <database> --check`, rồi dùng `--backup <backup-moi>` sau khi kiểm tra dữ liệu. Không chạy riêng file SQL migration lên database hiện có. Xem [hướng dẫn nâng cấp danh mục](docs/analysis-design/category-bilingual-preparation.md) và [sao lưu/phục hồi](docs/deployment/backup-restore.md).

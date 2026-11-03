@@ -96,11 +96,9 @@ test('loading and category errors are visible and translated', async ({ page }) 
   await expect(page.locator('.card')).toHaveCount(2);
 });
 
-test('privacy and placeholders describe pending functionality in both languages', async ({ page }) => {
+test('privacy describes its current functionality in both languages', async ({ page }) => {
   await page.goto(`${real}/privacy`);
   await expect(page.getByText(/Web khách hiện chưa gửi thống kê/)).toBeVisible();
   await page.getByLabel('Ngôn ngữ giao diện').selectOption('en');
   await expect(page.getByText(/does not currently send visit statistics/)).toBeVisible();
-  await page.getByRole('link', { name: 'Map', exact: true }).click();
-  await expect(page.getByText('The map is being integrated', { exact: true })).toBeVisible();
 });

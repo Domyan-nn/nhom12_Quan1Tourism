@@ -1,5 +1,9 @@
 # Kết quả kiểm thử
 
+## Tích hợp Gate 2 ngày 03/11/2026
+
+Nền `main` / `486ae4e`, working tree chưa commit: backend 60/60; pytest analytics 27/27 (trùng phạm vi unittest, không cộng thành 87 ca độc lập); guest Node 7/7 và Vitest 11/11; Playwright Edge 24/24, tiến trình thoát 0; mobile với API/SQLite tạm 69/69, mặc định 67 pass + 2 skip. Build Admin, guest và export Android thành công. Tile OSM thật bị `net::ERR_CONNECTION_REFUSED` tại môi trường kiểm tra; trạng thái lỗi và đường tiếp tục tra cứu vẫn hoạt động. Chưa có điện thoại/emulator để nghiệm thu native. Xem [báo cáo, lệnh, giới hạn và đề xuất WBS](gate2-integration-2026-11-03.md). Các báo cáo bên dưới giữ nguyên như lịch sử.
+
 ## Sửa tích hợp ngày 02/11/2026
 
 Nền mã nguồn: main tại 3bf8256, đã đối chiếu GitHub trước khi sửa. Python 3.12.15, Node 22.22.0, Windows, Microsoft Edge headless. Tệp retest-2026-11-02.md là kết quả trước sửa và được giữ nguyên; bản bàn giao sau sửa tại [integration-fixes-2026-11-02.md](integration-fixes-2026-11-02.md).
