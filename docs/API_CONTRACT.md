@@ -114,3 +114,13 @@ Mobile còn adapter `contract` cho đường dẫn cũ và analytics gọi `/api
 ## 7. Xác nhận nhóm còn cần
 
 Phần Public/Admin ở trên ghi nhận mã đã có, không giả định đã có phê duyệt sản phẩm. Nhóm cần review ràng buộc analytics chặt hơn trước khi áp dụng lên database riêng, các đề xuất mục 6 và bộ locale/nội dung được kiểm duyệt. Chưa có xác nhận thành viên nào được thêm vào tài liệu.
+# Admin: địa điểm và thuyết minh (03/11/2026)
+
+Các endpoint dưới đây yêu cầu `Authorization: Bearer <token>`; phiên thiếu, sai, hết hạn hoặc bị thu hồi trả 401 `AUTH_REQUIRED`. Response lỗi dạng `{ "error": { "code": "...", "message": "...", "details": [] } }`. Lỗi 422 không trả dữ liệu đã nhập.
+
+* `GET /api/v1/admin/pois` trả `{ "items": [ ... ] }` gồm mọi trạng thái; `GET /api/v1/admin/pois/{id}` trả một bản ghi hoặc 404 `POI_NOT_FOUND`.
+* `POST /api/v1/admin/pois` trả 201 và bản ghi mới `status: "draft"`; `PUT /api/v1/admin/pois/{id}` thay các trường biên tập, giữ trạng thái cũ. Body: `{ "category_id": "id", "name": "Tên", "address": "Địa chỉ", "latitude": 10.7, "longitude": 106.7, "radius_m": 100, "image_url": null }`. Tên và địa chỉ bắt buộc, danh mục phải tồn tại, tọa độ lần lượt trong [-90,90] và [-180,180], bán kính nguyên 20–1000; URL ảnh tùy chọn phải dùng HTTP(S). Sai dữ liệu trả 422; danh mục không tồn tại có mã `CATEGORY_NOT_FOUND`.
+* `DELETE /api/v1/admin/pois/{id}` trả 204, xóa các thuyết minh liên quan theo khóa ngoại CASCADE; không tồn tại trả 404.
+* `GET /api/v1/admin/pois/{id}/narrations` trả `{ "items": [ ... ] }`. `POST` cùng đường dẫn nhận `{ "locale": "vi", "title": "Tiêu đề", "body": "Nội dung" }`, trả 201; mã được chuẩn hóa chữ thường, gồm 2–3 chữ cái và các phần tùy chọn phân cách bằng dấu gạch ngang. Mỗi ngôn ngữ chỉ có một bài cho một địa điểm; trùng trả 409 `NARRATION_DUPLICATE`. `PUT /api/v1/admin/pois/{id}/narrations/{narration_id}` nhận `{ "title": "...", "body": "..." }`, giữ nguyên locale và trả bài đã lưu. Thiếu địa điểm hoặc bài trả 404; tiêu đề/nội dung rỗng hoặc sai định dạng trả 422.
+
+Không có API upload hoặc phục vụ ảnh mới; URL do quản trị viên cung cấp. Không có endpoint xóa riêng bài hay thay đổi trạng thái công bố trong phạm vi này. Không thay schema hoặc chạy migration; API công khai giữ nguyên.

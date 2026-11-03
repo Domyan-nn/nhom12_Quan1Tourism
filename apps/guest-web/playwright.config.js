@@ -17,5 +17,7 @@ export default defineConfig({
       url: `http://127.0.0.1:${port}`, env: { VITE_USE_MOCK: mock, VITE_API_BASE_URL: '/api/v1' },
       reuseExistingServer: false,
     })),
+    { command: `node node_modules/vite/bin/vite.js --config ../guest-web/tests/admin-vite.config.js --host 127.0.0.1 --port 18175 --strictPort`,
+      cwd: path.resolve(appDir, '../admin-web'), url: 'http://127.0.0.1:18175', reuseExistingServer: false },
   ],
 });
