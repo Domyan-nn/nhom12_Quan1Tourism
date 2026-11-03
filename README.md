@@ -4,7 +4,7 @@
 
 ## Trạng thái
 
-Repository có SQLite, seed dữ liệu nháp, FastAPI cho đăng nhập Admin, danh mục, quản lý địa điểm và bài thuyết minh, và địa điểm công khai; ứng dụng React Admin và web khách được tách riêng. Guest web hỗ trợ mock và API thật `/api/v1`, có UI VI/EN độc lập với ngôn ngữ thuyết minh. Mobile đã có mã Expo nhưng tích hợp và thiết bị cần kiểm thử riêng. Upload ảnh, công bố/ẩn địa điểm, bản đồ/TTS web, API thống kê và dashboard còn chờ triển khai. Xem [hướng dẫn chạy](RUNNING.md), [nội dung mẫu](backend/scripts/README.md), [hợp đồng API](docs/API_CONTRACT.md) và [kết quả kiểm thử](docs/testing/test-results.md).
+Repository có SQLite, seed dữ liệu nháp, FastAPI cho đăng nhập Admin, danh mục, quản lý địa điểm và bài thuyết minh, và địa điểm công khai; ứng dụng React Admin và web khách được tách riêng. Guest web hỗ trợ mock và API thật `/api/v1`, bản đồ Leaflet/OpenStreetMap và UI VI/EN độc lập với ngôn ngữ thuyết minh. Mobile Expo đã tích hợp bảo vệ marker vào `apps/mobile/`, có kiểm thử tự động với API thật và database tạm; chưa nghiệm thu bản đồ/GPS/TTS trên điện thoại. Upload ảnh, công bố/ẩn địa điểm, TTS web và dashboard vẫn cần triển khai riêng. Xem [hướng dẫn chạy](RUNNING.md), [nội dung mẫu](backend/scripts/README.md), [hợp đồng API](docs/API_CONTRACT.md) và [báo cáo Gate 2 ngày 03/11](docs/testing/gate2-integration-2026-11-03.md).
 
 Hướng dẫn cài đặt, chạy Admin, guest web, mobile và kiểm thử: [RUNNING.md](RUNNING.md).
 

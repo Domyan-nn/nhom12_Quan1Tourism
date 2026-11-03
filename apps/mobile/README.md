@@ -4,6 +4,10 @@
 
 Hướng dẫn chạy và kiểm thử: [RUNNING.md](../../RUNNING.md).
 
+Code marker và test từ commit Thuận `0e2e16f` đã được tích hợp vào `apps/mobile/src/features/map/` và `apps/mobile/tests/`; bản trùng ở `mobile/apps/mobile/` được đối chiếu và dọn. Cùng tập ID/tọa độ hợp lệ dùng cho cả Marker và fitToCoordinates, không yêu cầu bán kính geofence để vẽ ghim. Dữ liệu rỗng/toàn tọa độ sai có thông báo và nút về danh sách. API lỗi khi tải lại có nút Thử lại; phản hồi chọn ghim cũ không ghi đè ghim mới.
+
+`npm.cmd test -- --runInBand` chạy test giả lập; 2 ca HTTP được bỏ qua khi chưa chọn API test. Cách chạy 2 ca đó bằng FastAPI/SQLite dùng một lần ở [RUNNING](../../RUNNING.md#api-thật-và-dữ-liệu-test-riêng-cho-gate-2). Kết quả tự động và bundle Android không thay cho nghiệm thu native trên thiết bị. Thuận thực hiện [checklist Gate 2](../../docs/mobile/testing/day2-gate2-mobile.md) và [phiếu thực địa](../../docs/mobile/testing/mobile-field-test.md).
+
 ## Dữ liệu và cấu hình API
 
 Các biến trong `.env` được đọc khi khởi động Expo:

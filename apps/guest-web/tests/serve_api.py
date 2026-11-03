@@ -29,10 +29,24 @@ if __name__ == '__main__':
                 ('hidden', 'Private hidden', 'history', 'hidden'),
             ]:
                 db.execute('INSERT INTO pois VALUES (?,?,?,?,?,?,?,NULL,?,?,?)',
-                           (poi_id, category, name, 'Test address', 10.77, 106.69, 100, status, 'now', 'now'))
+                           (poi_id, category, name, 'Test address', 10.777 if poi_id == 'palace' else 10.772,
+                            106.695 if poi_id == 'palace' else 106.699, 100, status, 'now', 'now'))
                 for locale in ('vi', 'en', 'fr'):
                     db.execute('INSERT INTO poi_narrations VALUES (?,?,?,?,?,?,?)',
                                (poi_id + locale, poi_id, locale, 'Title ' + locale, 'Test body ' + locale, 'now', 'now'))
         os.environ['SAIGON_DATABASE'] = str(database)
+        from app.main import app
+        from fastapi import HTTPException
+
+        # Fixture-only control of this disposable DB; never imported by production.
+        @app.put('/__test/pois/{poi_id}/status')
+        def change_test_status(poi_id: str, status: str):
+            if poi_id != 'palace' or status not in ('published', 'hidden'):
+                raise HTTPException(400)
+            with closing(sqlite3.connect(database)) as db, db:
+                db.execute('UPDATE pois SET status=? WHERE id=?', (status, poi_id))
+            return {'status': status}
+
         import uvicorn
-        uvicorn.run('app.main:app', host='127.0.0.1', port=18082)
+        uvicorn.run(app, host=os.environ.get('SAIGON_TEST_HOST', '127.0.0.1'),
+                    port=int(os.environ.get('SAIGON_TEST_PORT', '18082')))

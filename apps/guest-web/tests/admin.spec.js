@@ -3,6 +3,83 @@ import { test, expect } from '@playwright/test';
 const admin = 'http://127.0.0.1:18175';
 const guest = 'http://127.0.0.1:18174';
 
+async function login(page) {
+  await page.goto(admin);
+  await page.getByLabel('Tên đăng nhập').fill('browser-admin');
+  await page.getByLabel('Mật khẩu').fill('browser-test-only');
+  const response = page.waitForResponse((r) => r.url().endsWith('/api/v1/admin/login') && r.status() === 200);
+  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+  const token = (await (await response).json()).access_token;
+  await expect(page.getByText('Đã đăng nhập')).toBeVisible();
+  return token;
+}
+
+test('Admin rejects incorrect password, reports network errors, logs out and rejects reused token', async ({ page, request }) => {
+  await page.goto(admin);
+  await page.getByLabel('Tên đăng nhập').fill('browser-admin');
+  await page.getByLabel('Mật khẩu').fill('incorrect-test-password');
+  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Tên đăng nhập hoặc mật khẩu không đúng');
+  const token = await login(page);
+  await page.route('**/api/v1/admin/logout', (r) => r.abort());
+  await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Không kết nối được API');
+  await expect(page.getByText('Đã đăng nhập')).toBeVisible();
+  await page.unroute('**/api/v1/admin/logout');
+  await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Đăng nhập quản trị' })).toBeVisible();
+  const reuse = await request.get('http://127.0.0.1:18082/api/v1/admin/categories', { headers: { Authorization: `Bearer ${token}` } });
+  expect(reuse.status()).toBe(401);
+});
+
+test('Admin category CRUD, NFC duplicates, validation, used category and translated controls', async ({ page }) => {
+  await login(page);
+  const form = page.locator('.category-form');
+  const list = page.locator('.category-form').locator('..').locator('.category-list');
+  await form.getByLabel('Tên tiếng Việt').fill('   ');
+  await form.getByLabel('Tên tiếng Anh').fill('Valid');
+  await form.getByRole('button', { name: 'Thêm danh mục', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Tên không được để trống');
+  await form.getByLabel('Tên tiếng Việt').fill('  Café browser  ');
+  await form.getByLabel('Tên tiếng Anh').fill('  Browser coffee  ');
+  await form.getByRole('button', { name: 'Thêm danh mục', exact: true }).click();
+  const row = list.locator('li').filter({ hasText: 'Café browser / Browser coffee' });
+  await expect(row).toBeVisible();
+  await form.getByLabel('Tên tiếng Việt').fill(' CAFE\u0301 BROWSER ');
+  await form.getByLabel('Tên tiếng Anh').fill('Other name');
+  await form.getByRole('button', { name: 'Thêm danh mục', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Tên danh mục đã tồn tại');
+  await row.getByRole('button', { name: 'Sửa', exact: true }).click();
+  await form.getByLabel('Tên tiếng Việt').fill('Café updated');
+  await form.getByLabel('Tên tiếng Anh').fill('Coffee updated');
+  await form.getByRole('button', { name: 'Lưu', exact: true }).click();
+  const updated = list.locator('li').filter({ hasText: 'Café updated / Coffee updated' });
+  await expect(updated).toBeVisible();
+  page.once('dialog', (dialog) => dialog.accept());
+  await list.locator('li').filter({ hasText: 'history / History' }).getByRole('button', { name: 'Xóa', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Danh mục đang được địa điểm sử dụng');
+  await page.getByLabel('Ngôn ngữ giao diện').selectOption('en');
+  await expect(updated).toContainText('Café updated / Coffee updated');
+  page.once('dialog', (dialog) => dialog.accept());
+  await updated.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(updated).toHaveCount(0);
+});
+
+test('Admin category load error retries and revoked session returns to sign in', async ({ page, request }) => {
+  await page.route('**/api/v1/admin/categories', (r) => r.abort());
+  const token = await login(page);
+  const categories = page.locator('.category-form').locator('..');
+  await expect(categories.getByRole('alert')).toContainText('Không kết nối được API');
+  await page.unroute('**/api/v1/admin/categories');
+  await categories.getByRole('button', { name: 'Thử lại', exact: true }).click();
+  await expect(page.locator('.category-form').locator('..').locator('.category-list li')).toHaveCount(2);
+  expect((await request.post('http://127.0.0.1:18082/api/v1/admin/logout', { headers: { Authorization: `Bearer ${token}` } })).status()).toBe(204);
+  await page.getByLabel('Tên tiếng Việt').fill('Expired');
+  await page.getByLabel('Tên tiếng Anh').fill('Expired');
+  await page.getByRole('button', { name: 'Thêm danh mục', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Phiên đã hết hạn hoặc bị thu hồi');
+});
+
 test('Admin saves a draft and narration, while guest sees only published places', async ({ page, request }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));

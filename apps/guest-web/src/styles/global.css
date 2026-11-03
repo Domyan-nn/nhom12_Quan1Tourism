@@ -62,7 +62,11 @@ input[type='search'] { width: 100%; padding: .7rem .9rem; font: inherit; border:
 .back { display: inline-block; margin-bottom: 1rem; }
 .narration { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--yellow);
   border-radius: var(--radius); padding: 1.1rem 1.25rem; max-width: 70ch; }
-.map-slot { min-height: 50vh; border: 1px dashed var(--line); border-radius: var(--radius); display: grid; place-items: center; }
+.places-map { height: clamp(300px, 55vh, 560px); width: 100%; border-radius: var(--radius); isolation: isolate; }
+.places-map-wrap { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.place-marker { background: var(--green); color: #fff; border: 2px solid white; border-radius: 50%; text-align: center; font-size: 18px; line-height: 28px; box-shadow: 0 1px 5px #3338; }
+.map-summary { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; }
+.map-summary .btn { display: inline-block; text-decoration: none; }
 .prose { max-width: 65ch; }
 .topbar { flex-wrap: wrap; }
 .language-picker { display: flex; align-items: center; gap: .5rem; font-size: .85rem; }

@@ -17,4 +17,13 @@ describe('UC02 – marker bản đồ', () => {
   it('toCoordinate chỉ lấy vĩ độ và kinh độ', () => {
     expect(toCoordinate(P('a', 1, 2, { name: 'x' }))).toEqual({ latitude: 1, longitude: 2 });
   });
+  it('rejects invalid/duplicate IDs and non-array input; retains opaque IDs', () => {
+    expect(getMapMarkers([null, P(null, 1, 2), P('', 1, 2), P('  ', 1, 2), P({}, 1, 2),
+      P(1, 1, 2), P('opaque/id', 1, 2), P('opaque/id', 2, 3)]).map((p) => p.id)).toEqual(['opaque/id']);
+    expect(getMapMarkers({ items: [] })).toEqual([]);
+  });
+  it('accepts coordinate boundaries independently of geofence radius and rejects infinities', () => {
+    expect(getMapMarkers([P('edges', -90, 180, { radius_m: 0 }), P('zero', 0, 0),
+      P('inf', Infinity, 0), P('lonInf', 0, -Infinity)]).map((p) => p.id)).toEqual(['edges', 'zero']);
+  });
 });

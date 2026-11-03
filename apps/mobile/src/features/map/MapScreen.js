@@ -2,7 +2,7 @@
 // A1: vị trí khách chỉ hiện khi đã cấp quyền; từ chối quyền vẫn xem bản đồ.
 // E1: bản đồ không tải được -> báo lỗi, gợi ý dùng danh sách. E2: điểm vừa bị ẩn -> báo không khả dụng.
 import * as Location from 'expo-location';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Banner, Button, EmptyState, ErrorState, Loading } from '../../components/StateViews';
@@ -11,6 +11,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { errorText } from '../../context/translations';
 import { colors, radius, shadow, space } from '../../theme';
 import { startMapLoadTimer } from './mapLoadTimer';
+import { getMapMarkers, toCoordinate } from './mapMarkers';
 
 const Q1_CENTER = { latitude: 10.7769, longitude: 106.7009, latitudeDelta: 0.025, longitudeDelta: 0.025 };
 const MAP_LOAD_TIMEOUT_MS = 12_000;
@@ -19,6 +20,8 @@ export default function MapScreen({ navigation }) {
   const data = useData();
   const { t } = useSettings();
   const mapRef = useRef(null);
+  const selectionRequest = useRef(0);
+  const markers = useMemo(() => getMapMarkers(data.pois), [data.pois]);
   const [mapReady, setMapReady] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
   const [mapAttempt, setMapAttempt] = useState(0);
@@ -27,29 +30,31 @@ export default function MapScreen({ navigation }) {
   const [notice, setNotice] = useState(null);
   const [locGranted, setLocGranted] = useState(false);
 
+  useEffect(() => () => { selectionRequest.current++; }, []);
+
   useEffect(() => {
     Location.getForegroundPermissionsAsync().then((p) => setLocGranted(p.granted)).catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (data.status !== 'ready' || data.pois.length === 0) {
+    if (data.status !== 'ready' || markers.length === 0) {
       setMapReady(false);
       setMapFailed(false);
     }
-  }, [data.status, data.pois.length]);
+  }, [data.status, markers.length]);
 
   useEffect(() => {
-    return startMapLoadTimer({ dataReady: data.status === 'ready', hasPlaces: data.pois.length > 0,
+    return startMapLoadTimer({ dataReady: data.status === 'ready', hasPlaces: markers.length > 0,
       mapReady, onTimeout: () => setMapFailed(true), delay: MAP_LOAD_TIMEOUT_MS });
-  }, [mapReady, data.status, data.pois.length, mapAttempt]);
+  }, [mapReady, data.status, markers.length, mapAttempt]);
 
   useEffect(() => {
-    if (!mapReady || data.pois.length === 0) return;
+    if (!mapReady || markers.length === 0) return;
     mapRef.current?.fitToCoordinates(
-      data.pois.map((p) => ({ latitude: p.latitude, longitude: p.longitude })),
+      markers.map(toCoordinate),
       { edgePadding: { top: 80, right: 60, bottom: 200, left: 60 }, animated: true }
     );
-  }, [mapReady, data.pois]);
+  }, [mapReady, markers]);
 
   const askLocation = async () => {
     try {
@@ -60,27 +65,37 @@ export default function MapScreen({ navigation }) {
   };
 
   const onMarker = async (poi) => {
+    const request = ++selectionRequest.current;
     setSelected(poi);
     setNotice(null);
     setChecking(true);
     try {
       // Bước 4: kiểm tra điểm còn Công khai.
-      await data.getDetail(poi.id, { force: true });
+      const detail = await data.getDetail(poi.id, { force: true });
+      if (request === selectionRequest.current) setSelected(detail);
     } catch (err) {
+      if (request !== selectionRequest.current) return;
       if (err?.status === 404) {
         data.dropPoi(poi.id);
         setSelected(null);
         setNotice('locationGone');
       }
-      else setNotice(err?.code === 'NETWORK_ERROR' ? 'networkError' : 'serverError');
+      else {
+        setSelected(null);
+        setNotice(err?.code === 'NETWORK_ERROR' ? 'networkError' : 'serverError');
+      }
     } finally {
-      setChecking(false);
+      if (request === selectionRequest.current) setChecking(false);
     }
   };
 
   if (data.status === 'loading') return <Loading />;
   if (data.status === 'error') return <ErrorState message={errorText(t, data.error)} onRetry={data.reload} />;
-  if (data.pois.length === 0) return <EmptyState title={t.noPublished} hint={t.checkLater} />;
+  if (markers.length === 0) return <View>
+    {notice ? <Banner>{t[notice]}</Banner> : null}
+    <EmptyState title={data.pois.length ? t.noMapMarkers : t.noPublished} hint={t.checkLater} />
+    <Button title={t.openList} onPress={() => navigation.navigate('Explore')} />
+  </View>;
 
   return (
     <View style={styles.screen}>
@@ -92,13 +107,13 @@ export default function MapScreen({ navigation }) {
         showsUserLocation={locGranted}
         showsMyLocationButton={locGranted}
         onMapReady={() => { setMapReady(true); setMapFailed(false); }}
-        onPress={() => setSelected(null)}
+        onPress={() => { selectionRequest.current++; setSelected(null); setChecking(false); }}
         accessibilityLabel={t.mapLabel}
       >
-        {data.pois.map((p) => (
+        {markers.map((p) => (
           <Marker
             key={p.id}
-            coordinate={{ latitude: p.latitude, longitude: p.longitude }}
+            coordinate={toCoordinate(p)}
             title={p.name}
             pinColor={selected?.id === p.id ? colors.accent : colors.primary}
             onPress={(e) => { e.stopPropagation?.(); onMarker(p); }}
@@ -107,7 +122,8 @@ export default function MapScreen({ navigation }) {
       </MapView>
 
       <View style={styles.top} pointerEvents="box-none">
-        {data.stale ? <Banner kind="error">{t.cached}</Banner> : null}
+        {data.stale ? <View><Banner kind="error">{`${errorText(t, data.error)} ${t.cached}`}</Banner>
+          <Button title={t.retry} onPress={data.reload} /></View> : null}
         {notice ? <Banner>{t[notice]}</Banner> : null}
         {!locGranted ? <Button title={t.showLocation} kind="ghost" style={styles.locBtn} onPress={askLocation} /> : null}
       </View>
