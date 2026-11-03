@@ -11,6 +11,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { errorText } from '../../context/translations';
 import { colors, radius, shadow, space } from '../../theme';
 import { startMapLoadTimer } from './mapLoadTimer';
+import { getMapMarkers, toCoordinate } from './mapMarkers';
 
 const Q1_CENTER = { latitude: 10.7769, longitude: 106.7009, latitudeDelta: 0.025, longitudeDelta: 0.025 };
 const MAP_LOAD_TIMEOUT_MS = 12_000;
@@ -45,8 +46,10 @@ export default function MapScreen({ navigation }) {
 
   useEffect(() => {
     if (!mapReady || data.pois.length === 0) return;
+    const valid = getMapMarkers(data.pois);
+    if (valid.length === 0) return;
     mapRef.current?.fitToCoordinates(
-      data.pois.map((p) => ({ latitude: p.latitude, longitude: p.longitude })),
+      valid.map(toCoordinate),
       { edgePadding: { top: 80, right: 60, bottom: 200, left: 60 }, animated: true }
     );
   }, [mapReady, data.pois]);
@@ -95,10 +98,10 @@ export default function MapScreen({ navigation }) {
         onPress={() => setSelected(null)}
         accessibilityLabel={t.mapLabel}
       >
-        {data.pois.map((p) => (
+        {getMapMarkers(data.pois).map((p) => (
           <Marker
             key={p.id}
-            coordinate={{ latitude: p.latitude, longitude: p.longitude }}
+            coordinate={toCoordinate(p)}
             title={p.name}
             pinColor={selected?.id === p.id ? colors.accent : colors.primary}
             onPress={(e) => { e.stopPropagation?.(); onMarker(p); }}
