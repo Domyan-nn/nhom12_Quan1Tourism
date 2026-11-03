@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(os.environ.get('SAIGON_TEST_ROOT', Path(__file__).resolve().parents[3]))
 sys.path.insert(0, str(ROOT / 'backend'))
+from scripts.seed_db import password_hash
 
 if __name__ == '__main__':
     with tempfile.TemporaryDirectory(prefix='saigon-browser-') as directory:
@@ -16,6 +17,8 @@ if __name__ == '__main__':
         subprocess.run([sys.executable, str(ROOT / 'backend/scripts/init_db.py'), '--database', str(database)], check=True)
         with closing(sqlite3.connect(database)) as db, db:
             db.execute('PRAGMA foreign_keys=ON')
+            db.execute('INSERT INTO admin_accounts VALUES (?,?,?,?,?,?)',
+                       ('browser-admin', 'browser-admin', password_hash('browser-test-only'), 1, 'now', 'now'))
             for category, name_en in (('history', 'History'), ('culture', 'Culture')):
                 db.execute('INSERT INTO categories (id,name,normalized_name,name_en,normalized_name_en,created_at,updated_at) VALUES (?,?,?,?,?,?,?)',
                            (category, category, category, name_en, name_en.casefold(), 'now', 'now'))

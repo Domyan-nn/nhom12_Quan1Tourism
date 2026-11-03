@@ -2,6 +2,7 @@
     python -m pytest tests/test_analytics.py
 """
 import sqlite3
+import sys
 import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -10,6 +11,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.api.routes import analytics as analytics_routes
 from app.services import analytics_service as svc
 
@@ -223,8 +225,9 @@ def client(db_path):
         finally:
             c.close()
 
-    app.dependency_overrides[analytics_routes.get_conn] = override
-    return TestClient(app)
+    app.dependency_overrides[analytics_routes.get_connection] = override
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 def test_route_heartbeat_then_revoke_then_409(client):

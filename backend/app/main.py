@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.routes import auth, categories, public
+from app.api.routes import auth, categories, public, admin_pois
 from app.db.connection import configured_database, validate_category_schema
 
 
@@ -22,6 +22,7 @@ app = FastAPI(title="Saigon Stories API", version="0.1.0", lifespan=lifespan)
 app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(public.router)
+app.include_router(admin_pois.router)
 
 ERROR_MESSAGES = {
     "INVALID_CREDENTIALS": "Tên đăng nhập hoặc mật khẩu không hợp lệ, hoặc tài khoản bị khóa.",
@@ -30,6 +31,8 @@ ERROR_MESSAGES = {
     "CATEGORY_NOT_FOUND": "Không tìm thấy danh mục.",
     "CATEGORY_IN_USE": "Danh mục đang được địa điểm sử dụng.",
     "POI_NOT_FOUND": "Không tìm thấy địa điểm.",
+    "NARRATION_DUPLICATE": "Ngôn ngữ này đã có bài thuyết minh.",
+    "NARRATION_NOT_FOUND": "Không tìm thấy bài thuyết minh.",
 }
 
 

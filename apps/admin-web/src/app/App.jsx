@@ -18,7 +18,7 @@ export default function App() {
         </nav>
       </div>
     </header>
-    <Admin t={t} />
+    <Admin t={t} language={language} />
     <footer><div className="container">SAIGON STORIES <span>·</span> QUẬN 1</div></footer>
   </>;
 }
