@@ -4,6 +4,7 @@ import useAsync from '../hooks/useAsync.js';
 import { getPoi } from '../api/index.js';
 import { useLanguage } from '../i18n/LanguageContext.jsx';
 import { Loading, ErrorState } from '../components/StateViews.jsx';
+import TtsControls from '../components/TtsControls.jsx';
 
 const LOCALE_NAMES = { vi: 'Tiếng Việt', en: 'English' };
 
@@ -48,9 +49,9 @@ export default function PoiDetailPage() {
         <div className="narration">
           <h2>{narration.title}</h2>
           <p>{narration.body}</p>
-          {/* TODO(WBS-11): thay bằng TTS Player (Web Speech API) */}
-          <button className="btn" disabled>{t.listen}</button>
-          <p className="muted">{t.ttsPending}</p>
+          <TtsControls t={t} poiId={poi.id} locale={narration.locale}
+                       localeName={LOCALE_NAMES[narration.locale] || narration.locale}
+                       title={narration.title} body={narration.body} />
         </div>
       )}
     </article>
