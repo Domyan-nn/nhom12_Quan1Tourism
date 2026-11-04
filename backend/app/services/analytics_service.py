@@ -173,3 +173,60 @@ def cleanup_expired(conn: sqlite3.Connection, now: datetime | None = None) -> di
             "DELETE FROM anonymous_sessions WHERE last_seen_at < ?", (cutoff_iso,)
         ).rowcount
     return {"visit_events_deleted": events, "sessions_deleted": sessions}
+
+
+def vn_today(now: datetime | None = None):
+    return floor_ms(now or utcnow()).astimezone(VN_TZ).date()
+
+
+def _vn_day_start_utc(day) -> datetime:
+    return datetime(day.year, day.month, day.day, tzinfo=VN_TZ).astimezone(timezone.utc)
+
+
+def visits_per_day(conn: sqlite3.Connection, start, end) -> list[dict]:
+    """BR16: số lượt từng ngày Asia/Ho_Chi_Minh, tính cả hai đầu ngày."""
+    days, day = [], start
+    while day <= end:
+        lo = to_iso(_vn_day_start_utc(day))
+        hi = to_iso(_vn_day_start_utc(day + timedelta(days=1)))
+        count = conn.execute(
+            "SELECT COUNT(*) FROM visit_events WHERE started_at >= ? AND started_at < ?", (lo, hi)
+        ).fetchone()[0]
+        days.append({"date": day.isoformat(), "visits": count})
+        day += timedelta(days=1)
+    return days
+
+
+def visit_stats(conn: sqlite3.Connection, start=None, end=None, now: datetime | None = None) -> dict:
+    """UC10: hôm nay, 7 ngày gần nhất (gồm hôm nay) và khoảng tùy chọn trong 30 ngày."""
+    today = vn_today(now)
+    result = {
+        "timezone": "Asia/Ho_Chi_Minh",
+        "measured_at": to_iso(floor_ms(now or utcnow())),
+        "today": visits_per_day(conn, today, today)[0]["visits"],
+        "last_7_days": sum(d["visits"] for d in visits_per_day(conn, today - timedelta(days=6), today)),
+        "range": None,
+        "note": "Lượt truy cập tính theo mã phiên ẩn danh của khách đã đồng ý; không phải số người duy nhất.",
+    }
+    if start is not None and end is not None:
+        days = visits_per_day(conn, start, end)
+        result["range"] = {"from": start.isoformat(), "to": end.isoformat(),
+                           "total": sum(d["visits"] for d in days), "days": days}
+    return result
+
+
+def valid_range(start, end, now: datetime | None = None) -> bool:
+    """BR16: trong [hôm nay - 29 ngày, hôm nay] và start <= end."""
+    today = vn_today(now)
+    return start <= end and start >= today - timedelta(days=RETENTION_DAYS - 1) and end <= today
+
+
+def active_snapshot(conn: sqlite3.Connection, now: datetime | None = None) -> dict:
+    """UC11: ước lượng số phiên khách hoạt động (BR17, BR19)."""
+    now = floor_ms(now or utcnow())
+    return {
+        "active_sessions": count_active_sessions(conn, now),
+        "window_seconds": int(ACTIVE_WINDOW.total_seconds()),
+        "measured_at": to_iso(now),
+        "note": "Ước lượng theo mã phiên ẩn danh; không phải số người duy nhất.",
+    }

@@ -148,3 +148,44 @@ def update_narration(poi_id: str, narration_id: str, body: NarrationInput, db: s
         if not db.execute("UPDATE poi_narrations SET title=?, body=?, updated_at=? WHERE id=? AND poi_id=?", (body.title, body.body, timestamp(utc_now()), narration_id, poi_id)).rowcount:
             raise HTTPException(404, "NARRATION_NOT_FOUND")
     return dict(db.execute("SELECT * FROM poi_narrations WHERE id=?", (narration_id,)).fetchone())
+
+
+def publish_problems(db, row):
+    """BR04 + BR03: danh sách mục còn thiếu trước khi công bố."""
+    problems = []
+    if not (row["name"] or "").strip():
+        problems.append("name")
+    if not (row["address"] or "").strip():
+        problems.append("address")
+    if not db.execute("SELECT 1 FROM categories WHERE id=?", (row["category_id"],)).fetchone():
+        problems.append("category")
+    if not (-90 <= row["latitude"] <= 90 and -180 <= row["longitude"] <= 180 and 20 <= row["radius_m"] <= 1000):
+        problems.append("coordinates")
+    if not db.execute("SELECT 1 FROM poi_narrations WHERE poi_id=? AND length(trim(title))>0 AND length(trim(body))>0", (row["id"],)).fetchone():
+        problems.append("narration")
+    return problems
+
+
+def change_status(db, poi_id, allowed_from, new_status):
+    with db:
+        row = place(db, poi_id)
+        if row["status"] not in allowed_from:
+            raise HTTPException(409, "INVALID_STATUS_TRANSITION")
+        if new_status == "published":
+            problems = publish_problems(db, row)
+            if problems:
+                raise HTTPException(422, {"code": "POI_NOT_PUBLISHABLE", "details": problems})
+        db.execute("UPDATE pois SET status=?, updated_at=? WHERE id=?", (new_status, timestamp(utc_now()), poi_id))
+    return place(db, poi_id)
+
+
+@router.post("/{poi_id}/publish")
+def publish_place(poi_id: str, db: sqlite3.Connection = Depends(get_db)):
+    """UC09: Nháp/Ẩn -> Công khai sau khi kiểm tra BR04 và có >= 1 bài hợp lệ."""
+    return change_status(db, poi_id, ("draft", "hidden"), "published")
+
+
+@router.post("/{poi_id}/hide")
+def hide_place(poi_id: str, db: sqlite3.Connection = Depends(get_db)):
+    """UC09-A1: Công khai -> Ẩn; địa điểm biến mất khỏi API khách."""
+    return change_status(db, poi_id, ("published",), "hidden")
