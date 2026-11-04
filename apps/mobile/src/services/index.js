@@ -7,7 +7,7 @@ import { createPublicApi } from './publicApi';
 const client = createApiClient({ baseUrl: API_BASE_URL });
 
 export const publicApi = createPublicApi({ client, useMock: USE_MOCK, style: API_STYLE });
-export const analyticsApi = createAnalyticsApi({ client, useMock: USE_MOCK });
+export const analyticsApi = createAnalyticsApi({ client, useMock: USE_MOCK, style: API_STYLE });
 export const storage = AsyncStorage;
 export { USE_MOCK };
 
