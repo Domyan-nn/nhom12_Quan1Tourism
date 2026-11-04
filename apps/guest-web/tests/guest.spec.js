@@ -98,7 +98,7 @@ test('loading and category errors are visible and translated', async ({ page }) 
 
 test('privacy describes its current functionality in both languages', async ({ page }) => {
   await page.goto(`${real}/privacy`);
-  await expect(page.getByText(/Web khách hiện chưa gửi thống kê/)).toBeVisible();
+  await expect(page.locator('.prose').getByText(/Chỉ khi bạn đồng ý/)).toBeVisible();
   await page.getByLabel('Ngôn ngữ giao diện').selectOption('en');
-  await expect(page.getByText(/does not currently send visit statistics/)).toBeVisible();
+  await expect(page.locator('.prose').getByText(/Only with your consent/)).toBeVisible();
 });

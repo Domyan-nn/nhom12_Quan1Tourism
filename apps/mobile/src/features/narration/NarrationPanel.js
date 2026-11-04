@@ -5,7 +5,7 @@ import { Banner, Button, Chip } from '../../components/StateViews';
 import { useSettings } from '../../context/SettingsContext';
 import { playerError } from '../../context/translations';
 import { colors, radius, space } from '../../theme';
-import { getNarration, availableLocales, SUPPORTED_LOCALES } from './narrationUtils';
+import { getNarration, availableLocales, localeLabel } from './narrationUtils';
 import { player } from './player';
 import { usePlayerState } from './usePlayer';
 
@@ -17,7 +17,7 @@ export default function NarrationPanel({ poi }) {
   const status = mine ? ps.status : 'idle';
 
   // Rời màn hình thì dừng đọc bài của địa điểm này.
-  useEffect(() => () => { if (player.state.poiId === poi.id) player.stop(); }, [poi.id]);
+  useEffect(() => () => { if (player.state.poiId === poi.id) player.stop(); }, [poi.id, locale]);
 
   const narration = getNarration(poi, locale);
 
@@ -30,8 +30,8 @@ export default function NarrationPanel({ poi }) {
     <View style={styles.wrap}>
       <Text style={styles.h}>{t.narration}</Text>
       <View style={styles.row}>
-        {SUPPORTED_LOCALES.map((l) => (
-          <Chip key={l.code} label={l.label} selected={locale === l.code} onPress={() => pick(l.code)} />
+        {have.map((code) => (
+          <Chip key={code} label={localeLabel(code)} selected={locale === code} onPress={() => pick(code)} />
         ))}
       </View>
       {narration ? (

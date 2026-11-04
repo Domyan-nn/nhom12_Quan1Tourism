@@ -14,7 +14,7 @@ export const translations = {
     autoPrivacy: 'Chỉ hoạt động khi ứng dụng đang mở. Vị trí không được lưu hay gửi đi.', autoSwitch: 'Bật tự động phát', settings: 'Mở cài đặt', nearest: 'Gần nhất', playing: 'Đang phát thuyết minh…', stop: 'Dừng', log: 'Nhật ký (không chứa tọa độ)', noEvents: 'Chưa có sự kiện nào.',
     narration: 'Thuyết minh', noNarration: 'Địa điểm này chưa có bài thuyết minh khả dụng.', missingNarration: 'Chưa có thuyết minh ở ngôn ngữ đã chọn.', noVoice: 'Không xác nhận được giọng đọc phù hợp. Bạn vẫn có thể đọc văn bản.', ttsError: 'Không phát được âm thanh. Bạn vẫn có thể đọc văn bản.', emptyText: 'Bài thuyết minh không có nội dung.',
     noPause: 'Thiết bị không hỗ trợ tạm dừng; bạn có thể Dừng hoặc Nghe lại.', listen: 'Nghe', listenAgain: 'Nghe lại', preparing: 'Đang chuẩn bị…', pause: 'Tạm dừng', resume: 'Tiếp tục',
-    analyticsUnavailable: 'Thống kê ẩn danh chưa được hỗ trợ. Ứng dụng không gửi thống kê.', pendingRevoke: 'Yêu cầu rút đồng ý trước đó được giữ lại; chưa thể gửi vì máy chủ chưa hỗ trợ.', withdrawLocal: 'Rút lựa chọn đã lưu',
+    analyticsUnavailable: 'Mobile chưa kết nối API thống kê. Ứng dụng không gửi thống kê.', pendingRevoke: 'Yêu cầu rút đồng ý trước đó được giữ lại; chưa thể gửi vì mobile chưa kết nối API thống kê.', withdrawLocal: 'Rút lựa chọn đã lưu',
     logPlayed: 'Đã phát', logFailed: 'Không phát được', logGone: 'không còn công khai', logLoad: 'Không tải được bài',
   },
   en: {
@@ -32,7 +32,7 @@ export const translations = {
     autoPrivacy: 'Only works while the app is open. Your location is not stored or sent.', autoSwitch: 'Enable auto play', settings: 'Open settings', nearest: 'Nearest', playing: 'Playing narration…', stop: 'Stop', log: 'Events (without coordinates)', noEvents: 'No events yet.',
     narration: 'Narration', noNarration: 'No narration is available for this place.', missingNarration: 'No narration is available in the selected language.', noVoice: 'A matching voice could not be confirmed. You can still read the text.', ttsError: 'Could not play audio. You can still read the text.', emptyText: 'The narration is empty.',
     noPause: 'This device cannot pause speech; use Stop or Listen again.', listen: 'Listen', listenAgain: 'Listen again', preparing: 'Preparing…', pause: 'Pause', resume: 'Resume',
-    analyticsUnavailable: 'Anonymous analytics is not yet supported. The app does not send analytics.', pendingRevoke: 'An earlier withdrawal request is retained; the server does not yet support sending it.', withdrawLocal: 'Withdraw saved choice',
+    analyticsUnavailable: 'Mobile analytics is not connected to the API. The app does not send analytics.', pendingRevoke: 'An earlier withdrawal request is retained; mobile analytics is not yet connected to the API.', withdrawLocal: 'Withdraw saved choice',
     logPlayed: 'Played', logFailed: 'Could not play', logGone: 'is no longer public', logLoad: 'Could not load narration',
   },
 };

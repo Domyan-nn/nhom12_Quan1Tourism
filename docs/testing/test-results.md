@@ -1,5 +1,11 @@
 # Kết quả kiểm thử
 
+## Tích hợp tồn đọng đến 03/11, kiểm chứng ngày 04/11/2026
+
+Bổ sung trước push theo yêu cầu người dùng: rebase phần tích hợp lên commit `aa0d2d7` mới của An, giữ UC09/UC10–UC11/Dashboard. Backend chạy lại **79/79**, guest **25 Node + 20 Vitest**, build Admin thành công; Playwright **31 ca chức năng đạt + 1 OSM opt-in skip**, exit 0. Các con số bên dưới ghi mốc kiểm chứng trước rebase; xem phần đầu báo cáo để biết cách ghép và kết quả mới.
+
+Nền `main` / `97e1ad6`, Git ban đầu sạch, thay đổi chưa commit: backend unittest 69/69; pytest analytics 34/34 (các ca nằm trong unittest, không cộng hai lần); guest Node 25/25 + Vitest 20/20; Edge Playwright 32/32, exit 0, gồm 31 ca chức năng và 1 chẩn đoán OSM thật; mobile 85/85 với FastAPI/SQLite tạm, mặc định 83 pass + 2 HTTP skip. Build Admin/guest và export Android thành công. Tile OSM thật: 0 response thành công, 15 `net::ERR_CONNECTION_REFUSED`; diagnostic đạt kiểm tra fallback, không đạt tải tile. Âm thanh thật và điện thoại/emulator chưa kiểm thử. Xem [báo cáo, manifest file, Gate 2/Gate 3 và bàn giao](integration-2026-11-04.md). Các mục sau giữ làm lịch sử.
+
 ## Tích hợp Gate 2 ngày 03/11/2026
 
 Nền `main` / `486ae4e`, working tree chưa commit: backend 60/60; pytest analytics 27/27 (trùng phạm vi unittest, không cộng thành 87 ca độc lập); guest Node 7/7 và Vitest 11/11; Playwright Edge 24/24, tiến trình thoát 0; mobile với API/SQLite tạm 69/69, mặc định 67 pass + 2 skip. Build Admin, guest và export Android thành công. Tile OSM thật bị `net::ERR_CONNECTION_REFUSED` tại môi trường kiểm tra; trạng thái lỗi và đường tiếp tục tra cứu vẫn hoạt động. Chưa có điện thoại/emulator để nghiệm thu native. Xem [báo cáo, lệnh, giới hạn và đề xuất WBS](gate2-integration-2026-11-03.md). Các báo cáo bên dưới giữ nguyên như lịch sử.

@@ -1,6 +1,8 @@
 # Backend
 
-FastAPI cung cấp xác thực Admin, quản lý danh mục, địa điểm, thuyết minh và API đọc công khai. Có migration, seed và kiểm thử SQLite. Xem [hướng dẫn chạy](../RUNNING.md).
+FastAPI cung cấp xác thực Admin, quản lý danh mục, địa điểm, thuyết minh, API đọc công khai và UC12 heartbeat/revoke. Đường dẫn chuẩn `/api/v1/analytics/**`, giữ alias `/api/analytics/**`, cả hai trả 204 khi thành công. Có migration, seed và kiểm thử SQLite. Xem [hướng dẫn chạy](../RUNNING.md) và [hợp đồng API](../docs/API_CONTRACT.md).
+
+Khởi động chỉ kiểm tra schema đang có (danh mục song ngữ, analytics version 2), không tự migration. Retention dọn lượt/phiên thống kê quá cửa sổ 30 ngày lúc khởi động và mỗi 00:00 Việt Nam khi API chạy; tác vụ lỗi ghi log/thử lại sau 60 giây. Không thay schema trong đợt tích hợp 04/11. Trước khi chạy với dữ liệu thật cần đọc chính sách này; kiểm thử luôn dùng database tạm, không seed lại database cá nhân.
 
 Database demo preview có dữ liệu thử nghiệm `published`, chưa phải nội dung đã kiểm duyệt. Database `backend/data/saigon_stories.db` dành cho dữ liệu chính.
 

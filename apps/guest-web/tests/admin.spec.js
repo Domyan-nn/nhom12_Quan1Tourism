@@ -97,9 +97,16 @@ test('Admin saves a draft and narration, while guest sees only published places'
   await form.getByLabel('Vĩ độ').fill('10.77');
   await form.getByLabel('Kinh độ').fill('106.69');
   await form.getByLabel('Bán kính (m)').fill('100');
+  const creating = page.waitForResponse(r => r.url().endsWith('/api/v1/admin/pois') && r.status() === 201);
   await form.getByRole('button', { name: 'Lưu' }).click();
+  const poiId = (await (await creating).json()).id;
   await expect(page.locator('.places .category-list li').filter({ hasText: 'Browser test place' })).toContainText('draft');
   await expect(page.getByText('Đã lưu thành công.')).toBeVisible();
+
+  await form.getByLabel('Tên').fill('Browser edited place');
+  await form.getByLabel('Bán kính (m)').fill('1000');
+  await form.getByRole('button', { name: 'Lưu' }).click();
+  await expect(page.locator('.places .category-list li').filter({ hasText: 'Browser edited place' })).toContainText('draft');
 
   const narr = page.locator('.places .place-form').last();
   await narr.getByLabel('Mã ngôn ngữ').fill('fr');
@@ -108,15 +115,50 @@ test('Admin saves a draft and narration, while guest sees only published places'
   await narr.getByRole('button', { name: 'Lưu' }).click();
   await expect(page.locator('.places .category-list li').filter({ hasText: 'fr · Titre de test' })).toBeVisible();
 
+  await narr.getByLabel('Mã ngôn ngữ').fill('FR');
+  await narr.getByLabel('Tiêu đề').fill('Duplicate');
+  await narr.getByLabel('Nội dung').fill('Duplicate');
+  await narr.getByRole('button', { name: 'Lưu' }).click();
+  await expect(page.locator('.places [role="alert"]')).toContainText('Ngôn ngữ này đã có bài');
+  await page.locator('.places').getByRole('button', { name: 'Thử lại', exact: true }).click();
+  await page.locator('.places li').filter({ hasText: 'fr · Titre de test' }).getByRole('button', { name: 'Sửa', exact: true }).click();
+  await expect(narr.getByLabel('Mã ngôn ngữ')).toBeDisabled();
+  await narr.getByLabel('Tiêu đề').fill('   ');
+  await narr.getByRole('button', { name: 'Lưu' }).click();
+  await expect(page.locator('.places [role="alert"]')).toContainText('Kiểm tra các trường bắt buộc');
+  await narr.getByLabel('Tiêu đề').fill('Titre modifié');
+  await narr.getByLabel('Nội dung').fill('Texte modifié');
+  await page.route(`**/api/v1/admin/pois/${poiId}/narrations/*`, r => r.abort());
+  await narr.getByRole('button', { name: 'Lưu' }).click();
+  await expect(page.locator('.places [role="alert"]')).toContainText('Không kết nối được API');
+  await expect(narr.getByLabel('Nội dung')).toHaveValue('Texte modifié');
+  await page.unroute(`**/api/v1/admin/pois/${poiId}/narrations/*`);
+  await narr.getByRole('button', { name: 'Lưu' }).click();
+  await expect(page.locator('.places li').filter({ hasText: 'fr · Titre modifié' })).toBeVisible();
+
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  await page.route(`**/api/v1/admin/pois/${poiId}`, async r => { await gate; await r.continue(); });
+  await form.getByRole('button', { name: 'Lưu' }).click();
+  try {
+    await expect(page.getByRole('button', { name: 'Thêm địa điểm', exact: true })).toBeDisabled();
+    await expect(form.getByLabel('Tên')).toBeDisabled();
+  } finally { release(); }
+  await expect(form.getByLabel('Tên')).toBeEnabled();
+  await page.unroute(`**/api/v1/admin/pois/${poiId}`);
+
   const guestPage = await page.context().newPage();
   await guestPage.goto(guest);
   await expect(guestPage.locator('.card')).toHaveCount(2);
-  await expect(guestPage.getByText('Browser test place')).toHaveCount(0);
+  await expect(guestPage.getByText('Browser edited place')).toHaveCount(0);
   await guestPage.close();
 
+  page.once('dialog', dialog => dialog.dismiss());
+  await form.getByRole('button', { name: 'Xóa' }).click();
+  await expect(page.locator('.places li').filter({ hasText: 'Browser edited place' })).toBeVisible();
   page.once('dialog', dialog => dialog.accept());
   await form.getByRole('button', { name: 'Xóa' }).click();
-  await expect(page.locator('.places .category-list li').filter({ hasText: 'Browser test place' })).toHaveCount(0);
+  await expect(page.locator('.places .category-list li').filter({ hasText: 'Browser edited place' })).toHaveCount(0);
   const pois = await request.get('http://127.0.0.1:18082/api/v1/pois');
   expect((await pois.json()).items).toHaveLength(2);
   expect(errors).toEqual([]);

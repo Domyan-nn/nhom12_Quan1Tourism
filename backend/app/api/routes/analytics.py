@@ -1,11 +1,8 @@
 """Route thống kê ẩn danh dành cho khách (không cần đăng nhập).
 
-POST /api/analytics/heartbeat  -> 204 | 409 {"detail": "session_revoked"}
-POST /api/analytics/revoke     -> 204 (idempotent)
-
-TODO khi ghép vào app: thay `get_conn` bằng hàm mở kết nối trong
-app/db/connection.py (cần foreign_keys=ON, isolation_level=None, busy_timeout),
-rồi `app.include_router(analytics.router)` trong main.
+POST /api/v1/analytics/heartbeat -> 204 | 409
+POST /api/v1/analytics/revoke    -> 204 (idempotent)
+Giữ /api/analytics/** cho client cũ. Mỗi request dùng kết nối riêng.
 """
 import sqlite3
 from typing import Iterator
@@ -17,7 +14,7 @@ from app.schemas.analytics import SessionPayload
 from app.services import analytics_service as svc
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])  # đường dẫn client hiện tại
-v1_router = APIRouter(prefix="/api/v1/analytics", tags=["analytics"], include_in_schema=False)  # theo API_CONTRACT
+v1_router = APIRouter(prefix="/api/v1/analytics", tags=["analytics"])
 
 
 def get_connection() -> Iterator[sqlite3.Connection]:

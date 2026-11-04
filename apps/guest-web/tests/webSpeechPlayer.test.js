@@ -145,3 +145,57 @@ test('long text is read in several short utterances in order', async () => {
   assert.ok(synth.spoken.length >= 3);
   assert.equal(p.state.status, 'idle');
 });
+
+test('stop before onstart settles the pending play and ignores late callbacks', async () => {
+  const synth = fakeSynth({ behaviour: 'silent' });
+  let utterance;
+  synth.speak = (u) => { utterance = u; };
+  const p = make(synth);
+  const pending = p.play({ text: 'Xin chào', locale: 'vi' });
+  await tick();
+  p.stop();
+  assert.equal(await pending, false);
+  utterance.onstart(); utterance.onend();
+  assert.equal(p.state.status, 'idle');
+});
+
+test('voice enumeration errors are reported without leaving loading state', async () => {
+  const synth = fakeSynth();
+  synth.getVoices = () => { throw new Error('engine unavailable'); };
+  const p = make(synth);
+  assert.equal(await p.play({ text: 'Hello', locale: 'en' }), false);
+  assert.equal(p.state.errorCode, TTS_ERRORS.TTS_ERROR);
+});
+
+test('failed resume stops speech and offers replay', async () => {
+  const synth = fakeSynth({ behaviour: 'hold' });
+  const p = make(synth);
+  await p.play({ text: 'Hello', locale: 'en' });
+  p.pause();
+  synth.resume = () => { throw new Error('resume failed'); };
+  assert.equal(p.resume(), false);
+  assert.equal(p.state.errorCode, TTS_ERRORS.PAUSE_UNSUPPORTED);
+  assert.equal(p.state.status, 'error');
+});
+
+test('an unexpected interruption is an error and stale end cannot clear it', async () => {
+  const synth = fakeSynth();
+  let utterance;
+  synth.speak = (u) => { utterance = u; u.onstart(); };
+  const p = make(synth);
+  assert.equal(await p.play({ text: 'Hello', locale: 'en' }), true);
+  utterance.onerror({ error: 'interrupted' });
+  utterance.onend();
+  assert.equal(p.state.errorCode, TTS_ERRORS.TTS_ERROR);
+});
+
+test('a later chunk that never starts is timed out and stopped', async () => {
+  const synth = fakeSynth();
+  let count = 0;
+  synth.speak = (u) => { if (++count === 1) { u.onstart(); setTimeout(() => u.onend(), 0); } };
+  const p = make(synth, { maxChunk: 10, startTimeoutMs: 10 });
+  assert.equal(await p.play({ text: 'First bit. Second bit.', locale: 'en' }), true);
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  assert.equal(count, 2);
+  assert.equal(p.state.errorCode, TTS_ERRORS.TTS_ERROR);
+});

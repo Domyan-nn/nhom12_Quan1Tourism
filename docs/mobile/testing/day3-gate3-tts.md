@@ -20,9 +20,15 @@ Việc theo timeline: hoàn thiện chọn ngôn ngữ và nghe thuyết minh (U
 
 `apps/guest-web/tests/webSpeechPlayer.test.js` – 13 ca: khớp giọng theo ngôn ngữ, giọng nạp muộn, thiếu giọng (NO_VOICE), trình duyệt không hỗ trợ, văn bản rỗng, lỗi engine, không bắt đầu đọc (quá thời gian), tạm dừng/tiếp tục, không hỗ trợ tạm dừng, dừng và đổi bài, chia đoạn. Chạy: `npm.cmd test` trong `apps/guest-web`.
 
+Bổ sung kiểm chứng 04/11/2026: giữ 13 ca gốc, thêm 5 ca lỗi engine/vòng đời (tổng 18 ca player; tổng guest Node 25 + Vitest 20). Edge kiểm thử điều khiển với giọng giả cùng FastAPI/SQLite tạm; không nghe âm thanh thật. Mobile thêm 12 ca engine và 4 ca NarrationPanel, tổng Jest 83 pass + 2 HTTP skip khi chưa chọn fixture; khi bật API fixture riêng đạt 85/85. Export Android thành công, chưa cài native. Chi tiết lệnh, môi trường và giới hạn ở [báo cáo tích hợp](../../testing/integration-2026-11-04.md).
+
+Mobile chọn ngôn ngữ từ bài thực có trong dữ liệu (kể cả ngoài VI/EN), vẫn báo thiếu nếu lựa chọn trước đó không có bài; không tự đổi bài theo UI. Player đợi native Stop trước khi đọc bài mới, xử lý lỗi pause/resume iOS và timeout từng đoạn. Android vẫn chỉ Dừng/Nghe lại. Không thêm GPS nền hoặc offline.
+
 ## Phiếu thử thủ công Gate 3 (TTS)
 
 Cần địa điểm đã công bố và có bài tiếng Việt và tiếng Anh, hoặc chạy chế độ mock. **Cột kết quả để trống đến khi thử thật.**
+
+Ngày 04/11/2026: **chưa kiểm thử âm thanh thật và điện thoại/emulator**; không dùng kết quả engine giả để điền bảng dưới. Mỗi lượt Thuận cần ghi: người thử, ngày giờ, hash mã, thiết bị/model, Android/iOS và phiên bản, trình duyệt/Expo build, locale bài, tên/mã giọng đã cài, có nghe trực tiếp hay không, kết quả và lỗi. Thử cả bài dài, dừng trước lúc bắt đầu, đổi nhanh địa điểm/ngôn ngữ, rời màn hình và thiếu giọng. iOS cần thử pause/resume; Android xác nhận chỉ Stop/Replay. Dùng fixture SQLite riêng theo RUNNING, không công bố nội dung chưa duyệt.
 
 | # | Nền tảng | Bước | Mong đợi | Kết quả |
 | --- | --- | --- | --- | --- |

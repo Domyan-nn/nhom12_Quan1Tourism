@@ -21,8 +21,8 @@ export class NarrationPlayer {
   constructor({ speech, supportsPause = false, setTimeoutFn = setTimeout, clearTimeoutFn = clearTimeout }) {
     this.speech = speech;
     this.supportsPause = supportsPause;
-    this._setTimeout = setTimeoutFn;
-    this._clearTimeout = clearTimeoutFn;
+    this._setTimeout = (fn, ms) => setTimeoutFn(fn, ms);
+    this._clearTimeout = (id) => clearTimeoutFn(id);
     this.state = { ...IDLE };
     this.listeners = new Set();
     this._token = 0;
@@ -47,8 +47,11 @@ export class NarrationPlayer {
    * Trả false nếu lỗi; khi đó state.status = 'error' kèm lý do để UI cho khách đọc văn bản.
    */
   async play({ text, locale, poiId = null }) {
-    this.stop({ silent: true });
+    const stopped = this.stop({ silent: true });
     const token = ++this._token;
+    const didStop = await stopped;
+    if (token !== this._token) return false;
+    if (!didStop) return this._fail(token, PLAYER_ERRORS.TTS_ERROR, 'Không dừng được bài trước.', poiId, locale);
 
     const chunks = splitIntoChunks(text, Math.min(this.speech.maxSpeechInputLength || 4000, 3500));
     if (chunks.length === 0) return this._fail(token, PLAYER_ERRORS.EMPTY_TEXT, 'Bài thuyết minh không có nội dung.', poiId, locale);
@@ -75,26 +78,28 @@ export class NarrationPlayer {
       const settle = (ok) => {
         if (settled) return;
         settled = true;
-        this._clearTimeout(watchdog);
         if (this._cancelPending === cancelPending) this._cancelPending = null;
         resolve(ok);
       };
       const cancelPending = () => settle(false);
       this._cancelPending = cancelPending;
-      const watchdog = this._setTimeout(() => {
-        if (!started && token === this._token) {
-          this.speech.stop?.();
+      const startWatchdog = () => {
+        this._clearTimeout(this._watchdog);
+        this._watchdog = this._setTimeout(() => {
+          if (token !== this._token) return;
           this._fail(token, PLAYER_ERRORS.TTS_ERROR, 'Không bắt đầu đọc được. Bạn có thể đọc văn bản bên dưới.', poiId, locale);
           settle(false);
-        }
-      }, START_TIMEOUT_MS);
+        }, START_TIMEOUT_MS);
+      };
 
       const speakChunk = (i) => {
         if (token !== this._token) return settle(false);
+        startWatchdog();
         const opts = {
           language: voice?.language ?? speechTagFor(locale),
           onStart: () => {
             if (token !== this._token) return;
+            this._clearTimeout(this._watchdog);
             if (!started) {
               started = true;
               this._set({ status: 'playing' });
@@ -103,10 +108,15 @@ export class NarrationPlayer {
           },
           onDone: () => {
             if (token !== this._token) return;
+            this._clearTimeout(this._watchdog);
             if (i + 1 < chunks.length) speakChunk(i + 1);
-            else this._set({ ...IDLE });
+            else { this._set({ ...IDLE }); settle(started); }
           },
-          onStopped: () => {},
+          onStopped: () => {
+            if (token !== this._token) return;
+            this._fail(token, PLAYER_ERRORS.TTS_ERROR, 'Bài đọc bị gián đoạn. Bạn có thể phát lại.', poiId, locale);
+            settle(false);
+          },
           onError: () => {
             if (token !== this._token) return;
             this._fail(token, PLAYER_ERRORS.TTS_ERROR, 'Không đọc được bằng TTS. Bạn có thể đọc văn bản bên dưới.', poiId, locale);
@@ -125,32 +135,52 @@ export class NarrationPlayer {
   }
 
   _fail(token, code, message, poiId, locale) {
-    if (token === this._token) this._set({ status: 'error', errorCode: code, message, poiId, locale });
+    if (token === this._token) {
+      this._token++;
+      this._clearTimeout(this._watchdog);
+      this._haltSpeech();
+      this._cancelPending?.();
+      this._set({ status: 'error', errorCode: code, message, poiId, locale });
+    }
     return false;
   }
 
-  pause() {
+  async pause() {
     if (this.state.status !== 'playing' || !this.supportsPause) return false;
-    this.speech.pause?.();
+    const token = this._token;
+    try { await this.speech.pause(); }
+    catch { return this._fail(token, PLAYER_ERRORS.TTS_ERROR, 'Không tạm dừng được. Hãy phát lại.', this.state.poiId, this.state.locale); }
+    if (token !== this._token) return false;
     this._set({ status: 'paused' });
     return true;
   }
 
-  resume() {
+  async resume() {
     if (this.state.status !== 'paused') return false;
-    this.speech.resume?.();
+    const token = this._token;
+    try { await this.speech.resume(); }
+    catch { return this._fail(token, PLAYER_ERRORS.TTS_ERROR, 'Không tiếp tục được. Hãy phát lại.', this.state.poiId, this.state.locale); }
+    if (token !== this._token) return false;
     this._set({ status: 'playing' });
     return true;
   }
 
   stop({ silent = false } = {}) {
     this._token++;
+    this._clearTimeout(this._watchdog);
     this._cancelPending?.();
-    try {
-      this.speech.stop?.();
-    } catch {
-      /* bỏ qua */
-    }
+    const stopped = this._haltSpeech();
     if (!silent) this._set({ ...IDLE });
+    return stopped;
+  }
+
+  _haltSpeech() {
+    let current;
+    try { current = Promise.resolve(this.speech.stop?.()).then(() => true, () => false); }
+    catch { current = Promise.resolve(false); }
+    const combined = Promise.all([this._stopping ?? true, current]).then((results) => results.every(Boolean));
+    this._stopping = combined;
+    combined.then(() => { if (this._stopping === combined) this._stopping = null; });
+    return combined;
   }
 }

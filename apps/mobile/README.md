@@ -25,4 +25,6 @@ Tab Tự phát có hai lựa chọn độc lập: ngôn ngữ giao diện VI/EN 
 
 Logic địa lý hiện yêu cầu ở trong vùng 5 giây, và chỉ phát lại sau khi đã rời vùng rồi quay lại ít nhất 600 giây sau lần phát trước. Khoảng cách giữa hai mẫu GPS hợp lệ quá 15 giây làm tính lại khoảng xác nhận; mẫu không có độ chính xác bị bỏ. Đây là các giả định cần nhóm xác nhận và thử thực địa. Với Android build riêng, bản đồ có thể cần cấu hình khóa Google Maps; không đưa khóa vào Git.
 
-API heartbeat/rút đồng ý thống kê chưa có trong backend. Mobile hiện không gửi thống kê, không hiện yêu cầu đồng ý mới và thông báo rõ trong tab Riêng tư. Một yêu cầu rút đồng ý tồn đọng từ bản trước được giữ lại; chưa thể xác nhận server đã nhận cho đến khi backend hỗ trợ.
+Backend đã có heartbeat/revoke tại `/api/v1/analytics/**` và alias `/api/analytics/**`, nhưng mobile chưa nối adapter UC12 (`createAnalyticsApi` trả `UNSUPPORTED`). Mobile không gửi thống kê, không hiện yêu cầu đồng ý mới và thông báo rõ trong tab Riêng tư. Một yêu cầu rút tồn đọng từ bản trước được giữ lại; không được xác nhận server đã nhận cho đến khi nhóm nối adapter, vòng đời foreground/NetInfo và kiểm thử HTTP thật.
+
+Đợt 04/11 bổ sung chờ native Stop trước khi phát bài thay thế, xử lý lỗi pause/resume, timeout từng đoạn và lựa chọn từ bài thực có; không đổi UI VI/EN theo locale bài. Checklist và tình trạng chưa thử âm thanh/thiết bị ở [Gate 3](../../docs/mobile/testing/day3-gate3-tts.md), kết quả tự động tại [báo cáo tích hợp](../../docs/testing/integration-2026-11-04.md).

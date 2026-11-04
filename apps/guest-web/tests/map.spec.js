@@ -58,8 +58,10 @@ test('mixed valid and malformed API coordinates/IDs do not break map or fitting'
   expect(errors).toEqual([]);
 });
 
-for (const items of [[], [{ id: 'bad', latitude: null, longitude: 0 }]]) {
+for (const items of [[], [{ id: 'bad', name: 'Invalid coordinates', address: 'Fixture', latitude: null, longitude: 0 }]]) {
   test(`empty map with ${items.length} input places provides list fallback in VI/EN`, async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
     await page.route('**/api/v1/pois', (r) => r.fulfill({ json: { items } }));
     await page.goto(`${real}/map`);
     await expect(page.getByText('Chưa có địa điểm có tọa độ hợp lệ', { exact: true })).toBeVisible();
@@ -68,6 +70,8 @@ for (const items of [[], [{ id: 'bad', latitude: null, longitude: 0 }]]) {
     await expect(page.getByText('No places with valid coordinates yet', { exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Back to places', exact: true }).click();
     await expect(page).toHaveURL(`${real}/`);
+    await expect(page.getByRole('heading', { name: 'Explore District 1' })).toBeVisible();
+    expect(errors).toEqual([]);
   });
 }
 
