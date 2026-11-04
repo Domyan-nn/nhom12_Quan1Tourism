@@ -14,8 +14,10 @@ Nền dùng `https://tile.openstreetmap.org/{z}/{x}/{y}.png`, không cần khóa
 
 `VITE_USE_MOCK=true` dùng dữ liệu mẫu có nhãn; `false` dùng `/api/v1` và không tự fallback khi lỗi. Cả hai chế độ vẫn cần mạng để tải tile OSM. POI của API thật phải là `published`; seed mặc định là `draft`. Dùng fixture riêng bên dưới để kiểm thử, không công bố nội dung mẫu lên môi trường vận hành.
 
-Nghe TTS và tích hợp UI consent/thống kê còn chờ triển khai; code analytics hiện có không được tự bật trong đợt Gate 2.
+Trang chi tiết đã nối TTS Web Speech: chỉ dùng giọng khớp ngôn ngữ bài, thiếu giọng/lỗi vẫn giữ văn bản; có Nghe, Dừng, Tạm dừng/Tiếp tục khi engine hỗ trợ và Phát lại khi không hỗ trợ. Đổi bài/ngôn ngữ hoặc rời trang dừng đọc. Test engine giả không xác nhận âm thanh thật.
+
+UC12 đã nối ở chế độ API thật: banner/cài đặt VI/EN, chỉ sinh UUID/gửi heartbeat sau đồng ý; đồng bộ tab, chờ gửi lại yêu cầu rút khi offline/lỗi máy chủ. Mock không tạo phiên hoặc gửi thống kê, trang Privacy giải thích rõ chế độ này. Base API phải kết thúc bằng `/api/v1`; client thêm `/analytics/heartbeat` hoặc `/analytics/revoke`. Chi tiết lưu dữ liệu, lịch dọn và giới hạn ở hợp đồng API.
 
 ## Kiểm thử
 
-Từ gốc repo: `npm.cmd --prefix apps/guest-web test -- --configLoader runner`, `npm.cmd --prefix apps/guest-web run build -- --configLoader runner` và `npm.cmd --prefix apps/guest-web run test:browser -- --reporter=line`. Browser test dùng FastAPI/SQLite tạm và Edge; tất cả tile được chặn và thay bằng ảnh fixture, không phụ thuộc OSM. Các ca mạng lỗi/tọa độ sai dùng response giả lập có ghi rõ trong test; ca published/draft/hidden và ẩn sau khi tải dùng backend thật. Xem [kết quả và giới hạn](../../docs/testing/gate2-integration-2026-11-03.md).
+Từ gốc repo: `npm.cmd --prefix apps/guest-web test`, `npm.cmd --prefix apps/guest-web run build` và `npm.cmd --prefix apps/guest-web run test:browser -- --reporter=line`. Browser test dùng FastAPI/SQLite tạm và Edge; các ca chức năng bản đồ dùng tile ảnh fixture, TTS dùng engine giả ở `tests/support/speech.js`. Các ca mạng lỗi/tọa độ sai dùng response giả lập; ca published/draft/hidden, UC12 và CRUD Admin dùng backend thật. Chẩn đoán OSM thật mặc định bị bỏ qua, bật bằng `SAIGON_TEST_REAL_OSM=1`; kết quả tile và fallback được ghi riêng. Xem [kết quả và giới hạn](../../docs/testing/integration-2026-11-04.md).

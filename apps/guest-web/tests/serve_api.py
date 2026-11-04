@@ -38,6 +38,14 @@ if __name__ == '__main__':
         from app.main import app
         from fastapi import HTTPException
 
+        @app.get('/__test/analytics/{session_id}')
+        def analytics_test_state(session_id: str):
+            with closing(sqlite3.connect(database)) as db:
+                row = db.execute('SELECT consent_granted FROM anonymous_sessions WHERE session_id=?', (session_id,)).fetchone()
+                linked = db.execute('SELECT count(*) FROM visit_events WHERE session_id=?', (session_id,)).fetchone()[0]
+                total = db.execute('SELECT count(*) FROM visit_events').fetchone()[0]
+            return {'consent': row[0] if row else None, 'linked_visits': linked, 'total_visits': total}
+
         # Fixture-only control of this disposable DB; never imported by production.
         @app.put('/__test/pois/{poi_id}/status')
         def change_test_status(poi_id: str, status: str):

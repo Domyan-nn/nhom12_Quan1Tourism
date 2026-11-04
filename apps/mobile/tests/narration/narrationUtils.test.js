@@ -91,6 +91,6 @@ describe('NarrationPlayer', () => {
     const p = new NarrationPlayer({ speech: fakeSpeech(), supportsPause: false });
     await p.play({ text: 'a', locale: 'vi' });
     p.state = { ...p.state, status: 'playing' };
-    expect(p.pause()).toBe(false);
+    expect(await p.pause()).toBe(false);
   });
 });

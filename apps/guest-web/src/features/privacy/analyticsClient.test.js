@@ -21,7 +21,7 @@ beforeEach(async () => {
   vi.stubGlobal('fetch', fetchMock);
   mod = await import('./analyticsClient.js');
 });
-afterEach(() => { if (dispose) dispose(); dispose = undefined; vi.useRealTimers(); vi.unstubAllGlobals(); });
+afterEach(() => { if (dispose) dispose(); dispose = undefined; vi.restoreAllMocks(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe('BR13 – chỉ thu khi đồng ý', () => {
   it('chưa chọn: không tạo mã, không gửi gì', async () => {
@@ -127,5 +127,100 @@ describe('BR18 – rút đồng ý', () => {
     expect(mod.getConsent()).toBe('denied');
     await vi.advanceTimersByTimeAsync(120_000);
     expect(calls('/heartbeat')).toHaveLength(1);
+  });
+});
+
+describe('tích hợp, lỗi lưu trữ và phản hồi đến muộn', () => {
+  it('dùng đúng base /api/v1, không ghép lặp /api', async () => {
+    init(); mod.grantConsent();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/analytics/heartbeat');
+    await mod.withdrawConsent();
+    expect(calls('/revoke')[0][0]).toBe('/api/v1/analytics/revoke');
+  });
+  it('mock bị vô hiệu hóa: không sinh mã hoặc gửi cả yêu cầu rút đang chờ', async () => {
+    localStorage.setItem('ss.analytics.pendingRevoke', '3f2b1c9e-8a44-4d51-9b0c-6a1f2e7d9c10');
+    dispose = mod.initAnalytics({ enabled: false });
+    expect(mod.grantConsent()).toBe(false);
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mod.getSessionId()).toBeNull();
+  });
+  it('lỗi máy chủ được thử lại sau 30 giây dù mạng không đổi', async () => {
+    init(); mod.grantConsent();
+    fetchMock.mockImplementation(async () => ({ ok: false, status: 503 }));
+    await mod.withdrawConsent();
+    expect(mod.hasPendingRevoke()).toBe(true);
+    fetchMock.mockImplementation(async () => ({ ok: true, status: 204 }));
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(calls('/revoke')).toHaveLength(2);
+    expect(mod.hasPendingRevoke()).toBe(false);
+  });
+  it('không đồng ý lại và ghi đè mã chờ rút khi offline', async () => {
+    init(); mod.grantConsent();
+    const sid = mod.getSessionId();
+    online = false;
+    await mod.withdrawConsent();
+    expect(mod.grantConsent()).toBe(false);
+    expect(localStorage.getItem('ss.analytics.pendingRevoke')).toBe(sid);
+    expect(mod.getSessionId()).toBeNull();
+  });
+  it('phản hồi 409 của mã cũ không tắt lần đồng ý mới', async () => {
+    let finish;
+    fetchMock.mockImplementation((url) => url.endsWith('/heartbeat')
+      ? new Promise((resolve) => { finish = resolve; }) : Promise.resolve({ ok: true, status: 204 }));
+    init(); mod.grantConsent();
+    const old = mod.getSessionId();
+    const finishOld = finish;
+    await mod.withdrawConsent();
+    mod.grantConsent();
+    const current = mod.getSessionId();
+    expect(current).not.toBe(old);
+    finishOld({ ok: false, status: 409 });
+    finish({ ok: true, status: 204 });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(mod.getSessionId()).toBe(current);
+    expect(mod.getConsent()).toBe('granted');
+  });
+  it('heartbeat chậm không tạo chồng nhiều request', async () => {
+    let finish;
+    fetchMock.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    init(); mod.grantConsent();
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(calls('/heartbeat')).toHaveLength(1);
+    finish({ ok: true, status: 204 });
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(calls('/heartbeat')).toHaveLength(2);
+  });
+  it('xác nhận rút cũ không xóa yêu cầu mới từ tab khác', async () => {
+    let finish;
+    init(); mod.grantConsent();
+    fetchMock.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    const withdrawing = mod.withdrawConsent();
+    const other = 'a1b2c3d4-0000-4000-8000-000000000002';
+    localStorage.setItem('ss.analytics.pendingRevoke', other);
+    finish({ ok: true, status: 204 });
+    await withdrawing;
+    expect(localStorage.getItem('ss.analytics.pendingRevoke')).toBe(other);
+    expect(mod.hasPendingRevoke()).toBe(true);
+  });
+  it('không gửi khi localStorage từ chối ghi', async () => {
+    init();
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('storage denied'); });
+    expect(mod.grantConsent()).toBe(false);
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mod.getConsent()).toBe('denied');
+    expect(mod.getConsentError()).toBe('storageUnavailable');
+  });
+  it('đóng vòng đời ứng dụng dừng mọi heartbeat, khởi động lại hoạt động', async () => {
+    init(); mod.grantConsent();
+    await vi.advanceTimersByTimeAsync(0);
+    dispose();
+    await vi.advanceTimersByTimeAsync(90_000);
+    expect(calls('/heartbeat')).toHaveLength(1);
+    init();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(calls('/heartbeat')).toHaveLength(2);
   });
 });

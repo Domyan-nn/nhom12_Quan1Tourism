@@ -1,6 +1,6 @@
 # Hợp đồng API – Saigon Stories Quận 1
 
-Cập nhật 02/11/2026 theo mã FastAPI. Tài liệu này là nguồn chung cho client; [api-design.md](analysis-design/api-design.md) mô tả phạm vi và dẫn về đây. Bản đề xuất ngày 01/11 chưa có xác nhận nhóm; các đường dẫn cũ `/api/public/**`, `/api/admin/auth/**`, `/api/health` không phải API đang chạy.
+Cập nhật 04/11/2026 theo mã FastAPI. Tài liệu này là nguồn chung cho client; [api-design.md](analysis-design/api-design.md) mô tả phạm vi và dẫn về đây. Bản đề xuất ngày 01/11 chưa có xác nhận nhóm; các đường dẫn cũ `/api/public/**`, `/api/admin/auth/**`, `/api/health` không phải API đang chạy.
 
 ## 1. Quy ước đã triển khai
 
@@ -84,7 +84,18 @@ Client xử lý theo code/status, không phân tích chuỗi message. Message ba
 
 Chưa triển khai rate limiting, nên không cam kết 429. Chưa ánh xạ SQLite lock thành 503; hiện thuộc DATABASE_ERROR.
 
-## 5. Schema analytics đã có, API chưa có
+## 5. Analytics UC12 đã tích hợp
+
+Không cần đăng nhập. Heartbeat đầu tiên là khai báo đồng ý của client; backend không có endpoint tạo phiên trước đồng ý. Client có trách nhiệm không tạo UUID/gọi heartbeat trước lựa chọn của khách. Chỉ ứng dụng khách gửi heartbeat, thao tác Admin không được tính.
+
+| Phương thức, đường dẫn | Request | Kết quả |
+| --- | --- | --- |
+| POST /api/v1/analytics/heartbeat | `{"session_id":"<uuid-v4>"}` | 204 không body; 409 nếu mã đã rút đồng ý |
+| POST /api/v1/analytics/revoke | Cùng body | 204 không body, idempotent kể cả khi chưa có heartbeat |
+
+Giữ hai alias `/api/analytics/heartbeat` và `/api/analytics/revoke` của An, cùng nghiệp vụ và database. UUID v4 đúng variant, đủ dấu gạch nối; đầu vào chữ hoa được chuẩn hóa chữ thường. UUID sai phiên bản/variant trả 422 thay vì lỗi SQLite 500. Lỗi phiên đã rút giữ `{"detail":"session_revoked"}` cho client cũ và thêm envelope `error` với `code: "session_revoked"`.
+
+Mỗi request dùng kết nối riêng, bật khóa ngoại, busy timeout 10 giây. Giao dịch `BEGIN IMMEDIATE` tuần tự hóa heartbeat/revoke: tín hiệu đầu tiên ghi một lượt; từ 30 phút không có tín hiệu thì ghi lượt mới, heartbeat liên tục chỉ tăng `last_seen_at`. Revoke tách mã khỏi lượt cũ, giữ tổng số lượt và đặt `consent_granted=0`; nếu mã chưa tồn tại thì tạo dấu thu hồi để chặn heartbeat đến muộn. Không có cơ chế kích hoạt lại mã đã thu hồi khi dấu còn trong database; đồng ý lại dùng UUID mới.
 
 DDL chuẩn là [002_analytics_constraints.sql](../backend/migrations/002_analytics_constraints.sql). `001_initial.sql` được giữ làm lịch sử; init mới chạy 001 rồi 002. [schema_analytics.sql](../backend/data/schema_analytics.sql) chỉ còn truy vấn tham chiếu, không còn DDL song song.
 
@@ -93,28 +104,28 @@ DDL chuẩn là [002_analytics_constraints.sql](../backend/migrations/002_analyt
 - `created_at`, `last_seen_at`, `started_at`: UTC hợp lệ theo `YYYY-MM-DDTHH:MM:SS.mmmZ`, 24 ký tự; kiểm tra cả ngày giờ hợp lệ, không chỉ độ dài; `last_seen_at >= created_at`.
 - `visit_events.session_id` cho phép NULL; giá trị khác NULL phải tham chiếu phiên tồn tại; ON DELETE SET NULL.
 - Chỉ mục: `idx_anonymous_sessions_last_seen_at`, `idx_visit_events_session_id`, `idx_visit_events_started_at`.
-- Nâng cấp dùng [migrate_db.py](../backend/scripts/migrate_db.py) theo [hướng dẫn](../backend/README.md#nâng-cấp-schema-thống-kê). Không tự sửa UUID, đổi thời gian hoặc xóa dòng sai.
+- Nâng cấp dùng [migrate_db.py](../backend/scripts/migrate_db.py) theo [hướng dẫn](../RUNNING.md). Không tự sửa UUID, đổi thời gian hoặc xóa dòng sai.
 
-## 6. Chức năng đề xuất, chưa triển khai
+Không đổi schema trong đợt tích hợp này. API kiểm tra schema analytics phiên bản 2 trước khi dọn dữ liệu; thiếu schema thì dừng khởi động và chỉ dẫn nâng cấp, không tự migration. Chỉ dùng script kiểm tra/sao lưu/nâng cấp đang có; xem RUNNING.
 
-Các đường dẫn dưới đây là phương án thống nhất để nhóm review sau; không phải route khả dụng và không phải xác nhận hoàn tất WBS-08/WBS-09.
+Retention: giữ từ 00:00 Việt Nam của hôm nay trừ 29 ngày; mốc đúng ranh giới được giữ. Xóa lượt có `started_at` và phiên/dấu thu hồi có `last_seen_at` nhỏ hơn mốc. Dấu thu hồi không đổi `last_seen_at` khi revoke; sau khi hết thời hạn và bị dọn, server không còn nhớ mã cũ. Guest phải xóa mã đang dùng và tạo mã mới sau lần đồng ý mới.
 
-| Nhóm | Đề xuất cho giai đoạn tiếp theo |
-| --- | --- |
-| Analytics | POST /api/v1/analytics/heartbeat: body `{"session_id":"<uuid-v4>"}`; dự kiến 200 `{"session_id":"...","visit_recorded":true,"server_time":"..."}` |
-| Rút đồng ý | POST /api/v1/analytics/revoke: cùng body; dự kiến 204 idempotent |
-| Thống kê Admin | GET /api/v1/admin/stats/visits?from=YYYY-MM-DD&to=YYYY-MM-DD và GET /api/v1/admin/stats/active |
-| Quản lý POI, bài, công bố | CRUD dưới /api/v1/admin/pois; request/response chi tiết cần review trước triển khai |
-| Ảnh | Upload và phục vụ ảnh cần thiết kế riêng |
+FastAPI lifespan dọn lúc khởi động, sau đó tác vụ trong tiến trình chờ mỗi 00:00 Việt Nam; nếu lỗi thì ghi log và thử lại sau 60 giây. Không có tiến trình API thì lịch không chạy, lần khởi động sau dọn bù. Mỗi worker có thể chạy lịch, các giao dịch SQLite tuần tự hóa việc dọn. Đã kiểm thử startup và vòng lịch với thời gian tiêm vào, không phải quan sát máy chủ vận hành liên tục qua nhiều ngày. Không có cron hoặc dịch vụ scheduler ngoài API.
 
-Quy tắc mục tiêu từ PRD: chỉ gửi sau đồng ý; heartbeat 30 giây khi hiển thị/có mạng, lượt mới sau gián đoạn từ 30 phút; hoạt động là phiên trong 90 giây; ngày VN, cửa sổ 30 ngày; rút đồng ý dừng gửi, loại khỏi active và tách mã khỏi lượt cũ; lỗi thống kê không giả thành số 0. Chưa có API, lịch dọn dữ liệu, dashboard hay cam kết thời hạn lưu đang vận hành. Cần chốt TTL dấu thu hồi, rate limiting, request/response và kiểm thử đồng thời trước khi bật.
+Guest thật dùng cùng `VITE_API_BASE_URL` với Public (mặc định `/api/v1`), không ghép thêm `/api`. Banner/cài đặt VI/EN; heartbeat mỗi 30 giây chỉ khi visible và online. Rút đồng ý dừng vòng lặp, lưu `ss.analytics.pendingRevoke` trước khi xóa mã, chỉ xóa mã chờ sau 2xx; thử lại khi có mạng/hiển thị/khởi động và mỗi 30 giây. Không cho đồng ý lại trước khi yêu cầu rút xong để không ghi đè mã chờ. localStorage bị chặn thì dừng thống kê và báo; mã chờ chỉ còn trong bộ nhớ có thể mất khi đóng trang. Mock không tạo/gửi thống kê.
 
-Mobile còn adapter `contract` cho đường dẫn cũ và analytics gọi `/api/analytics/**`; các route đó không tồn tại. Trong đợt này chỉ guest web được tích hợp; mobile dùng public style `v1` khi thử API hiện tại, analytics vẫn chờ triển khai.
+## 6. Phần còn chờ triển khai
+
+Upload và phục vụ ảnh cần thiết kế riêng, nằm ngoài phạm vi đợt này. UC09 và UC10–UC11 đã được An đưa lên `main` trong commit `aa0d2d7`, được giữ khi rebase để push; xem mục 9.
+
+Rate limiting chưa triển khai. Không suy từ test tích hợp UC12 sang nghiệm thu đầy đủ dashboard hoặc môi trường vận hành.
+
+Mobile còn adapter public `contract` cho đường dẫn cũ; khi dùng backend hiện tại phải chọn style `v1`. `createAnalyticsApi` vẫn trả `UNSUPPORTED`, không gửi HTTP; PrivacyScreen chỉ rút lựa chọn cục bộ/giữ yêu cầu chờ. Các alias server cũ đã có nhưng mobile chưa nối UC12, không được báo gửi/rút thống kê thành công. Phần nối mobile để nhóm xử lý ở giai đoạn tiếp theo.
 
 ## 7. Xác nhận nhóm còn cần
 
 Phần Public/Admin ở trên ghi nhận mã đã có, không giả định đã có phê duyệt sản phẩm. Nhóm cần review ràng buộc analytics chặt hơn trước khi áp dụng lên database riêng, các đề xuất mục 6 và bộ locale/nội dung được kiểm duyệt. Chưa có xác nhận thành viên nào được thêm vào tài liệu.
-# Admin: địa điểm và thuyết minh (03/11/2026)
+## 8. Admin: địa điểm và thuyết minh (UC07–UC08)
 
 Các endpoint dưới đây yêu cầu `Authorization: Bearer <token>`; phiên thiếu, sai, hết hạn hoặc bị thu hồi trả 401 `AUTH_REQUIRED`. Response lỗi dạng `{ "error": { "code": "...", "message": "...", "details": [] } }`. Lỗi 422 không trả dữ liệu đã nhập.
 
@@ -123,4 +134,19 @@ Các endpoint dưới đây yêu cầu `Authorization: Bearer <token>`; phiên t
 * `DELETE /api/v1/admin/pois/{id}` trả 204, xóa các thuyết minh liên quan theo khóa ngoại CASCADE; không tồn tại trả 404.
 * `GET /api/v1/admin/pois/{id}/narrations` trả `{ "items": [ ... ] }`. `POST` cùng đường dẫn nhận `{ "locale": "vi", "title": "Tiêu đề", "body": "Nội dung" }`, trả 201; mã được chuẩn hóa chữ thường, gồm 2–3 chữ cái và các phần tùy chọn phân cách bằng dấu gạch ngang. Mỗi ngôn ngữ chỉ có một bài cho một địa điểm; trùng trả 409 `NARRATION_DUPLICATE`. `PUT /api/v1/admin/pois/{id}/narrations/{narration_id}` nhận `{ "title": "...", "body": "..." }`, giữ nguyên locale và trả bài đã lưu. Thiếu địa điểm hoặc bài trả 404; tiêu đề/nội dung rỗng hoặc sai định dạng trả 422.
 
-Không có API upload hoặc phục vụ ảnh mới; URL do quản trị viên cung cấp. Không có endpoint xóa riêng bài hay thay đổi trạng thái công bố trong phạm vi này. Không thay schema hoặc chạy migration; API công khai giữ nguyên.
+Không có API upload hoặc phục vụ ảnh mới; URL do quản trị viên cung cấp. Không có endpoint xóa riêng bài. Thay đổi trạng thái công bố từ commit mới của An được ghi ở mục 9. Không thay schema hoặc chạy migration; API công khai giữ nguyên.
+
+## 9. Phần ngày 04/11 của An được giữ khi rebase
+
+Các route sau đã có từ `aa0d2d7`, yêu cầu cùng phiên Admin hợp lệ; không phải chức năng Codex mở rộng từ yêu cầu tồn đọng ngày 03/11.
+
+| Phương thức, đường dẫn | Hành vi |
+| --- | --- |
+| POST /api/v1/admin/pois/{id}/publish | Draft/hidden thành published sau khi kiểm tra địa điểm và có ít nhất một bài hợp lệ; 200 trả POI; 422 POI_NOT_PUBLISHABLE kèm danh sách mục thiếu |
+| POST /api/v1/admin/pois/{id}/hide | Published thành hidden; 200 trả POI; trạng thái chuyển sai trả 409 INVALID_STATUS_TRANSITION |
+| GET /api/v1/admin/stats/visits | Không tham số: hôm nay/7 ngày; lọc bằng cặp `date_from=YYYY-MM-DD&date_to=YYYY-MM-DD`, nằm trong cửa sổ 30 ngày; sai trả 422 INVALID_DATE_RANGE |
+| GET /api/v1/admin/stats/active | Trả `active_sessions`, `window_seconds:90`, `measured_at`, `note`; chỉ phiên chưa rút có `now-90s < last_seen <= now` |
+
+Visit response gồm `timezone`, `measured_at`, `today`, `last_7_days`, `range` (null hoặc `{from,to,total,days:[{date,visits}]}`), `note`. Admin Dashboard của An được giữ nguyên, gồm tự làm mới active 30 giây, lọc ngày và trạng thái Không khả dụng khi lỗi. Lỗi publish giữ `error.details`, đồng thời lỗi UC12 vẫn giữ detail session_revoked tương thích.
+
+Giữ hàm `run_cleanup_once(database=None)` và cờ `SAIGON_DISABLE_CLEANUP=1` của An. Cờ này tắt cả dọn startup và lịch tự động; mặc định không đặt cờ. Lịch đã ghép thống nhất thành một tác vụ 00:00 Việt Nam, không chạy thêm vòng 6 giờ song song. Khi vận hành chính sách giữ 30 ngày, không bật cờ tắt dọn.

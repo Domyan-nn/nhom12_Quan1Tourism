@@ -1,13 +1,13 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 import {
-  getConsent, subscribe, initAnalytics,
+  getConsent, subscribe, getConsentError,
   grantConsent, declineConsent, withdrawConsent, hasPendingRevoke,
 } from './analyticsClient';
 
-// Dùng một lần ở gốc ứng dụng để khởi động heartbeat; mọi nơi khác chỉ đọc trạng thái.
+// AppLayout owns the analytics lifecycle; controls only subscribe.
 export function useAnalyticsConsent() {
-  useEffect(() => initAnalytics(), []);
   const consent = useSyncExternalStore(subscribe, getConsent, () => 'unset');
   const pendingRevoke = useSyncExternalStore(subscribe, hasPendingRevoke, () => false);
-  return { consent, pendingRevoke, grant: grantConsent, decline: declineConsent, withdraw: withdrawConsent };
+  const error = useSyncExternalStore(subscribe, getConsentError, () => null);
+  return { consent, pendingRevoke, error, grant: grantConsent, decline: declineConsent, withdraw: withdrawConsent };
 }

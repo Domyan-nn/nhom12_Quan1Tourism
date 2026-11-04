@@ -59,8 +59,8 @@ export class WebSpeechPlayer {
   constructor({ synth, Utterance, setTimeoutFn = setTimeout, clearTimeoutFn = clearTimeout, voicesWaitMs = 1500, startTimeoutMs = 5000, maxChunk = 180 }) {
     this.synth = synth ?? null;
     this.Utterance = Utterance ?? null;
-    this._setTimeout = setTimeoutFn;
-    this._clearTimeout = clearTimeoutFn;
+    this._setTimeout = (fn, ms) => setTimeoutFn(fn, ms);
+    this._clearTimeout = (id) => clearTimeoutFn(id);
     this.voicesWaitMs = voicesWaitMs;
     this.startTimeoutMs = startTimeoutMs;
     this.maxChunk = maxChunk;
@@ -119,7 +119,9 @@ export class WebSpeechPlayer {
     if (chunks.length === 0) return this._fail(token, TTS_ERRORS.EMPTY_TEXT, locale, key);
 
     this._set({ status: 'loading', errorCode: null, locale, key });
-    const voice = pickVoice(await this._loadVoices(), locale);
+    let voice;
+    try { voice = pickVoice(await this._loadVoices(), locale); }
+    catch { return this._fail(token, TTS_ERRORS.TTS_ERROR, locale, key); }
     if (token !== this._token) return false; // khách đã dừng hoặc đổi bài trong lúc chờ
     if (!voice) return this._fail(token, TTS_ERRORS.NO_VOICE, locale, key);
 
@@ -129,38 +131,46 @@ export class WebSpeechPlayer {
       const settle = (ok) => {
         if (settled) return;
         settled = true;
-        this._clearTimeout(watchdog);
+        if (this._cancelPending === cancelPending) this._cancelPending = null;
         resolve(ok);
       };
+      const cancelPending = () => settle(false);
+      this._cancelPending = cancelPending;
       const fail = (code) => {
-        try { this.synth.cancel(); } catch { /* bỏ qua */ }
+        if (token !== this._token) return settle(false);
+        this._clearTimeout(this._watchdog);
         this._fail(token, code, locale, key);
+        this._token++; // invalidate callbacks before cancel can fire events
+        try { this.synth.cancel(); } catch { /* bỏ qua */ }
         settle(false);
       };
-      const watchdog = this._setTimeout(() => {
-        if (!started && token === this._token) fail(TTS_ERRORS.TTS_ERROR);
-      }, this.startTimeoutMs);
 
       const speak = (i) => {
         if (token !== this._token) return settle(false);
-        const u = new this.Utterance(chunks[i]);
+        this._clearTimeout(this._watchdog);
+        this._watchdog = this._setTimeout(() => fail(TTS_ERRORS.TTS_ERROR), this.startTimeoutMs);
+        let u;
+        try { u = new this.Utterance(chunks[i]); }
+        catch { fail(TTS_ERRORS.TTS_ERROR); return; }
         u.voice = voice;
         u.lang = voice.lang;
         u.onstart = () => {
-          if (token !== this._token || started) return;
+          if (token !== this._token) return;
+          this._clearTimeout(this._watchdog);
+          if (started) return;
           started = true;
           this._set({ status: 'playing' });
           settle(true);
         };
         u.onend = () => {
           if (token !== this._token) return;
+          this._clearTimeout(this._watchdog);
           if (i + 1 < chunks.length) speak(i + 1);
-          else this._set({ ...IDLE });
+          else { this._set({ ...IDLE }); settle(started); }
         };
         u.onerror = (e) => {
           if (token !== this._token) return;
-          // 'canceled'/'interrupted' xảy ra khi chính ta gọi cancel(): không phải lỗi.
-          if (e?.error === 'canceled' || e?.error === 'interrupted') return;
+          // Our own cancel has already invalidated token; a current interruption is a failure.
           fail(TTS_ERRORS.TTS_ERROR);
         };
         try {
@@ -190,13 +200,23 @@ export class WebSpeechPlayer {
 
   resume() {
     if (this.state.status !== 'paused') return false;
-    try { this.synth.resume(); } catch { /* bỏ qua */ }
+    try {
+      this.synth.resume();
+      if (this.synth.paused) throw new Error('Still paused');
+    } catch {
+      const { locale, key } = this.state;
+      this.stop({ silent: true });
+      this._set({ status: 'error', errorCode: TTS_ERRORS.PAUSE_UNSUPPORTED, locale, key });
+      return false;
+    }
     this._set({ status: 'playing' });
     return true;
   }
 
   stop({ silent = false } = {}) {
     this._token++;
+    this._clearTimeout(this._watchdog);
+    this._cancelPending?.();
     try { this.synth?.cancel?.(); } catch { /* bỏ qua */ }
     if (!silent) this._set({ ...IDLE });
   }

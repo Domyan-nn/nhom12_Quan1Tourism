@@ -57,3 +57,24 @@ class PlaceAPITests(unittest.TestCase):
         token = self.login()
         self.client.post('/api/v1/admin/logout', headers=self.headers(token))
         self.assertEqual(self.client.get(base, headers=self.headers(token)).status_code, 401)
+
+    def test_boundaries_edit_validation_and_narration_ownership(self):
+        base = '/api/v1/admin/pois'
+        headers = self.headers(self.login())
+        body = {'category_id': stable_id('category:history'), 'name': 'Boundary place', 'address': 'Address',
+                'latitude': -90, 'longitude': 180, 'radius_m': 20}
+        first = self.client.post(base, headers=headers, json=body).json()
+        second = self.client.post(base, headers=headers, json={**body, 'latitude': 90, 'longitude': -180, 'radius_m': 1000}).json()
+        path = base + '/' + first['id']
+        for key, value in [('radius_m', 20.5), ('radius_m', True), ('latitude', '10.7'), ('address', ' '), ('category_id', 'missing')]:
+            self.assertEqual(self.client.put(path, headers=headers, json={**body, key: value}).status_code, 422)
+        self.assertEqual(self.client.get(path, headers=headers).json()['radius_m'], 20)
+        narration = self.client.post(path + '/narrations', headers=headers,
+                                     json={'locale': ' VI ', 'title': 'Title', 'body': 'Body'}).json()
+        self.assertEqual(narration['locale'], 'vi')
+        other_path = base + '/' + second['id'] + '/narrations/' + narration['id']
+        self.assertEqual(self.client.put(other_path, headers=headers, json={'title': 'Changed', 'body': 'Changed'}).status_code, 404)
+        for payload in ({'title': ' ', 'body': 'Body'}, {'title': 'Title', 'body': ' '}):
+            self.assertEqual(self.client.put(path + '/narrations/' + narration['id'], headers=headers, json=payload).status_code, 422)
+        self.assertEqual(self.client.get(path + '/narrations', headers=headers).json()['items'][0]['body'], 'Body')
+        self.assertEqual(self.client.get('/api/v1/pois/' + second['id']).status_code, 404)

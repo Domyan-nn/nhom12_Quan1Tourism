@@ -1,11 +1,9 @@
 """FastAPI entry point."""
 
 import asyncio
-import contextlib
-import logging
 import os
 import sqlite3
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -13,45 +11,32 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.routes import auth, categories, public, admin_pois, admin_stats, analytics
-from app.db.connection import configured_database, connect, validate_category_schema
-from app.services import analytics_service
-
-
-CLEANUP_INTERVAL_SECONDS = 6 * 60 * 60
-log = logging.getLogger("saigon.cleanup")
+from app.db.connection import configured_database, validate_category_schema, validate_analytics_schema
+from app.services.analytics_retention import cleanup_database, retention_loop
 
 
 def run_cleanup_once(database=None) -> dict:
     """Xóa lượt/phiên thống kê quá 30 ngày theo ngày Asia/Ho_Chi_Minh (UC10, mục 5.4)."""
-    conn = connect(database or configured_database())
-    conn.isolation_level = None  # service tự quản lý BEGIN IMMEDIATE
-    try:
-        return analytics_service.cleanup_expired(conn)
-    finally:
-        conn.close()
-
-
-async def _cleanup_loop():
-    while True:
-        try:
-            result = await asyncio.to_thread(run_cleanup_once)
-            log.info("analytics cleanup: %s", result)
-        except Exception:  # không để lỗi dọn dẹp làm dừng API
-            log.exception("analytics cleanup failed")
-        await asyncio.sleep(CLEANUP_INTERVAL_SECONDS)
+    return cleanup_database(database or configured_database())
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    validate_category_schema(configured_database())
-    task = None if os.environ.get("SAIGON_DISABLE_CLEANUP") == "1" else asyncio.create_task(_cleanup_loop())
+    database = configured_database()
+    validate_category_schema(database)
+    validate_analytics_schema(database)
+    # Existing schema only: never initialize or migrate a developer database.
+    retention = None
+    if os.environ.get("SAIGON_DISABLE_CLEANUP") != "1":
+        await asyncio.to_thread(run_cleanup_once, database)
+        retention = asyncio.create_task(retention_loop(database))
     try:
         yield
     finally:
-        if task:
-            task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await task
+        if retention:
+            retention.cancel()
+            with suppress(asyncio.CancelledError):
+                await retention
 
 
 app = FastAPI(title="Saigon Stories API", version="0.1.0", lifespan=lifespan)
@@ -76,6 +61,7 @@ ERROR_MESSAGES = {
     "POI_NOT_PUBLISHABLE": "Địa điểm chưa đủ điều kiện công bố.",
     "INVALID_STATUS_TRANSITION": "Trạng thái hiện tại không cho phép thao tác này.",
     "INVALID_DATE_RANGE": "Khoảng ngày không hợp lệ hoặc ngoài 30 ngày gần nhất.",
+    "session_revoked": "Phiên thống kê đã rút đồng ý.",
 }
 
 
@@ -85,8 +71,11 @@ async def http_error(request: Request, exc: StarletteHTTPException):
     if isinstance(detail, dict):
         detail, details = detail.get("code"), list(detail.get("details", []))
     code = detail if isinstance(detail, str) and detail in ERROR_MESSAGES else "HTTP_ERROR"
-    return JSONResponse(status_code=exc.status_code, headers=exc.headers,
-                        content={"error": {"code": code, "message": ERROR_MESSAGES.get(code, "Yêu cầu không thành công."), "details": details}})
+    content = {"error": {"code": code, "message": ERROR_MESSAGES.get(code, "Yêu cầu không thành công."), "details": details}}
+    if code == "session_revoked":
+        # Compatibility with An's original /api/analytics contract.
+        content["detail"] = "session_revoked"
+    return JSONResponse(status_code=exc.status_code, headers=exc.headers, content=content)
 
 
 @app.exception_handler(RequestValidationError)

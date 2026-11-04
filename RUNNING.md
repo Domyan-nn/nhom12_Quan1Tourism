@@ -39,9 +39,11 @@ $env:SAIGON_DATABASE = (Resolve-Path -LiteralPath $db).Path
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
-API sẵn sàng khi `http://127.0.0.1:8000/api/v1/health` trả `{"status":"ok"}`. `/docs` hiển thị OpenAPI. Health chỉ xác nhận tiến trình, không kiểm tra database. Backend không tự tạo hay nâng cấp database khi khởi động. Để dùng database demo preview có sẵn, sau khi cài dependency có thể chạy `.\.venv\Scripts\python.exe backend/scripts/start_demo.py`; preview có dữ liệu thử nghiệm `published`, chưa được kiểm duyệt.
+API sẵn sàng khi `http://127.0.0.1:8000/api/v1/health` trả `{"status":"ok"}`. `/docs` hiển thị OpenAPI. Health chỉ xác nhận tiến trình, không kiểm tra database. Backend không tự tạo hay nâng cấp database khi khởi động; yêu cầu danh mục song ngữ và analytics schema phiên bản 2. UC12 dọn bản ghi thống kê hết hạn ngay khi khởi động và mỗi 00:00 Việt Nam trong lúc API chạy; lỗi dọn theo lịch được ghi log và thử lại sau 60 giây. Chính sách là cửa sổ 30 ngày theo ngày Việt Nam, gồm cả lượt và phiên/dấu thu hồi quá hạn; API tắt thì lần khởi động sau dọn bù. Để dùng database demo preview có sẵn, sau khi cài dependency có thể chạy `.\.venv\Scripts\python.exe backend/scripts/start_demo.py`; preview có dữ liệu thử nghiệm `published`, chưa được kiểm duyệt.
 
 ## Chạy Admin và guest web
+
+Khi ghép commit ngày 04/11 của An, giữ cờ `SAIGON_DISABLE_CLEANUP=1` để tắt dọn startup/lịch khi thật sự cần. Mặc định không đặt cờ; không dùng cờ này khi muốn chính sách dọn dữ liệu 30 ngày hoạt động. Hàm `run_cleanup_once(database)` vẫn dùng được; không chạy lên database cá nhân trong kiểm thử.
 
 Mở hai cửa sổ PowerShell khác từ gốc repo. Admin ở `http://127.0.0.1:5174`, guest ở `http://127.0.0.1:5173`. Vite chuyển `/api` về FastAPI trên cổng 8000.
 
@@ -78,7 +80,7 @@ Từ gốc repo, chạy các lệnh sau trong môi trường đã cài dependenc
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s backend/tests -v
-.\.venv\Scripts\python.exe -m pytest backend/tests/test_analytics.py -q --basetemp=backend/.pytest-tmp
+.\.venv\Scripts\python.exe -m pytest backend/tests/test_analytics.py backend/tests/test_analytics_integration.py -q --basetemp=backend/.pytest-tmp
 npm.cmd --prefix apps/admin-web run build
 npm.cmd --prefix apps/guest-web test
 npm.cmd --prefix apps/guest-web run build
@@ -88,6 +90,16 @@ npm.cmd --prefix apps/mobile test -- --runInBand
 ```
 
 Browser test kiểm tra Admin và guest web với dữ liệu tạm; không truy cập database cá nhân. Build tĩnh cần reverse proxy `/api` về FastAPI; guest SPA cần fallback cho route chi tiết. Các lệnh kiểm thử mobile và browser không thay thế kiểm thử GPS/TTS trên thiết bị thật.
+
+Các ca chức năng map dùng tile fixture, ca TTS dùng engine giả. Chẩn đoán tile OSM thật là opt-in, ghi riêng số response thành công/lỗi và ảnh fallback, không phát âm thanh. Để chạy riêng từ gốc repo:
+
+```powershell
+$env:SAIGON_TEST_REAL_OSM = '1'
+npm.cmd --prefix apps/guest-web run test:browser -- --grep 'real OSM diagnostic' --reporter=line
+Remove-Item Env:SAIGON_TEST_REAL_OSM
+```
+
+UC12 chỉ bật ở guest chế độ API thật. Trước đồng ý/từ chối không có UUID/heartbeat. Có thể rút tại Privacy; khi yêu cầu đang chờ xác nhận thì nút đồng ý lại bị khóa, client thử lại khi online/mở lại/hiển thị và mỗi 30 giây. Không xóa localStorage khi đang có yêu cầu rút chờ. Nếu trình duyệt chặn lưu trữ, thống kê dừng và yêu cầu chưa lưu có thể mất khi đóng trang. Mobile vẫn chưa nối API thống kê, không dùng màn hình rút lựa chọn cục bộ làm bằng chứng server đã thu hồi.
 
 Nếu môi trường hạn chế ghi cache/output báo `EPERM`, dùng `--configLoader runner` cho Vite/Vitest và chọn `--outDir dist/<ten-luot-moi>` khi build, `--output=test-results/<ten-luot-moi>` khi chạy Playwright. Nếu vẫn bị chặn, cần quyền ghi từ môi trường thực thi; không xóa thư mục cũ hoặc kết luận build/test thất bại do mã nguồn. Bản đồ web và điều kiện dùng mạng ở [guest README](apps/guest-web/README.md).
 

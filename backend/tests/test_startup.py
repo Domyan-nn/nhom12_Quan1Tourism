@@ -49,6 +49,18 @@ class StartupTests(unittest.TestCase):
                     self.fail('Missing database must not start')
         self.assertFalse(self.database.exists())
 
+    def test_analytics_upgrade_required_before_retention_can_write(self):
+        from scripts.prepare_category_bilingual import upgrade_connection
+        with closing(sqlite3.connect(self.database)) as db:
+            db.executescript((BACKEND / 'migrations' / '001_initial.sql').read_text(encoding='utf-8'))
+            upgrade_connection(db)
+        before = self.database.read_bytes()
+        with patch.dict(os.environ, {'SAIGON_DATABASE': str(self.database)}):
+            with self.assertRaisesRegex(RuntimeError, 'migrate_db.py'):
+                with self.start():
+                    self.fail('Unmigrated analytics must not start')
+        self.assertEqual(self.database.read_bytes(), before)
+
 
 if __name__ == '__main__':
     unittest.main()
