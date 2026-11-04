@@ -2,26 +2,27 @@
 import React from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../components/StateViews';
+import { useSettings } from '../../context/SettingsContext';
 import { colors, radius, space } from '../../theme';
-import { PRIVACY_NOTICE } from './privacyText';
 import { usePrivacy } from './PrivacyContext';
 
 export default function ConsentModal() {
+  const { t } = useSettings();
   const { ready, consent, grant, decline } = usePrivacy();
-  const visible = false; // Backend does not provide analytics yet.
+  const visible = ready && consent === null;
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => {}}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
-          <Text style={styles.h}>Thống kê ẩn danh</Text>
+          <Text style={styles.h}>{t.consentTitle}</Text>
           <ScrollView style={{ maxHeight: 280 }}>
-            {PRIVACY_NOTICE.map((t) => (
-              <Text key={t} style={styles.p}>{t}</Text>
+            {['privacyP1', 'privacyP2', 'privacyP3', 'privacyP4'].map((k) => (
+              <Text key={k} style={styles.p}>{t[k]}</Text>
             ))}
           </ScrollView>
-          <Button title="Đồng ý" onPress={grant} />
-          <Button title="Từ chối" kind="ghost" onPress={decline} />
-          <Text style={styles.foot}>Bạn có thể đổi lựa chọn trong tab Riêng tư.</Text>
+          <Button title={t.consentAccept} onPress={grant} />
+          <Button title={t.consentDecline} kind="ghost" onPress={decline} />
+          <Text style={styles.foot}>{t.consentFoot}</Text>
         </View>
       </View>
     </Modal>

@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DataProvider } from './src/context/DataContext';
 import { SettingsProvider } from './src/context/SettingsContext';
 import { AutoPlayProvider } from './src/features/location/AutoPlayContext';
+import ConsentModal from './src/features/privacy/ConsentModal';
 import { PrivacyProvider } from './src/features/privacy/PrivacyContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
@@ -16,6 +17,7 @@ export default function App() {
             <AutoPlayProvider>
               <StatusBar style="light" />
               <AppNavigator />
+              <ConsentModal />
             </AutoPlayProvider>
           </DataProvider>
         </PrivacyProvider>
