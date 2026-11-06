@@ -1,6 +1,6 @@
 # Hợp đồng API – Saigon Stories Quận 1
 
-Cập nhật 04/11/2026 theo mã FastAPI. Tài liệu này là nguồn chung cho client; [api-design.md](analysis-design/api-design.md) mô tả phạm vi và dẫn về đây. Bản đề xuất ngày 01/11 chưa có xác nhận nhóm; các đường dẫn cũ `/api/public/**`, `/api/admin/auth/**`, `/api/health` không phải API đang chạy.
+Cập nhật 06/11/2026 theo mã FastAPI. Tài liệu này là nguồn chung cho client; [api-design.md](analysis-design/api-design.md) mô tả phạm vi và dẫn về đây. Các đường dẫn cũ `/api/public/**`, `/api/admin/auth/**`, `/api/health` không phải API đang chạy.
 
 ## 1. Quy ước đã triển khai
 
@@ -120,7 +120,7 @@ Upload và phục vụ ảnh cần thiết kế riêng, nằm ngoài phạm vi �
 
 Rate limiting chưa triển khai. Không suy từ test tích hợp UC12 sang nghiệm thu đầy đủ dashboard hoặc môi trường vận hành.
 
-Mobile còn adapter public `contract` cho đường dẫn cũ; khi dùng backend hiện tại phải chọn style `v1`. `createAnalyticsApi` vẫn trả `UNSUPPORTED`, không gửi HTTP; PrivacyScreen chỉ rút lựa chọn cục bộ/giữ yêu cầu chờ. Các alias server cũ đã có nhưng mobile chưa nối UC12, không được báo gửi/rút thống kê thành công. Phần nối mobile để nhóm xử lý ở giai đoạn tiếp theo.
+Mobile đã nối `createAnalyticsApi` từ commit `48a0908`: style `v1` gọi `/api/v1/analytics/**`, style `contract` gọi alias `/api/analytics/**`. Public của backend hiện tại cần style `v1`; `EXPO_PUBLIC_API_BASE_URL` kết thúc `/api`. `PrivacyProvider` theo dõi AppState/NetInfo; chỉ gửi heartbeat khi foreground và online. AsyncStorage giữ consent/session/pending revoke; rút dừng gửi trước thao tác bất đồng bộ, chặn đồng ý lại khi còn yêu cầu chờ, thử lại mỗi 30 giây và khi lifecycle/network phục hồi. Chế độ mock không tạo mã/gọi mạng/xác nhận revoke, giữ yêu cầu rút thật đến khi trở lại API thật và server xác nhận. Mock adapter trả UNSUPPORTED nếu gọi nhầm, không giả thành công. Test giả lập và HTTP máy cục bộ được phân biệt trong [báo cáo 06/11](testing/integration-2026-11-06.md); chưa nghiệm thu trên điện thoại.
 
 ## 7. Xác nhận nhóm còn cần
 
@@ -147,6 +147,8 @@ Các route sau đã có từ `aa0d2d7`, yêu cầu cùng phiên Admin hợp lệ
 | GET /api/v1/admin/stats/visits | Không tham số: hôm nay/7 ngày; lọc bằng cặp `date_from=YYYY-MM-DD&date_to=YYYY-MM-DD`, nằm trong cửa sổ 30 ngày; sai trả 422 INVALID_DATE_RANGE |
 | GET /api/v1/admin/stats/active | Trả `active_sessions`, `window_seconds:90`, `measured_at`, `note`; chỉ phiên chưa rút có `now-90s < last_seen <= now` |
 
-Visit response gồm `timezone`, `measured_at`, `today`, `last_7_days`, `range` (null hoặc `{from,to,total,days:[{date,visits}]}`), `note`. Admin Dashboard của An được giữ nguyên, gồm tự làm mới active 30 giây, lọc ngày và trạng thái Không khả dụng khi lỗi. Lỗi publish giữ `error.details`, đồng thời lỗi UC12 vẫn giữ detail session_revoked tương thích.
+Visit response gồm `timezone`, `measured_at`, `today`, `last_7_days`, `range` (null hoặc `{from,to,total,days:[{date,visits}]}`), `note`. Backend dùng cùng mốc hiện tại để kiểm tra khoảng lọc và tính thống kê. Admin Dashboard làm mới active 30 giây khi hiển thị, hủy request cũ khi thay bộ lọc/rời màn hình và phân biệt Không khả dụng với 0. Ngày hiển thị theo giờ Việt Nam.
+
+Admin đã có nút công bố/ẩn và xác nhận chỉ công bố nội dung đã kiểm duyệt. Client giữ `error.details` để hiện các trường thiếu. Publish kiểm tra lại dữ liệu cũ bằng validator của POI/bài và thực hiện kiểm tra/chuyển trạng thái trong giao dịch `BEGIN IMMEDIATE`; request đua không cùng công bố một trạng thái. Không thay endpoint, body, response hay schema/migration trong đợt 06/11.
 
 Giữ hàm `run_cleanup_once(database=None)` và cờ `SAIGON_DISABLE_CLEANUP=1` của An. Cờ này tắt cả dọn startup và lịch tự động; mặc định không đặt cờ. Lịch đã ghép thống nhất thành một tác vụ 00:00 Việt Nam, không chạy thêm vòng 6 giờ song song. Khi vận hành chính sách giữ 30 ngày, không bật cờ tắt dọn.

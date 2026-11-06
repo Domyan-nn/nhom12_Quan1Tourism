@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import useTts from '../tts/useTts.js';
 import { TTS_ERRORS } from '../tts/webSpeechPlayer.js';
 
@@ -18,8 +18,9 @@ export default function TtsControls({ t, poiId, locale, localeName, title, body 
   const mine = state.key === key;
   const status = mine ? state.status : 'idle';
 
-  // Đổi địa điểm/ngôn ngữ hoặc rời trang thì dừng đọc.
-  useEffect(() => () => player.stop(), [player, key]);
+  // Hủy ngay trong commit khi đổi bài/rời trang, trước khi callback giọng đọc
+  // hoặc thao tác tiếp theo có thể phát lại bài vừa bị tháo khỏi màn hình.
+  useLayoutEffect(() => () => player.stop(), [player, key]);
 
   const play = () => player.play({ text: `${title}. ${body}`, locale, key });
   const message = mine && status === 'error' ? t[ERROR_KEY[state.errorCode]]?.replace('{lang}', localeName) : null;

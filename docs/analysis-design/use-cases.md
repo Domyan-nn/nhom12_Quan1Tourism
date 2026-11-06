@@ -15,4 +15,4 @@
 | UC11 | Xem số phiên khách đang hoạt động |
 | UC12 | Đồng ý hoặc rút đồng ý thống kê |
 
-Đặc tả chi tiết, luồng ngoại lệ và quy tắc nghiệp vụ nằm trong PRD. Backend UC05 và UC06 đã có kiểm thử API; giao diện và toàn bộ luồng người dùng chưa được kiểm thử. Các use case khác chưa được xác nhận triển khai.
+Đặc tả chi tiết, luồng ngoại lệ và quy tắc nghiệp vụ nằm trong PRD. Ngày 06/11/2026, UC01–UC12 đã có code tích hợp trong FastAPI và các ứng dụng tương ứng. [Báo cáo bàn giao](../testing/integration-2026-11-06.md) ghi riêng bằng chứng API, browser, engine giả lập và phần chưa xác minh trên thiết bị; không suy từ sự hiện diện code sang nghiệm thu toàn bộ. Upload ảnh tạm gác.

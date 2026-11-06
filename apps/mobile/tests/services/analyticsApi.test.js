@@ -38,8 +38,22 @@ describe('analyticsApi – nối UC12 với backend', () => {
     const f = fakeFetch(204);
     const client = createApiClient({ baseUrl: 'http://x/api', fetchImpl: f.impl });
     const a = createAnalyticsApi({ client, useMock: true });
-    await a.heartbeat(UUID);
-    await a.revoke(UUID);
+    await expect(a.heartbeat(UUID)).rejects.toMatchObject({ code: 'UNSUPPORTED' });
+    await expect(a.revoke(UUID)).rejects.toMatchObject({ code: 'UNSUPPORTED' });
+    expect(f.calls).toHaveLength(0);
+  });
+  it('mock không xác nhận giả yêu cầu rút còn chờ từ chế độ API thật', async () => {
+    const { f, api: a } = api(204, { useMock: true });
+    const mem = new Map([
+      ['saigon.consent.v1', 'denied'],
+      ['saigon.analytics.pending_revoke', UUID],
+    ]);
+    const storage = { getItem: async (key) => mem.get(key) ?? null, setItem: async (key, value) => void mem.set(key, value), removeItem: async (key) => void mem.delete(key) };
+    const c = new AnalyticsClient({ storage, api: a, randomId: () => UUID });
+    await c.init();
+    expect(await c.flushRevoke()).toBe(false);
+    expect(mem.get('saigon.analytics.pending_revoke')).toBe(UUID);
+    expect(c.snapshot().hasPendingRevoke).toBe(true);
     expect(f.calls).toHaveLength(0);
   });
   it('409 làm AnalyticsClient dừng gửi và xóa mã phiên', async () => {
@@ -49,7 +63,9 @@ describe('analyticsApi – nối UC12 với backend', () => {
     const c = new AnalyticsClient({ storage, api: a, randomId: () => UUID });
     await c.init();
     await c.grant();
+    c.setRunning(true);
     expect(await c.sendHeartbeat()).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(c.consent).toBe('denied');
     expect(c.sessionId).toBeNull();
   });

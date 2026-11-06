@@ -11,11 +11,13 @@ Người thực hiện: Lê Nam Thuận. **Chưa thực hiện** – điền b�
 - [ ] Kiểm tra TTS khi có, không có và không liệt kê được giọng đúng ngôn ngữ.
 - [ ] Kết nối điện thoại và backend thật trên cùng mạng, dùng địa chỉ LAN và `EXPO_PUBLIC_USE_MOCK=false`.
 
-Các ca analytics gửi heartbeat/rút đồng ý dưới đây hiện **chưa áp dụng**: backend chưa có API, mobile không gửi thống kê và giữ lại yêu cầu rút đang chờ nếu có.
+Các ca analytics dưới đây **đã có code kết nối API**, vẫn **chưa kiểm thử trên điện thoại**. Chọn API thật (`EXPO_PUBLIC_USE_MOCK=false`, style `v1`, base URL LAN kết thúc `/api`) và database thử nghiệm riêng. Không dùng chế độ mock để xác nhận thu hồi phía server. Không đưa session ID/token vào ảnh hoặc video công khai.
 
 | Thiết bị / OS | Expo Go / bản build | Ngày | Người thử |
 | --- | --- | --- | --- |
 | | | | |
+
+Commit/working tree: __________. Backend/database tạm và bộ dữ liệu: __________. Tên giọng và locale đã thử: __________. Video/ảnh/log đã loại thông tin nhạy cảm: __________.
 
 | # | UC | Bước thử | Kết quả mong đợi | Kết quả thực tế | Đạt? | Minh chứng |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -36,5 +38,8 @@ Các ca analytics gửi heartbeat/rút đồng ý dưới đây hiện **chưa �
 | 15 | UC04 / BR08 | Ra khỏi vùng, vào lại ≥ 600 giây | Phát lại | | | |
 | 16 | UC04 / BR07 | Đưa ứng dụng xuống nền | Dừng theo dõi; mở lại thì tiếp tục | | | |
 | 17 | UC12 | Lần mở đầu | Hiện hộp đồng ý; Từ chối thì không gọi API thống kê | | | |
-| 18 | UC12-A2 | Rút đồng ý | Dừng gửi ngay; Admin không còn đếm phiên sau 90 giây | | | |
+| 18 | UC12-A2 | Rút đồng ý | Dừng gửi ngay; sau khi server nhận revoke, phiên bị loại ngay (UI Dashboard cập nhật trong kỳ làm mới tối đa 30 giây) | | | |
 | 19 | UC12-E1 | Rút đồng ý khi tắt mạng, bật lại | Yêu cầu rút được gửi lại và thành công | | | |
+| 20 | UC12-E1 | Khi rút đang chờ, thử đồng ý lại | Nút đồng ý bị khóa; không mất mã cần rút, không tạo phiên mới | | | |
+| 21 | UC12 / BR15 | Đồng ý rồi đưa app xuống nền/mất mạng | Không gửi heartbeat khi nền/mất mạng; mở lại/online mới gửi | | | |
+| 22 | UC04 / BR08 | Hai điểm chồng vùng, lỗi mẫu GPS/cùng khoảng cách | Lọc ứng viên trước, chọn gần nhất/tie ID; bỏ mẫu quá 15s, tương lai >1s, thiếu/sai độ chính xác | | | |

@@ -2,7 +2,7 @@ import NetInfo from '@react-native-community/netinfo';
 import * as Crypto from 'expo-crypto';
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { analyticsApi, storage } from '../../services';
+import { analyticsApi, storage, USE_MOCK } from '../../services';
 import { AnalyticsClient } from './AnalyticsClient';
 
 const PrivacyContext = createContext(null);
@@ -11,7 +11,7 @@ export const usePrivacy = () => useContext(PrivacyContext);
 export function PrivacyProvider({ children }) {
   const clientRef = useRef(null);
   if (!clientRef.current) {
-    clientRef.current = new AnalyticsClient({ storage, api: analyticsApi, randomId: () => Crypto.randomUUID() });
+    clientRef.current = new AnalyticsClient({ storage, api: analyticsApi, enabled: !USE_MOCK, randomId: () => Crypto.randomUUID() });
   }
   const client = clientRef.current;
   const [snap, setSnap] = useState({ consent: null, hasPendingRevoke: false });
@@ -20,7 +20,7 @@ export function PrivacyProvider({ children }) {
   useEffect(() => {
     let mounted = true;
     let visible = AppState.currentState === 'active';
-    let online = true;
+    let online = false;
     // BR15: chỉ gửi heartbeat khi ứng dụng đang hiển thị và có mạng.
     const sync = () => client.setRunning(mounted && visible && online);
     const unsub = client.subscribe(setSnap);
@@ -34,7 +34,7 @@ export function PrivacyProvider({ children }) {
       sync();
     });
     const netUnsub = NetInfo.addEventListener((state) => {
-      online = state.isConnected !== false && state.isInternetReachable !== false;
+      online = state.isConnected === true && state.isInternetReachable !== false;
       sync();
     });
     return () => {
@@ -51,6 +51,8 @@ export function PrivacyProvider({ children }) {
       ready,
       consent: snap.consent, // null (chưa chọn) | 'granted' | 'denied'
       hasPendingRevoke: snap.hasPendingRevoke,
+      storageError: snap.storageError,
+      isMock: USE_MOCK,
       grant: () => client.grant(),
       decline: () => client.decline(),
       revoke: () => client.revoke(), // true nếu server đã nhận; false nếu còn chờ gửi lại

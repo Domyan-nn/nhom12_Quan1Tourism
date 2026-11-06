@@ -4,7 +4,7 @@ import sqlite3
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from app.api.dependencies import get_db, require_admin
 from app.services.auth import timestamp, utc_now
@@ -159,15 +159,32 @@ def publish_problems(db, row):
         problems.append("address")
     if not db.execute("SELECT 1 FROM categories WHERE id=?", (row["category_id"],)).fetchone():
         problems.append("category")
-    if not (-90 <= row["latitude"] <= 90 and -180 <= row["longitude"] <= 180 and 20 <= row["radius_m"] <= 1000):
-        problems.append("coordinates")
-    if not db.execute("SELECT 1 FROM poi_narrations WHERE poi_id=? AND length(trim(title))>0 AND length(trim(body))>0", (row["id"],)).fetchone():
+    # Older databases may contain records not written through the API validators.
+    try:
+        PlaceInput.model_validate({key: row[key] for key in PlaceInput.model_fields})
+    except ValidationError as exc:
+        for issue in exc.errors():
+            key = issue["loc"][0]
+            key = "coordinates" if key in ("latitude", "longitude", "radius_m") else key
+            if key not in problems:
+                problems.append(key)
+    valid_narration = False
+    for narration in db.execute("SELECT locale, title, body FROM poi_narrations WHERE poi_id=?", (row["id"],)):
+        try:
+            NarrationCreate.model_validate(dict(narration))
+            valid_narration = True
+            break
+        except ValidationError:
+            continue
+    if not valid_narration:
         problems.append("narration")
     return problems
 
 
 def change_status(db, poi_id, allowed_from, new_status):
     with db:
+        # Serialize eligibility checks with publishing, hiding and content edits.
+        db.execute("BEGIN IMMEDIATE")
         row = place(db, poi_id)
         if row["status"] not in allowed_from:
             raise HTTPException(409, "INVALID_STATUS_TRANSITION")

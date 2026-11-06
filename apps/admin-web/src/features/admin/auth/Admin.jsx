@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { request } from '../../../services/api.js';
 import Categories from '../categories/Categories.jsx';
 import Places from '../places/Places.jsx';
@@ -10,7 +10,7 @@ export default function Admin({ t, language }) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const expire = () => { setSession(null); setError('AUTH_REQUIRED'); };
+  const expire = useCallback(() => { setSession(null); setError('AUTH_REQUIRED'); }, []);
   useEffect(() => {
     if (!session) return;
     const timer = setTimeout(expire, Math.max(0, new Date(session.expires_at).getTime() - Date.now()));

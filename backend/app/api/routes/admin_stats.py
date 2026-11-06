@@ -12,15 +12,16 @@ router = APIRouter(prefix="/api/v1/admin/stats", tags=["admin stats"], dependenc
 
 @router.get("/visits")
 def visits(date_from: str | None = None, date_to: str | None = None, db: sqlite3.Connection = Depends(get_db)):
+    now = svc.utcnow()
     start = end = None
     if date_from is not None or date_to is not None:
         try:
             start, end = date.fromisoformat(date_from or ""), date.fromisoformat(date_to or "")
         except ValueError:
             raise HTTPException(422, "INVALID_DATE_RANGE")
-        if not svc.valid_range(start, end):
+        if not svc.valid_range(start, end, now=now):
             raise HTTPException(422, "INVALID_DATE_RANGE")
-    return svc.visit_stats(db, start, end)
+    return svc.visit_stats(db, start, end, now=now)
 
 
 @router.get("/active")

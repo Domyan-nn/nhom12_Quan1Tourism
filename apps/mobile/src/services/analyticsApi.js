@@ -9,12 +9,12 @@ export function createAnalyticsApi({ client, useMock, style = 'v1' }) {
   const base = BASES[style] ?? BASES.v1;
   return {
     async heartbeat(sessionId) {
-      if (useMock) return null;
+      if (useMock) throw Object.assign(new Error('Analytics is unavailable in mock mode.'), { code: 'UNSUPPORTED' });
       await client.post(`${base}/heartbeat`, { session_id: sessionId });
       return null;
     },
     async revoke(sessionId) {
-      if (useMock) return null;
+      if (useMock) throw Object.assign(new Error('Analytics is unavailable in mock mode.'), { code: 'UNSUPPORTED' });
       await client.post(`${base}/revoke`, { session_id: sessionId });
       return null;
     },

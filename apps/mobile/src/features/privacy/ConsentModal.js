@@ -1,14 +1,20 @@
 // UC12 bước 1–3: lần mở đầu tiên khi chưa có lựa chọn.
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../components/StateViews';
+import { Banner, Button } from '../../components/StateViews';
 import { useSettings } from '../../context/SettingsContext';
 import { colors, radius, space } from '../../theme';
 import { usePrivacy } from './PrivacyContext';
 
 export default function ConsentModal() {
   const { t } = useSettings();
-  const { ready, consent, grant, decline } = usePrivacy();
+  const { ready, consent, storageError, isMock, grant, decline } = usePrivacy();
+  const [busy, setBusy] = useState(false);
+  const choose = async (action) => {
+    setBusy(true);
+    try { await action(); }
+    finally { setBusy(false); }
+  };
   const visible = ready && consent === null;
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => {}}>
@@ -20,8 +26,10 @@ export default function ConsentModal() {
               <Text key={k} style={styles.p}>{t[k]}</Text>
             ))}
           </ScrollView>
-          <Button title={t.consentAccept} onPress={grant} />
-          <Button title={t.consentDecline} kind="ghost" onPress={decline} />
+          {storageError ? <Banner kind="error">{t.privacyStorageError}</Banner> : null}
+          {isMock ? <Banner>{t.analyticsMock}</Banner> : null}
+          <Button title={t.consentAccept} disabled={busy || storageError || isMock} onPress={() => choose(grant)} />
+          <Button title={t.consentDecline} kind="ghost" disabled={busy} onPress={() => choose(decline)} />
           <Text style={styles.foot}>{t.consentFoot}</Text>
         </View>
       </View>

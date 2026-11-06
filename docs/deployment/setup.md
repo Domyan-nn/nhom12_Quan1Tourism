@@ -4,13 +4,14 @@ Python 3.12, Node.js 22.12+ và npm; không dùng Docker. Chạy từ gốc repo
 
 ## Backend
 
-Để dùng demo hiện có, sau khi cài phụ thuộc, chỉ định database preview trong cửa sổ chạy API:
+Để dùng demo hiện có, chọn đường dẫn database đã được nhóm duyệt, [sao lưu/phục hồi thử](backup-restore.md), rồi chỉ định rõ trong cửa sổ chạy API:
 
 ```powershell
-.\.venv\Scripts\python.exe backend/scripts/start_demo.py
+$demoDb = 'THAY_BANG_DUONG_DAN_TUYET_DOI_DATABASE_DA_DUYET'
+.\.venv\Scripts\python.exe backend/scripts/start_demo.py --database $demoDb
 ```
 
-Preview chứa dữ liệu thử nghiệm, gồm hai địa điểm published. Database chính `backend/data/saigon_stories.db` không dùng cho demo. Các lệnh tiếp theo dành cho trường hợp cần tạo database thử nghiệm riêng mới.
+Không tự chọn database preview/cá nhân theo tên có sẵn. Startup có dọn thống kê quá hạn. Các lệnh tiếp theo dành cho database thử nghiệm riêng mới; seed là nội dung nháp chưa kiểm duyệt, không tự công bố.
 
 ```powershell
 if (-not (Test-Path -LiteralPath .venv)) { python -m venv .venv }
@@ -70,6 +71,6 @@ Set-Location apps/guest-web
 npm.cmd run test:browser
 ```
 
-Không dùng mock để xác nhận database. Proxy Vite chỉ phục vụ dev; triển khai tĩnh cần reverse proxy và SPA fallback. Chưa có cam kết production hoặc triển khai analytics, bản đồ/TTS web hay dashboard.
+Không dùng mock để xác nhận database. Proxy Vite chỉ phục vụ dev; triển khai tĩnh cần reverse proxy và SPA fallback. Analytics web/mobile, bản đồ/TTS và Dashboard đã có tích hợp; xem [bằng chứng 06/11](../testing/integration-2026-11-06.md). Chưa xác minh cài mới trên máy khác, production HTTPS, âm thanh và GPS trên thiết bị thật.
 
 Mỗi ứng dụng có lockfile riêng và cần cài dependency riêng. Nếu PowerShell chưa nhận node/npm/npx, thêm thư mục Node đã cài vào PATH của cửa sổ hiện tại trước khi chạy. Sau khi thay đổi cấu trúc được merge, lưu thay đổi cá nhân, đồng bộ nhánh, chuyển terminal và `.env` sang `apps/<ứng-dụng>`, rồi cài lại từ lockfile. Không khởi động lại các ứng dụng từ thư mục web/mobile cũ.

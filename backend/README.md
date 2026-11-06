@@ -4,7 +4,7 @@ FastAPI cung cấp xác thực Admin, quản lý danh mục, địa điểm, thu
 
 Khởi động chỉ kiểm tra schema đang có (danh mục song ngữ, analytics version 2), không tự migration. Retention dọn lượt/phiên thống kê quá cửa sổ 30 ngày lúc khởi động và mỗi 00:00 Việt Nam khi API chạy; tác vụ lỗi ghi log/thử lại sau 60 giây. Không thay schema trong đợt tích hợp 04/11. Trước khi chạy với dữ liệu thật cần đọc chính sách này; kiểm thử luôn dùng database tạm, không seed lại database cá nhân.
 
-Database demo preview có dữ liệu thử nghiệm `published`, chưa phải nội dung đã kiểm duyệt. Database `backend/data/saigon_stories.db` dành cho dữ liệu chính.
+Chọn database bằng đường dẫn tuyệt đối trong `SAIGON_DATABASE` hoặc `scripts/start_demo.py --database ...`; không còn tệp preview cá nhân mặc định. Chỉ dùng dữ liệu được nhóm duyệt cho demo; seed là nháp và placeholder. Sao lưu trước khi khởi động vì retention có ghi/xóa dữ liệu thống kê quá hạn.
 
 Migration giữ nguyên ID và tên cũ, không tự dịch các danh mục sẵn có. Admin cần bổ sung tên tiếng Anh cho từng danh mục; trang khách dùng tên tiếng Việt khi bản dịch còn thiếu. Seed chỉ tạo bản dịch cho các dòng mẫu mới, không ghi đè dòng hiện có. Chi tiết ở [hướng dẫn danh mục](../docs/analysis-design/category-bilingual-preparation.md).
 

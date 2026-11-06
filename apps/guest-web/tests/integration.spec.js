@@ -52,6 +52,10 @@ test('one real API session integrates map, TTS language/controls and consent wit
   await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
   expect(await page.evaluate(() => __speech.spoken.at(-1).lang)).toBe('en-US');
   await page.getByRole('link', { name: 'Privacy', exact: true }).click();
+  // Router navigation is a React transition: click can finish before commit.
+  // Check cleanup after the narration screen has actually been removed.
+  await expect(page.locator('.prose > h1')).toHaveText('Privacy');
+  await expect(page.locator('.tts')).toHaveCount(0);
   expect(await page.evaluate(() => __speech.active)).toBeNull();
   const withdrawn = page.waitForResponse(revoke);
   await page.getByRole('button', { name: 'Withdraw consent', exact: true }).click();
@@ -158,13 +162,17 @@ test('changing language and place cancels speech, including voices loaded after 
   await page.getByRole('button', { name: 'Tiếng Việt', exact: true }).click();
   await page.getByRole('button', { name: 'Nghe thuyết minh', exact: true }).click();
   await page.getByRole('button', { name: 'English', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'English', exact: true })).toHaveAttribute('aria-pressed', 'true');
   expect(await page.evaluate(() => __speech.active)).toBeNull();
   await page.evaluate(() => __speech.setLanguages([]));
   await page.getByRole('button', { name: 'Nghe thuyết minh', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Đang chuẩn bị giọng đọc…', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Khám phá', exact: true }).click();
+  await expect(page.locator('.card')).toHaveCount(2);
+  await expect(page.locator('.tts')).toHaveCount(0);
   await page.evaluate(() => __speech.setLanguages(['en-US']));
   await page.locator('.card').filter({ hasText: 'Chợ Bến Thành' }).click();
+  await expect(page.locator('.narration')).toContainText('Test body en');
   expect(await page.evaluate(() => __speech.spoken.length)).toBe(1);
   expect(await page.evaluate(() => __speech.active)).toBeNull();
 });

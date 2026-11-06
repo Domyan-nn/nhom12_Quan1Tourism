@@ -16,11 +16,12 @@ Nếu chưa có Node, cài Node.js 22.12+ rồi mở PowerShell mới. Thay đ�
 
 ## Chuẩn bị backend và database thử nghiệm
 
-Nếu tài khoản Windows đã có `SAIGON_DATABASE` trỏ tới database hợp lệ, mở PowerShell mới và chạy backend trực tiếp; không khởi tạo hoặc seed lại:
+Với database đã có, chọn **đường dẫn tuyệt đối đã được nhóm duyệt**, dừng API cũ và [sao lưu/khôi phục thử](docs/deployment/backup-restore.md) trước khi chạy. Startup sẽ dọn thống kê quá hạn; không dùng database cá nhân để kiểm thử. Không khởi tạo hoặc seed lại database đã có:
 
 ```powershell
-$env:SAIGON_DATABASE = [Environment]::GetEnvironmentVariable('SAIGON_DATABASE', 'User')
-if (-not (Test-Path -LiteralPath $env:SAIGON_DATABASE)) { throw 'SAIGON_DATABASE chưa trỏ tới database có sẵn' }
+$demoDb = 'THAY_BANG_DUONG_DAN_TUYET_DOI_DATABASE_DA_DUYET'
+if (-not (Test-Path -LiteralPath $demoDb -PathType Leaf)) { throw 'Chưa chọn database có sẵn' }
+$env:SAIGON_DATABASE = (Resolve-Path -LiteralPath $demoDb).Path
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
@@ -39,11 +40,11 @@ $env:SAIGON_DATABASE = (Resolve-Path -LiteralPath $db).Path
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
-API sẵn sàng khi `http://127.0.0.1:8000/api/v1/health` trả `{"status":"ok"}`. `/docs` hiển thị OpenAPI. Health chỉ xác nhận tiến trình, không kiểm tra database. Backend không tự tạo hay nâng cấp database khi khởi động; yêu cầu danh mục song ngữ và analytics schema phiên bản 2. UC12 dọn bản ghi thống kê hết hạn ngay khi khởi động và mỗi 00:00 Việt Nam trong lúc API chạy; lỗi dọn theo lịch được ghi log và thử lại sau 60 giây. Chính sách là cửa sổ 30 ngày theo ngày Việt Nam, gồm cả lượt và phiên/dấu thu hồi quá hạn; API tắt thì lần khởi động sau dọn bù. Để dùng database demo preview có sẵn, sau khi cài dependency có thể chạy `.\.venv\Scripts\python.exe backend/scripts/start_demo.py`; preview có dữ liệu thử nghiệm `published`, chưa được kiểm duyệt.
+API sẵn sàng khi `http://127.0.0.1:8000/api/v1/health` trả `{"status":"ok"}`. `/docs` hiển thị OpenAPI. Health chỉ xác nhận tiến trình, không kiểm tra database. Backend không tự tạo hay nâng cấp database khi khởi động; yêu cầu danh mục song ngữ và analytics schema phiên bản 2. UC12 dọn thống kê hết hạn lúc khởi động và mỗi 00:00 Việt Nam; lỗi dọn theo lịch được ghi log/thử lại sau 60 giây. Cửa sổ giữ dữ liệu tính từ 00:00 Việt Nam của hôm nay trừ 29 ngày; API tắt thì lần khởi động sau dọn bù. Script chạy demo yêu cầu chọn database rõ ràng: `.\.venv\Scripts\python.exe backend/scripts/start_demo.py --database $demoDb`; không còn mặc định tệp preview của cá nhân. Không tự công bố dữ liệu mẫu chưa duyệt.
 
 ## Chạy Admin và guest web
 
-Khi ghép commit ngày 04/11 của An, giữ cờ `SAIGON_DISABLE_CLEANUP=1` để tắt dọn startup/lịch khi thật sự cần. Mặc định không đặt cờ; không dùng cờ này khi muốn chính sách dọn dữ liệu 30 ngày hoạt động. Hàm `run_cleanup_once(database)` vẫn dùng được; không chạy lên database cá nhân trong kiểm thử.
+Mặc định không đặt `SAIGON_DISABLE_CLEANUP`. Giá trị `1` tắt cả startup/lịch, chỉ dùng khi chủ động chẩn đoán; không dùng trong demo chính sách giữ 30 ngày. Hàm `run_cleanup_once(database)` vẫn dùng được; kiểm thử chỉ gọi trên database tạm.
 
 Mở hai cửa sổ PowerShell khác từ gốc repo. Admin ở `http://127.0.0.1:5174`, guest ở `http://127.0.0.1:5173`. Vite chuyển `/api` về FastAPI trên cổng 8000.
 
@@ -99,9 +100,19 @@ npm.cmd --prefix apps/guest-web run test:browser -- --grep 'real OSM diagnostic'
 Remove-Item Env:SAIGON_TEST_REAL_OSM
 ```
 
-UC12 chỉ bật ở guest chế độ API thật. Trước đồng ý/từ chối không có UUID/heartbeat. Có thể rút tại Privacy; khi yêu cầu đang chờ xác nhận thì nút đồng ý lại bị khóa, client thử lại khi online/mở lại/hiển thị và mỗi 30 giây. Không xóa localStorage khi đang có yêu cầu rút chờ. Nếu trình duyệt chặn lưu trữ, thống kê dừng và yêu cầu chưa lưu có thể mất khi đóng trang. Mobile vẫn chưa nối API thống kê, không dùng màn hình rút lựa chọn cục bộ làm bằng chứng server đã thu hồi.
+UC12 đã nối API thật trên guest **và mobile**. Khi chưa đồng ý hoặc đã từ chối thì không tạo UUID/gửi heartbeat. Heartbeat 30 giây chỉ khi hiển thị và có mạng. Rút tại mục Riêng tư; khi còn yêu cầu chờ, nút đồng ý lại bị khóa và client thử lại khi online/mở lại/hiển thị và mỗi 30 giây. Không xóa localStorage/AsyncStorage khi yêu cầu rút còn chờ. Nếu lưu trữ bị chặn thì dừng gửi và báo lỗi; yêu cầu chưa lưu có thể mất khi đóng ứng dụng. Chế độ mock không gọi mạng thống kê. Xem bằng chứng HTTP và giới hạn thiết bị ở [báo cáo 06/11](docs/testing/integration-2026-11-06.md).
 
 Nếu môi trường hạn chế ghi cache/output báo `EPERM`, dùng `--configLoader runner` cho Vite/Vitest và chọn `--outDir dist/<ten-luot-moi>` khi build, `--output=test-results/<ten-luot-moi>` khi chạy Playwright. Nếu vẫn bị chặn, cần quyền ghi từ môi trường thực thi; không xóa thư mục cũ hoặc kết luận build/test thất bại do mã nguồn. Bản đồ web và điều kiện dùng mạng ở [guest README](apps/guest-web/README.md).
+
+Thử khởi tạo, seed, sao lưu/phục hồi và đo NFR08 bằng HTTP thật trong **database tạm tự hủy**, không dùng `SAIGON_DATABASE` hiện có:
+
+```powershell
+.\.venv\Scripts\python.exe docs/testing/tools/verify_handoff.py
+```
+
+Script tạo 5 POI nháp từ seed và 5 POI tổng hợp riêng cho test, chỉ công bố POI test; in 20 thời gian phản hồi, số thành công dưới 3 giây và môi trường, không in mật khẩu/token. Đây là thử yêu cầu liên tiếp cục bộ, không phải thử tải đồng thời hoặc thiết bị thật. Checklist từng bước demo tại [demo-guide](docs/deployment/demo-guide.md).
+
+Mobile chuyển sang mock vẫn giữ yêu cầu rút từ API thật, không tạo mã hoặc giả xác nhận server. Trở lại API thật để gửi pending và chỉ xóa sau khi server nhận. Không dùng nút/câu thông báo cục bộ làm bằng chứng thu hồi trên server.
 
 ## API thật và dữ liệu test riêng cho Gate 2
 

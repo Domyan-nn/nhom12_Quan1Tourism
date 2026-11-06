@@ -1,6 +1,6 @@
 # Thiết kế API
 
-[API_CONTRACT.md](../API_CONTRACT.md) là nguồn chung cho request, response, mã lỗi và trạng thái triển khai, cập nhật theo FastAPI ngày 04/11/2026. Không còn duy trì một bộ đường dẫn/response khác trong tài liệu này.
+[API_CONTRACT.md](../API_CONTRACT.md) là nguồn chung cho request, response, mã lỗi và trạng thái triển khai, cập nhật theo FastAPI ngày 06/11/2026.
 
 ## Đã triển khai
 
@@ -17,6 +17,6 @@
 
 Upload ảnh chưa có router và được loại khỏi tác vụ này. Các đường dẫn cũ `/api/public`, `/api/admin/auth`, `analytics/withdraw` không dùng cho tích hợp mới.
 
-Migration thống kê hiện có đáp ứng tích hợp UC12, không thêm schema mới. Kết nối UC12 mobile vẫn chưa có. Xem phần schema, thời hạn dấu thu hồi và nâng cấp an toàn trong hợp đồng và [RUNNING](../../RUNNING.md).
+Migration thống kê hiện có đáp ứng UC12, không thêm schema mới. UC12 mobile đã nối HTTP từ commit `48a0908`, gồm foreground/NetInfo và lưu yêu cầu rút để gửi lại. Xem schema, thời hạn dấu thu hồi và nâng cấp an toàn trong hợp đồng và [RUNNING](../../RUNNING.md).
 
-Các giới hạn hiện tại: chưa phân trang; tìm kiếm Unicode lọc tên bằng Python trong bộ nhớ; chưa rate limiting/CORS cho origin độc lập. Bản đồ/TTS/UC12 guest đã nối; âm thanh thật, điện thoại và khả năng truy cập tile OSM cần kiểm chứng theo [báo cáo](../testing/integration-2026-11-04.md). Ngôn ngữ UI VI/EN độc lập với các ngôn ngữ bài thực tế.
+Các giới hạn hiện tại: chưa phân trang; tìm kiếm Unicode lọc tên bằng Python trong bộ nhớ; chưa rate limiting/CORS cho origin độc lập. Bản đồ/TTS/UC12 guest đã nối; xem [bằng chứng và giới hạn 06/11](../testing/integration-2026-11-06.md). Ngôn ngữ UI VI/EN độc lập với các ngôn ngữ bài thực tế.
