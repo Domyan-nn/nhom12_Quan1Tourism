@@ -15,10 +15,12 @@ export const RULES = Object.freeze({
 /** Mẫu hợp lệ cho một POI cụ thể (BR08). */
 export function isSampleValidForPoi(sample, poi, now) {
   if (!sample || !Number.isFinite(sample.timestamp)) return false;
+  if (!Number.isFinite(now) || !Number.isFinite(sample.latitude) || Math.abs(sample.latitude) > 90 ||
+      !Number.isFinite(sample.longitude) || Math.abs(sample.longitude) > 180) return false;
   if (now - sample.timestamp > RULES.MAX_SAMPLE_AGE_MS) return false;
   if (sample.timestamp - now > RULES.MAX_FUTURE_MS) return false;
   // Thiết bị không báo sai số thì không thể xác minh -> bỏ mẫu.
-  if (!Number.isFinite(sample.accuracy)) return false;
+  if (!Number.isFinite(sample.accuracy) || sample.accuracy < 0) return false;
   return sample.accuracy <= maxAccuracyFor(poi.radius_m);
 }
 

@@ -3,6 +3,9 @@ import unittest
 import uuid
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
+from unittest.mock import patch
 
 import test_admin_api
 from app.api.routes import analytics as analytics_routes
@@ -62,6 +65,41 @@ class Day4Tests(unittest.TestCase):
         h = self.headers(self.login())
         self.assertEqual(self.client.post(f"{BASE}/nope/publish", headers=h).status_code, 404)
 
+    def test_publish_rejects_legacy_invalid_narration_and_fractional_radius(self):
+        h = self.headers(self.login())
+        pid = self.new_place(h)
+        with self.conn() as db, db:
+            # SQLite trim accepts Unicode whitespace and old locale spellings.
+            db.execute("INSERT INTO poi_narrations VALUES (?,?,?,?,?,?,?)",
+                       (str(uuid.uuid4()), pid, "not_a_locale", "\u00a0\t", "Body", "2026-11-01", "2026-11-01"))
+        response = self.client.post(f"{BASE}/{pid}/publish", headers=h)
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("narration", response.json()["error"]["details"])
+        self.assertEqual(self.client.get(f"/api/v1/pois/{pid}").status_code, 404)
+        self.client.post(f"{BASE}/{pid}/narrations", headers=h,
+                         json={"locale": "fr", "title": "Title", "body": "Body"})
+        with self.conn() as db, db:
+            db.execute("UPDATE pois SET radius_m=20.5 WHERE id=?", (pid,))
+        response = self.client.post(f"{BASE}/{pid}/publish", headers=h)
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("coordinates", response.json()["error"]["details"])
+        with self.conn() as db, db:
+            db.execute("UPDATE pois SET radius_m=20 WHERE id=?", (pid,))
+        self.assertEqual(self.client.post(f"{BASE}/{pid}/publish", headers=h).status_code, 200)
+
+    def test_concurrent_publication_allows_one_transition(self):
+        h = self.headers(self.login())
+        pid = self.new_place(h)
+        self.client.post(f"{BASE}/{pid}/narrations", headers=h,
+                         json={"locale": "vi", "title": "Title", "body": "Body"})
+        barrier = Barrier(4)
+        def publish(_):
+            barrier.wait(timeout=10)
+            return self.client.post(f"{BASE}/{pid}/publish", headers=h).status_code
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            statuses = list(pool.map(publish, range(4)))
+        self.assertEqual(sorted(statuses), [200, 409, 409, 409])
+
     # --- UC10 / UC11 ---
     def seed_sessions(self):
         now = datetime.now(timezone.utc)
@@ -118,6 +156,29 @@ class Day4Tests(unittest.TestCase):
             from datetime import date
             days = svc.visits_per_day(db, date(2026, 11, 3), date(2026, 11, 4))
         self.assertEqual([d["visits"] for d in days], [1, 1])
+
+    def test_stats_routes_share_vietnam_clock_and_exact_active_boundary(self):
+        h = self.headers(self.login())
+        now = datetime(2026, 11, 5, 17, tzinfo=timezone.utc)  # VN 06/11 00:00
+        with self.conn() as db, db:
+            for age, consent in [(0, 1), (89.999, 1), (90, 1), (-1, 1), (1, 0)]:
+                stamp = svc.to_iso(now - timedelta(seconds=age))
+                db.execute("INSERT INTO anonymous_sessions VALUES (?,?,?,?)", (str(uuid.uuid4()), consent, stamp, stamp))
+            for stamp in ("2026-11-05T16:59:59.999Z", "2026-11-05T17:00:00.000Z"):
+                db.execute("INSERT INTO visit_events VALUES (?,NULL,?)", (str(uuid.uuid4()), stamp))
+        with patch.object(svc, "utcnow", return_value=now):
+            data = self.client.get("/api/v1/admin/stats/active", headers=h).json()
+            self.assertEqual(data["active_sessions"], 2)
+            response = self.client.get("/api/v1/admin/stats/visits", headers=h,
+                                       params={"date_from": "2026-10-08", "date_to": "2026-11-06"})
+            self.assertEqual(response.status_code, 200)
+            visits = response.json()
+            self.assertEqual(visits["today"], 1)
+            self.assertEqual(visits["last_7_days"], 2)
+            self.assertEqual(visits["range"]["total"], 2)
+            self.assertEqual(len(visits["range"]["days"]), 30)
+            self.assertEqual(self.client.get("/api/v1/admin/stats/visits", headers=h,
+                             params={"date_from": "2026-10-07", "date_to": "2026-11-06"}).status_code, 422)
 
     # --- Dọn dữ liệu quá 30 ngày ---
     def test_run_cleanup_once_boundary(self):

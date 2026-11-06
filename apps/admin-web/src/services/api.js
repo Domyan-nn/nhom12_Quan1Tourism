@@ -1,5 +1,5 @@
 export class ApiError extends Error {
-  constructor(code, status) { super(code); this.code = code; this.status = status; }
+  constructor(code, status, details = []) { super(code); this.code = code; this.status = status; this.details = details; }
 }
 
 export async function request(path, { token, body, ...options } = {}) {
@@ -14,7 +14,8 @@ export async function request(path, { token, body, ...options } = {}) {
   if (!response.ok) {
     let data;
     try { data = await response.json(); } catch { /* Non-JSON server error. */ }
-    throw new ApiError(data?.error?.code || 'SERVER_ERROR', response.status);
+    throw new ApiError(data?.error?.code || 'SERVER_ERROR', response.status,
+      Array.isArray(data?.error?.details) ? data.error.details : []);
   }
   return response.status === 204 ? null : response.json();
 }

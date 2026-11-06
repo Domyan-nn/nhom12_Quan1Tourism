@@ -1,0 +1,23 @@
+# Từ điển dữ liệu theo mã nguồn 06/11/2026
+
+Đối chiếu PRD §7.1–7.2 và schema thực tế; không thay schema/migration trong đợt này. Nguồn: `001_initial.sql`, `002_analytics_constraints.sql`, `prepare_category_bilingual.py`, validators/routes và services. Database mới đi qua init (001 → analytics 002 → danh mục song ngữ). `user_version=2` chỉ xác nhận phiên bản analytics; vẫn phải kiểm tra cột danh mục song ngữ.
+
+| Bảng | Trường và kiểu | Khóa/ràng buộc và nghiệp vụ |
+| --- | --- | --- |
+| `admin_accounts` | `id TEXT`, `username TEXT`, `password_hash TEXT`, `is_active INTEGER=1`, `created_at/updated_at TEXT` | PK id, UNIQUE username, username/hash không rỗng; active ∈{0,1}. API chuẩn hóa username trim/NFC/casefold. Password PBKDF2-HMAC-SHA256 salt 16 byte, 600.000 vòng; không trả hash qua API. Không có đăng ký Admin công khai. |
+| `admin_sessions` | `id/admin_id/token_hash/issued_at/expires_at TEXT`, `revoked_at TEXT NULL` | PK id; FK admin_id → accounts CASCADE; UNIQUE token_hash; expires > issued. Backend chỉ lưu SHA256 token ngẫu nhiên; TTL 8 giờ. Thiếu/sai/hết hạn/thu hồi/tài khoản khóa bị 401. |
+| `categories` | `id/name/normalized_name/created_at/updated_at TEXT`, `name_en/normalized_name_en TEXT NULL` | PK id; UNIQUE normalized_name; partial UNIQUE normalized_name_en khi có. Tên VI/EN trim+NFC/casefold riêng; không gộp khoảng trắng nội bộ. API tạo/sửa yêu cầu cả hai tên (≤200 ký tự); dữ liệu cũ có thể thiếu EN, client dùng tên VI. Không tự dịch. |
+| `pois` | `id/category_id/name/address TEXT`, `latitude/longitude REAL`, `radius_m INTEGER=100`, `image_url TEXT NULL`, `status TEXT='draft'`, `created_at/updated_at TEXT` | PK id; FK category → categories RESTRICT. Tên/địa chỉ không rỗng; lat [-90,90], lon [-180,180], radius [20,1000]. API yêu cầu radius nguyên, số hữu hạn và danh mục tồn tại; tên ≤200, địa chỉ ≤500. image_url tùy chọn HTTP(S), không có upload mới. status ∈{draft,published,hidden}. |
+| `poi_narrations` | `id/poi_id/locale/title/body/created_at/updated_at TEXT` | PK id, FK poi_id → pois CASCADE; UNIQUE(poi_id,locale). API locale trim/lower, 2–3 ký tự chữ với các subtag 2–8 ký tự chữ/số, ví dụ vi/en/fr/pt-br. Tiêu đề ≤500 và nội dung không rỗng theo Unicode strip. Không giới hạn bài ở VI/EN. |
+| `anonymous_sessions` | `session_id TEXT`, `consent_granted INTEGER=1`, `created_at/last_seen_at TEXT` | PK session_id, UUIDv4 lowercase đúng variant. Consent là integer 0/1; UTC format cố định 24 ký tự, ngày/giờ hợp lệ; last_seen≥created. Consent=0 là dấu thu hồi, heartbeat muộn trả 409; đồng ý lại dùng UUID mới. |
+| `visit_events` | `id TEXT`, `session_id TEXT NULL`, `started_at TEXT` | PK id UUIDv4 lowercase; FK session → anonymous_sessions SET NULL; started_at UTC 24 ký tự hợp lệ. Rút đồng ý tách mã, giữ tổng lượt đến khi retention dọn. |
+
+Các trường trừ nơi ghi NULL đều NOT NULL trong DDL. PK danh mục/POI/Admin dùng TEXT; schema không ép mọi ID là UUID (fixture test dùng ID ngắn). Chỉ hai bảng analytics có CHECK UUIDv4 và thời gian chặt; timestamp Admin/nội dung không có CHECK định dạng tương đương. SQLite affinity `INTEGER` ở radius chưa bảo đảm số nguyên cho dữ liệu SQL trực tiếp; validators và kiểm tra publish bù điều kiện này. SQL trim không bao quát mọi Unicode whitespace; API kiểm tra sâu hơn. Không coi ràng buộc DDL là bằng chứng dữ liệu legacy đều đạt.
+
+Các chỉ mục: `idx_admin_sessions_admin_id`, `idx_pois_category_id`, `idx_categories_normalized_name_en` (partial unique), `idx_anonymous_sessions_last_seen_at`, `idx_visit_events_session_id`, `idx_visit_events_started_at`, cộng các chỉ mục UNIQUE/PK của SQLite. Mỗi kết nối ứng dụng bật `PRAGMA foreign_keys=ON`, timeout 10 giây.
+
+Public chỉ truy vấn published; draft/hidden trả 404 ở chi tiết và không có trong list/map. Công bố draft/hidden → published cần đủ BR04 và ≥1 bài hợp lệ, trong `BEGIN IMMEDIATE`; hide chỉ published → hidden. Xóa POI CASCADE bài; không xóa danh mục đang dùng. UI xác nhận xóa/công bố và thể hiện lý do thiếu.
+
+Analytics heartbeat đầu sau đồng ý hoặc sau ≥30 phút không tín hiệu tạo lượt mới. Heartbeat/revoke/retention chạy giao dịch; active là consent=1 và `now−90s < last_seen <= now`. Ngày thống kê UTC+7; giữ từ 00:00 VN của hôm nay−29 ngày, đúng mốc được giữ. Retention chạy startup và mỗi 00:00 VN; đây là tác vụ trong API, không có scheduler khi API tắt. Không lưu tọa độ khách trong bảy bảng. Kiểm tra thời gian giả lập không chứng minh vận hành dài ngày.
+
+Nguyên cần đối chiếu lại bảng §7.1.1–7.1.5, An §7.1.6–7.1.7 trong Word; bổ sung tên EN danh mục và schema analytics v2. Word chưa được chỉnh sửa/kiểm tra layout; [báo cáo bàn giao](../testing/integration-2026-11-06.md) nêu phần chờ nhóm.

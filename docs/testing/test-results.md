@@ -1,5 +1,11 @@
 # Kết quả kiểm thử
 
+## Bàn giao 06/11/2026, chuẩn bị demo 07/11
+
+Nền `main` / `48a0908`, ban đầu sạch; kết quả áp dụng working tree chưa commit. Backend **89/89**, guest **25 Node + 20 Vitest**, browser **36 đạt + 1 OSM opt-in bỏ qua** (config tạm, dịch vụ riêng), mobile **120/120** khi bật fixture HTTP (mặc định **116 đạt + 4 HTTP bỏ qua**); các lượt cuối này đều exit 0. Build Admin/guest và Android export đạt. NFR08 HTTP thật **20/20 dưới 3 giây**; backup/restore kiểm tra bảy bảng trên SQLite tạm đạt. Cài sạch web từ cache npm đạt; backend venv mới chưa cài được offline vì thiếu distribution FastAPI.
+
+OSM diagnostic riêng: fallback đạt, nhưng **0 tile thành công / 15 ERR_CONNECTION_REFUSED**; chưa đạt tải tile thật tại môi trường này. Chưa có điện thoại, âm thanh/GPS/native map thật, nội dung demo được duyệt, Word/sơ đồ/video hoàn chỉnh hoặc cài mới toàn hệ thống trên máy khác. Xem [báo cáo F01–F12/NFR01–NFR08, lệnh, giới hạn và manifest](integration-2026-11-06.md), [checklist demo](../deployment/demo-guide.md), [sao lưu/phục hồi](../deployment/backup-restore.md). Các kết quả bên dưới là lịch sử.
+
 ## Tích hợp tồn đọng đến 03/11, kiểm chứng ngày 04/11/2026
 
 Bổ sung trước push theo yêu cầu người dùng: rebase phần tích hợp lên commit `aa0d2d7` mới của An, giữ UC09/UC10–UC11/Dashboard. Backend chạy lại **79/79**, guest **25 Node + 20 Vitest**, build Admin thành công; Playwright **31 ca chức năng đạt + 1 OSM opt-in skip**, exit 0. Các con số bên dưới ghi mốc kiểm chứng trước rebase; xem phần đầu báo cáo để biết cách ghép và kết quả mới.

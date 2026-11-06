@@ -26,6 +26,7 @@ export const translations = {
     withdrawPending: 'Chưa gửi được yêu cầu rút tới máy chủ (có thể đang mất mạng). Ứng dụng đã dừng gửi và sẽ thử lại khi có mạng.',
     pendingRevoke: 'Yêu cầu rút đồng ý đang chờ gửi tới máy chủ; sẽ tự thử lại khi có mạng và ứng dụng đang mở.',
     analyticsMock: 'Đang dùng dữ liệu giả lập: không có thống kê nào được gửi tới máy chủ.',
+    privacyStorageError: 'Không lưu được lựa chọn riêng tư. Thống kê đã dừng; yêu cầu rút chưa lưu có thể mất khi đóng ứng dụng. Kiểm tra bộ nhớ thiết bị và mở lại ứng dụng.',
     logPlayed: 'Đã phát', logFailed: 'Không phát được', logGone: 'không còn công khai', logLoad: 'Không tải được bài',
   },
   en: {
@@ -55,6 +56,7 @@ export const translations = {
     withdrawPending: 'The withdrawal request could not reach the server yet (you may be offline). The app has stopped sending data and will retry when online.',
     pendingRevoke: 'A withdrawal request is waiting to be sent to the server; it retries automatically when online and the app is open.',
     analyticsMock: 'Using mock data: no statistics are sent to the server.',
+    privacyStorageError: 'Your privacy choice could not be saved. Statistics are stopped; an unsaved withdrawal may be lost when the app closes. Check device storage and reopen the app.',
     logPlayed: 'Played', logFailed: 'Could not play', logGone: 'is no longer public', logLoad: 'Could not load narration',
   },
 };

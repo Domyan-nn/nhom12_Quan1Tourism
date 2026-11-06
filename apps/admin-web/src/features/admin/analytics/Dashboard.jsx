@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { request } from '../../../services/api.js';
 
 const REFRESH_MS = 30000; // BR17: tự làm mới mỗi 30 giây khi trang hiển thị
@@ -19,7 +19,7 @@ const vnDate = (offsetDays = 0) => {
   const d = new Date(Date.now() + offsetDays * 86400000);
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(d); // YYYY-MM-DD
 };
-const fmtTime = iso => (iso ? new Date(iso).toLocaleTimeString() : '');
+const fmtTime = iso => (iso ? new Date(iso).toLocaleTimeString([], {timeZone:'Asia/Ho_Chi_Minh'}) : '');
 
 export default function Dashboard({ language, token, onExpired }) {
   const s = strings[language] || strings.vi;
@@ -27,29 +27,37 @@ export default function Dashboard({ language, token, onExpired }) {
   const [visits, setVisits] = useState(null), [visitsErr, setVisitsErr] = useState('');
   const [from, setFrom] = useState(''), [to, setTo] = useState(''), [rangeErr, setRangeErr] = useState('');
   const [query, setQuery] = useState(''), [tick, setTick] = useState(0);
+  const activeRequest = useRef(null);
 
   const fail = useCallback((e, set) => { if (e.status === 401) onExpired(); else set(e.code || 'SERVER_ERROR'); }, [onExpired]);
 
   // UC11: số phiên đang hoạt động; lỗi => "Không khả dụng", giữ lần thành công gần nhất (BR19).
-  const loadActive = useCallback(() => request('/admin/stats/active', { token })
-    .then(d => { setActive(d); setActiveErr(''); setLastOk(d.measured_at); })
-    .catch(e => fail(e, setActiveErr)), [token, fail]);
+  const loadActive = useCallback(() => {
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    return request('/admin/stats/active', { token, signal:controller.signal })
+      .then(d => { if (!controller.signal.aborted) { setActive(d); setActiveErr(''); setLastOk(d.measured_at); } })
+      .catch(e => { if (!controller.signal.aborted) fail(e, setActiveErr); });
+  }, [token, fail]);
   useEffect(() => {
     loadActive();
     const timer = setInterval(() => { if (document.visibilityState === 'visible') loadActive(); }, REFRESH_MS);
     const onVisible = () => { if (document.visibilityState === 'visible') loadActive(); };
     document.addEventListener('visibilitychange', onVisible);
-    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
+    return () => { activeRequest.current?.abort(); clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
   }, [loadActive]);
 
   // UC10: hôm nay, 7 ngày và khoảng ngày tùy chọn. Lỗi không được thay bằng 0.
   useEffect(() => {
     let live = true;
+    const controller = new AbortController();
+    setVisits(null);
     setVisitsErr('');
-    request(`/admin/stats/visits${query}`, { token })
+    request(`/admin/stats/visits${query}`, { token, signal:controller.signal })
       .then(d => { if (live) setVisits(d); })
       .catch(e => { if (live) { setVisits(null); fail(e, setVisitsErr); } });
-    return () => { live = false; };
+    return () => { live = false; controller.abort(); };
   }, [token, query, tick, fail]);
 
   function apply(e) {

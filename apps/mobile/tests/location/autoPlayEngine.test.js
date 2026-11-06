@@ -49,6 +49,16 @@ describe('BR08 – mẫu hợp lệ', () => {
     const e = new AutoPlayEngine();
     expect(run(e, { ...sample(T0), accuracy: null }).distances.a).toBeUndefined();
   });
+  it.each([
+    { latitude: NaN }, { latitude: 91 }, { latitude: null },
+    { longitude: Infinity }, { longitude: -181 }, { accuracy: -1 },
+  ])('bỏ mẫu GPS sai, không cho phát từ trạng thái trong vùng cũ: %j', (invalid) => {
+    const e = new AutoPlayEngine();
+    run(e, sample(T0));
+    const r = run(e, { ...sample(T0 + 6000), ...invalid });
+    expect(r.candidate).toBeNull();
+    expect(r.distances.a).toBeUndefined();
+  });
 });
 
 describe('BR08 – xác nhận 5 giây', () => {
