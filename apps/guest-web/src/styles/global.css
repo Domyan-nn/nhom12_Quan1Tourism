@@ -64,6 +64,18 @@ input[type='search'] { width: 100%; padding: .7rem .9rem; font: inherit; border:
   border-radius: var(--radius); padding: 1.1rem 1.25rem; max-width: 70ch; }
 .places-map { height: clamp(300px, 55vh, 560px); width: 100%; border-radius: var(--radius); isolation: isolate; }
 .places-map-wrap { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.places-map-wrap.is-map-fallback { position: relative; }
+.is-map-fallback .places-map {
+  background-color: #e8f2e7;
+  background-image: linear-gradient(#bbd8c84d 1px, transparent 1px), linear-gradient(90deg, #bbd8c84d 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.map-fallback-label {
+  position: absolute; z-index: 1000; top: 12px; right: 12px;
+  max-width: 55%; padding: .4rem .6rem; border-radius: 6px;
+  background: #ffffffed; color: var(--ink); font-size: .8rem;
+  box-shadow: 0 1px 5px #3333; pointer-events: none;
+}
 .place-marker { background: var(--green); color: #fff; border: 2px solid white; border-radius: 50%; text-align: center; font-size: 18px; line-height: 28px; box-shadow: 0 1px 5px #3338; }
 .map-summary { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; }
 .map-summary .btn { display: inline-block; text-decoration: none; }
