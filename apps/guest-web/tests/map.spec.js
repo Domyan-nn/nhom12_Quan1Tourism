@@ -3,13 +3,18 @@ import { test, expect } from '@playwright/test';
 const real = 'http://127.0.0.1:18174';
 const mock = 'http://127.0.0.1:18173';
 const api = 'http://127.0.0.1:18082';
-// Local tile fixture: browser tests never depend on, or send traffic to, OSM.
+// Local tile fixture: browser tests never depend on external tile servers.
 const tile = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==', 'base64');
+const primaryTiles = 'https://tile.openstreetmap.org/**';
+const secondaryTiles = 'https://tile.openstreetmap.de/**';
 const tiles = (page) => page.route('https://tile.openstreetmap.org/**', (route) =>
   route.fulfill({ contentType: 'image/png', body: tile }));
 const places = (page) => page.getByRole('group', { name: 'Địa điểm trên bản đồ' });
 
-test.beforeEach(async ({ page }) => { await tiles(page); });
+test.beforeEach(async ({ page }) => {
+  await tiles(page);
+  await page.route(secondaryTiles, (route) => route.abort());
+});
 
 test('real public API map draws published markers, opens summary and correct multilingual detail', async ({ page, request }) => {
   const errors = [];
@@ -98,11 +103,26 @@ for (const failure of ['network', 'server']) {
   });
 }
 
+test('secondary tile source displays the street map when primary source fails', async ({ page }) => {
+  await page.unroute(primaryTiles);
+  await page.route(primaryTiles, (route) => route.abort());
+  await page.unroute(secondaryTiles);
+  await page.route(secondaryTiles, (route) => route.fulfill({ contentType: 'image/png', body: tile }));
+  await page.goto(`${real}/map`);
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(2);
+  await expect(page.locator('.leaflet-control-attribution')).toContainText('OpenStreetMap Deutschland');
+  await expect(page.locator('.leaflet-tile').first()).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
 test('tile error keeps summary controls and list fallback usable; retry restores map', async ({ page }) => {
-  await page.unroute('https://tile.openstreetmap.org/**');
-  await page.route('https://tile.openstreetmap.org/**', (r) => r.abort());
+  await page.unroute(primaryTiles);
+  await page.route(primaryTiles, (r) => r.abort());
   await page.goto(`${real}/map`);
   await expect(page.getByRole('alert')).toContainText('Không tải được nền bản đồ');
+  await expect(page.locator('.places-map-wrap')).toHaveClass(/is-map-fallback/);
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(2);
+  await expect(page.locator('.leaflet-tile')).toHaveCount(0);
   await places(page).getByRole('button', { name: 'Dinh Độc Lập' }).click();
   await expect(page.getByRole('link', { name: 'Xem chi tiết', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Quay lại danh sách', exact: true })).toBeVisible();
