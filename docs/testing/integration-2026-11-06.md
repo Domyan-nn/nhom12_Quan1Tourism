@@ -1,5 +1,7 @@
 # Bàn giao tích hợp và chuẩn bị demo 07/11/2026
 
+**Cập nhật sau commit `4723a49`:** bản đồ web đã có nguồn tile dự phòng và đã tải được ảnh thật trên máy kiểm tra. Bộ kiểm thử hiện tại đạt 89 backend, 25 Node + 20 Vitest guest, 37 browser + 1 chẩn đoán mạng bỏ qua, 120 mobile Jest + HTTP fixture; hai web build đạt. Xem [biên bản nghiệm thu kỹ thuật mới](acceptance-readiness-2026-11-06.md). Các số liệu, trạng thái F02 và hạn chế tile bên dưới ghi lại mốc trước khi sửa bản đồ; không dùng chúng làm kết luận hiện tại cho web.
+
 Ngày kiểm tra: **06/11/2026, giờ Việt Nam (UTC+7)**. Người thực hiện kiểm thử tự động: Codex; chưa có xác nhận nghiệm thu hoặc chữ ký của Nguyên, An, Thuận. Báo cáo áp dụng cho working tree chưa commit trên nền `48a0908a5624e4a5202fc9417968e5f3f382b170`.
 
 ## 1. Phiên bản và phạm vi an toàn

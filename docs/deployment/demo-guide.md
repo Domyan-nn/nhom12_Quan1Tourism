@@ -1,6 +1,6 @@
 # Checklist demo 07/11/2026 — Windows 11, PowerShell
 
-Các ô dưới để nhóm ghi sau khi thực hiện, không phải xác nhận nghiệm thu. Nguyên phụ trách Admin/CSDL, An web/thống kê/hiệu năng, Thuận mobile/GPS/TTS. Dùng [báo cáo 06/11](../testing/integration-2026-11-06.md) để phân biệt test giả lập với thiết bị thật.
+Các ô dưới để nhóm ghi sau khi thực hiện, không phải xác nhận nghiệm thu. Nguyên phụ trách Admin/CSDL, An web/thống kê/hiệu năng, Thuận mobile/GPS/TTS. Dùng [biên bản kiểm tra hiện tại](../testing/acceptance-readiness-2026-11-06.md) và [báo cáo tích hợp 06/11](../testing/integration-2026-11-06.md) để phân biệt test giả lập với thiết bị thật.
 
 ## Trước buổi demo
 
@@ -69,7 +69,7 @@ Không cần chờ dài trong buổi thuyết trình để chứng minh mọi bi
 
 | Sự cố | Thao tác tiếp tục |
 | --- | --- |
-| Tile OSM không tải | Ghi lỗi mạng quan sát được, dùng liên kết về danh sách; marker/summary còn có thể hoạt động. Không gọi ảnh tile fixture là bản đồ thật. Giữ attribution. Thử lại mạng có quyền truy cập trước buổi demo. |
+| Tile OSM không tải | Web tự thử nguồn OpenStreetMap Deutschland; nếu cả hai nguồn lỗi, sơ đồ vị trí vẫn hiện ghim và có nút Thử lại. Ghi nguồn đang dùng và lỗi mạng, giữ attribution. Nếu cần bản đồ đường phố thật, kiểm tra mạng trước buổi demo; không gọi tile fixture là bản đồ thật. |
 | Không có giọng phù hợp/TTS lỗi | Hiển thị thông báo và đọc văn bản; kiểm tra giọng/âm lượng hoặc đổi sang **bài có sẵn** ở ngôn ngữ có giọng. Không tự đổi giọng sai ngôn ngữ hoặc tạo/dịch bài. |
 | Mất API/mạng | Hiện lỗi và Thử lại khi kết nối phục hồi. Chỉ dữ liệu đã tải có thể còn để đọc; không có chế độ offline. Không chuyển mock ngầm. |
 | GPS không đạt độ chính xác | Giữ app foreground, ra nơi thoáng, kiểm tra quyền; không ép mẫu sai để phát. Dùng nghe thủ công và ghi UC04 chưa xác minh nếu chưa đủ điều kiện. |
