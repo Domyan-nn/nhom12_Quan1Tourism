@@ -1,5 +1,11 @@
 # Kết quả kiểm thử
 
+## Kiểm tra nghiệm thu kỹ thuật trên `4723a49` — 06/11/2026
+
+Backend **89/89**, guest **25 Node + 20 Vitest**, Edge **37 đạt + 1 chẩn đoán mạng bỏ qua**, mobile Jest + HTTP fixture **120/120**; tất cả các lượt được tính đều exit 0. Build Admin và guest thành công. Bản đồ web đã tải 12 tile thật qua nguồn dự phòng OpenStreetMap Deutschland và hiện 4 ghim API; 13/13 ca bản đồ trong Edge đạt. Bộ browser dùng bốn dịch vụ test riêng để tránh lỗi dừng server của cấu hình mặc định. Xem [biên bản kiểm tra và phần việc tiếp theo](acceptance-readiness-2026-11-06.md).
+
+Kết quả này xác nhận phần tự động đã sẵn sàng cho bước demo và kiểm thử hiện trường. Mobile HTTP đã chạy lại trên phiên bản này bằng SQLite tạm; kiểm thử điện thoại, âm thanh/GPS thực tế và dữ liệu demo được duyệt vẫn chờ nhóm hoàn tất. Các mục dưới là kết quả lịch sử theo đúng phiên bản ghi tại từng mục.
+
 ## Bàn giao 06/11/2026, chuẩn bị demo 07/11
 
 Nền `main` / `48a0908`, ban đầu sạch; kết quả áp dụng working tree chưa commit. Backend **89/89**, guest **25 Node + 20 Vitest**, browser **36 đạt + 1 OSM opt-in bỏ qua** (config tạm, dịch vụ riêng), mobile **120/120** khi bật fixture HTTP (mặc định **116 đạt + 4 HTTP bỏ qua**); các lượt cuối này đều exit 0. Build Admin/guest và Android export đạt. NFR08 HTTP thật **20/20 dưới 3 giây**; backup/restore kiểm tra bảy bảng trên SQLite tạm đạt. Cài sạch web từ cache npm đạt; backend venv mới chưa cài được offline vì thiếu distribution FastAPI.
