@@ -1,5 +1,16 @@
 # Kết quả kiểm thử
 
+## Xác nhận kiểm thử Admin và Guest web — 07/11/2026
+
+Người dùng xác nhận **Admin web và Guest web đều đạt kiểm thử**. Đây là kết quả kiểm thử thủ công do người dùng cung cấp sau mốc `85ba378`, không phải lượt chạy lại bộ kiểm thử tự động.
+
+| Thành phần | Kết quả | Nguồn xác nhận |
+| --- | --- | --- |
+| Admin web | Đạt | Người dùng xác nhận các chức năng đã kiểm thử đều đạt. |
+| Guest web (web khách) | Đạt | Người dùng xác nhận các chức năng đã kiểm thử đều đạt. |
+
+Chưa cung cấp danh sách ca chi tiết, trình duyệt/thiết bị và ảnh/video cho lượt xác nhận này. Kết quả mobile giữ theo cập nhật bên dưới: bản đồ, quyền vị trí, GPS và TTS VI/EN đạt theo phản hồi; đồng ý/rút đồng ý thống kê trên mobile vẫn chờ kiểm thử với API thật vì lượt thử dùng mock.
+
 ## Mobile SDK 58 và phản hồi kiểm thử thiết bị — 07/11/2026
 
 Working tree sau nâng Expo lên **58.0.23**, React Native **0.88.1**, React **19.3.0**. Kiểm tra tự động: Expo Doctor **20/20 đạt**; Jest **116 đạt + 4 HTTP bỏ qua** khi chưa bật fixture riêng; bundle Android/iOS trả HTTP 200. Đây là kết quả kiểm tra kỹ thuật, không thay cho kiểm thử thiết bị.
