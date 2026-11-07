@@ -15,10 +15,10 @@ Các ô dưới để nhóm ghi sau khi thực hiện, không phải xác nhận
 
 ## Khởi động
 
-Chạy từ gốc repo, mỗi khối ở một cửa sổ PowerShell. Lần cài đầu dùng [RUNNING](../../RUNNING.md) để tạo venv, cài requirements và `npm.cmd ci` riêng từng app. Các lệnh dưới dùng dependency đã cài.
+DB hiện dùng là `backend/data/saigon_stories.db`; có thể bật cả bốn dịch vụ bằng `powershell -ExecutionPolicy Bypass -File scripts/start-system.ps1` theo [RUNNING](../../RUNNING.md). Các khối chạy riêng sau tương đương, không tạo DB demo mới. Chạy từ gốc repo, mỗi khối ở một cửa sổ PowerShell. Lần cài đầu dùng [RUNNING](../../RUNNING.md) để tạo venv, cài requirements và `npm.cmd ci` riêng từng app. Các lệnh dưới dùng dependency đã cài.
 
 ```powershell
-$demoDb = 'THAY_BANG_DUONG_DAN_TUYET_DOI_DATABASE_DA_DUYET'
+$demoDb = (Resolve-Path 'backend/data/saigon_stories.db').Path
 if (-not (Test-Path -LiteralPath $demoDb -PathType Leaf)) { throw 'Chưa chọn database' }
 $env:SAIGON_DATABASE = (Resolve-Path -LiteralPath $demoDb).Path
 .\.venv\Scripts\python.exe backend/scripts/start_demo.py --database $env:SAIGON_DATABASE

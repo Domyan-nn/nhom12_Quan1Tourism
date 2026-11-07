@@ -11,7 +11,7 @@ Chạy từ gốc repo, dùng Python `.venv`. Người vận hành chọn databa
 ## Tạo bản sao mới, không ghi đè
 
 ```powershell
-$demoDb = 'THAY_BANG_DUONG_DAN_TUYET_DOI_DATABASE_DA_DUYET'
+$demoDb = (Resolve-Path 'backend/data/saigon_stories.db').Path
 if (-not (Test-Path -LiteralPath $demoDb -PathType Leaf)) { throw 'Không tìm thấy database đã chọn' }
 $demoDb = (Resolve-Path -LiteralPath $demoDb).Path
 New-Item -ItemType Directory -Path backups -Force | Out-Null

@@ -1,5 +1,23 @@
 # Kết quả kiểm thử
 
+## Hợp nhất DB chính và thư mục — 07/11/2026
+
+Đã thay `backend/data/saigon_stories.db` bằng snapshot `local-dev.db`, giữ nguyên schema phiên bản 2 và toàn bộ dữ liệu bảy bảng. Đối chiếu schema/từng dòng và kiểm tra toàn vẹn/khóa ngoại đều đạt trước khi chạy lại API. Đã lưu ZIP dự phòng rồi xóa 9 DB phụ. Xem [biên bản chuyển DB](../deployment/database-consolidation-2026-11-07.md).
+
+Admin, Guest web và mobile cùng dùng API với DB chính; Guest/mobile mặc định gọi API thật. `.env` mobile cục bộ đã chuyển `EXPO_PUBLIC_USE_MOCK=false`, bundle Android xác nhận giá trị `false` và URL LAN cổng 8000. Các ca UC12 trên điện thoại vẫn chờ người dùng thực hiện lại; cấu hình mới không thay kết quả kiểm thử thiết bị trước đó.
+
+| Kiểm tra sau thay đổi | Kết quả |
+| --- | --- |
+| Backend unittest, SQLite tạm | 89/89 đạt, exit 0 |
+| Guest Node + Vitest | 25 + 20 đạt, exit 0 |
+| Mobile Jest | 116 đạt + 4 HTTP bỏ qua do chưa bật fixture riêng, exit 0 |
+| Build Admin và Guest | Đạt, dùng `--configLoader runner`, exit 0 |
+| Playwright Edge, bốn dịch vụ test riêng và SQLite tạm | 37 đạt + 1 OSM opt-in bỏ qua, exit 0; đã dọn config tạm và dừng dịch vụ test |
+| HTTP hệ thống chính | Health, Public API qua hai Vite proxy và API LAN trả 200; Metro trả 200; Android bundle tải được |
+| Lệnh quản lý dịch vụ | Script PowerShell parse hợp lệ; bật với IP rõ ràng, dừng và bật lại với IP LAN tự nhận đều thành công |
+
+Lượt Playwright tự quản lý server ban đầu bị kẹt teardown và đã dừng, không tính là đạt. Lượt test cuối dùng bốn dịch vụ độc lập theo cách tái lập đã ghi ở [báo cáo trước](integration-2026-11-06.md); `.last-run.json` ghi `passed`, không có ca thất bại. Các bộ test không dùng DB chính để ghi/xóa dữ liệu.
+
 ## Xác nhận kiểm thử Admin và Guest web — 07/11/2026
 
 Người dùng xác nhận **Admin web và Guest web đều đạt kiểm thử**. Đây là kết quả kiểm thử thủ công do người dùng cung cấp sau mốc `85ba378`, không phải lượt chạy lại bộ kiểm thử tự động.

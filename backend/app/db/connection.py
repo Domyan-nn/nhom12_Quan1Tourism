@@ -28,7 +28,7 @@ def validate_category_schema(database: Path) -> None:
     if missing:
         raise RuntimeError(
             f"Database {database} thiếu bảng categories hoặc các cột: {', '.join(sorted(missing))}. "
-            "Dùng database demo đã nâng cấp hoặc sao lưu và nâng cấp database theo RUNNING.md."
+            "Sao lưu và nâng cấp database chính theo RUNNING.md."
         )
 
 

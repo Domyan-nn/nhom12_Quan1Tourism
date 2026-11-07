@@ -4,6 +4,8 @@ Phụ trách theo kế hoạch: Lê Nam Thuận. **Đã có kết quả kiểm t
 
 ## Kết quả cập nhật ngày 07/11/2026
 
+Sau lượt thử được báo bên dưới, hệ thống đã [chuyển sang DB chính](../../deployment/database-consolidation-2026-11-07.md) và cấu hình mobile dùng API thật (`EXPO_PUBLIC_USE_MOCK=false`). Luồng đồng ý/rút thống kê trên điện thoại đang chờ thử lại với cấu hình mới; kết quả mock dưới đây được giữ làm lịch sử.
+
 Nguồn: phản hồi của người dùng trong phiên làm việc sau khi nâng mobile lên Expo SDK 58. Working tree chưa commit; chưa có xác nhận phiên bản build trên thiết bị. Lượt thử được người dùng xác nhận đang dùng **dữ liệu giả lập (mock)**.
 
 | Hạng mục | Kết quả người dùng báo | Phạm vi xác nhận |
