@@ -1,5 +1,13 @@
 # Kết quả kiểm thử
 
+## Mobile SDK 58 và phản hồi kiểm thử thiết bị — 07/11/2026
+
+Working tree sau nâng Expo lên **58.0.23**, React Native **0.88.1**, React **19.3.0**. Kiểm tra tự động: Expo Doctor **20/20 đạt**; Jest **116 đạt + 4 HTTP bỏ qua** khi chưa bật fixture riêng; bundle Android/iOS trả HTTP 200. Đây là kết quả kiểm tra kỹ thuật, không thay cho kiểm thử thiết bị.
+
+Người dùng báo **bản đồ, quyền vị trí, GPS, TTS VI và EN đều hoạt động ổn trên mobile**. Lượt thử đang dùng dữ liệu giả lập: **chưa kiểm thử được đồng ý/rút đồng ý thống kê (UC12)** vì nút Đồng ý bị khóa trong chế độ mock. Đây là hành vi dự kiến của mock; cần chuyển sang API thật và khởi động lại Expo để kiểm thử luồng này. Chưa có thông tin thiết bị/OS, build, giọng và minh chứng; chưa xác nhận toàn bộ ca biên hoặc nghiệm thu toàn hệ thống. Chi tiết tại [phiếu kiểm thử mobile](../mobile/testing/mobile-field-test.md).
+
+Các mục theo ngày bên dưới được giữ làm lịch sử.
+
 ## Kiểm tra nghiệm thu kỹ thuật trên `4723a49` — 06/11/2026
 
 Backend **89/89**, guest **25 Node + 20 Vitest**, Edge **37 đạt + 1 chẩn đoán mạng bỏ qua**, mobile Jest + HTTP fixture **120/120**; tất cả các lượt được tính đều exit 0. Build Admin và guest thành công. Bản đồ web đã tải 12 tile thật qua nguồn dự phòng OpenStreetMap Deutschland và hiện 4 ghim API; 13/13 ca bản đồ trong Edge đạt. Bộ browser dùng bốn dịch vụ test riêng để tránh lỗi dừng server của cấu hình mặc định. Xem [biên bản kiểm tra và phần việc tiếp theo](acceptance-readiness-2026-11-06.md).

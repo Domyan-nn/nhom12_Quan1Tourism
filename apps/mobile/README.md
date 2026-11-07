@@ -1,8 +1,12 @@
 # Mobile – Saigon Stories Quận 1 (React Native / Expo)
 
-Ứng dụng dùng Expo SDK 56, bản đồ, thuyết minh TTS và tự phát theo vị trí **chỉ khi ứng dụng hiển thị**. Không có theo dõi vị trí nền hoặc chế độ offline. Dữ liệu đã tải có thể được giữ trong bộ nhớ trong phiên hiện tại khi mạng lỗi.
+Ứng dụng dùng Expo SDK 58, React Native 0.88.1 và React 19.3, bản đồ, thuyết minh TTS và tự phát theo vị trí **chỉ khi ứng dụng hiển thị**. Không có theo dõi vị trí nền hoặc chế độ offline. Dữ liệu đã tải có thể được giữ trong bộ nhớ trong phiên hiện tại khi mạng lỗi.
+
+Sau khi cập nhật mã nguồn, chạy `npm.cmd ci` trong `apps/mobile` rồi `npx.cmd expo start --clear`. Dùng Expo Go tương thích SDK 58; nếu dùng development build riêng, cần build lại ứng dụng native sau khi nâng SDK. Node.js cần 22.13+ (nhánh 22), 24.3+ (nhánh 24), hoặc 26+ theo [hướng dẫn SDK 58](https://expo.dev/changelog/sdk-58).
 
 Hướng dẫn chạy và kiểm thử: [RUNNING.md](../../RUNNING.md).
+
+Kết quả người dùng báo ngày 07/11/2026: bản đồ, quyền vị trí, GPS và TTS VI/EN hoạt động ổn trên mobile. Lượt thử đang dùng mock nên nút Đồng ý thống kê bị khóa; đồng ý/rút đồng ý UC12 với API thật còn chờ kiểm thử. Xem [phiếu kiểm thử thiết bị và phạm vi đã xác nhận](../../docs/mobile/testing/mobile-field-test.md); chưa có model/OS, build và minh chứng chi tiết.
 
 Code marker và test từ commit Thuận `0e2e16f` đã được tích hợp vào `apps/mobile/src/features/map/` và `apps/mobile/tests/`; bản trùng ở `mobile/apps/mobile/` được đối chiếu và dọn. Cùng tập ID/tọa độ hợp lệ dùng cho cả Marker và fitToCoordinates, không yêu cầu bán kính geofence để vẽ ghim. Dữ liệu rỗng/toàn tọa độ sai có thông báo và nút về danh sách. API lỗi khi tải lại có nút Thử lại; phản hồi chọn ghim cũ không ghi đè ghim mới.
 
