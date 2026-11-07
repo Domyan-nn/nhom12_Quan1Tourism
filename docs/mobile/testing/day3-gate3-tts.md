@@ -1,5 +1,7 @@
 # Ngày 3 (03/11/2026) – Lê Nam Thuận: UC03 trên guest-web và mobile
 
+**Cập nhật 07/11/2026:** người dùng xác nhận TTS tiếng Việt và tiếng Anh hoạt động ổn trên mobile trong lượt thử dùng mock. Xem [phiếu kiểm thử hiện tại](mobile-field-test.md). Các trạng thái chưa kiểm thử bên dưới là lịch sử Gate 3 và các ca chi tiết chưa có kết quả riêng; phản hồi này chưa xác nhận thiếu giọng, bài dài, pause/resume hay TTS trên web.
+
 Việc theo timeline: hoàn thiện chọn ngôn ngữ và nghe thuyết minh (UC03) trên guest-web (Web Speech API) và mobile-app (Expo Speech); kiểm tra giọng đọc và báo lỗi khi thiếu giọng (BR05); nếu thiết bị không tạm dừng được thì dừng hoặc phát lại (UC03-E2).
 
 ## Hiện trạng

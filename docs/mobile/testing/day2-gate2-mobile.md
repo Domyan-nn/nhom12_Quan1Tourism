@@ -1,5 +1,7 @@
 # Ngày 2 (02/11/2026) – Lê Nam Thuận: UC01 và UC02 trên mobile
 
+**Cập nhật 07/11/2026:** người dùng xác nhận bản đồ, quyền vị trí và GPS hoạt động ổn trong lượt thử mobile dùng mock. Xem [phiếu kiểm thử hiện tại](mobile-field-test.md). Các trạng thái chưa kiểm thử bên dưới là lịch sử Gate 2 và các ca chi tiết chưa có kết quả riêng; chưa xác nhận tìm/lọc hoặc API thật từ phản hồi này.
+
 Mốc Gate 2 (phần mobile): khách tìm kiếm, lọc địa điểm và xem được ghim trên bản đồ. **Chưa kiểm thử điện thoại/emulator.** Tài liệu gốc của Thuận từ commit `0e2e16f` đã được chuyển về `docs/mobile/testing/`; code và test tương ứng nay nằm ở `apps/mobile/`.
 
 ## Việc trong bảng timeline và hiện trạng
