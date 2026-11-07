@@ -1,5 +1,7 @@
 # Checklist demo 07/11/2026 — Windows 11, PowerShell
 
+**Cập nhật kết quả 07/11/2026:** người dùng xác nhận Admin web và Guest web đều đạt kiểm thử. Mobile đã được xác nhận bản đồ, quyền vị trí, GPS và TTS VI/EN hoạt động ổn; đồng ý/rút đồng ý thống kê trên mobile còn chờ kiểm thử với API thật do lượt thử dùng mock. Xem [kết quả hiện tại](../testing/test-results.md) và [phiếu mobile](../mobile/testing/mobile-field-test.md). Các ô chi tiết dưới đây giữ để bổ sung thông tin và minh chứng từng bước.
+
 Các ô dưới để nhóm ghi sau khi thực hiện, không phải xác nhận nghiệm thu. Nguyên phụ trách Admin/CSDL, An web/thống kê/hiệu năng, Thuận mobile/GPS/TTS. Dùng [biên bản kiểm tra hiện tại](../testing/acceptance-readiness-2026-11-06.md) và [báo cáo tích hợp 06/11](../testing/integration-2026-11-06.md) để phân biệt test giả lập với thiết bị thật.
 
 ## Trước buổi demo
