@@ -16,8 +16,8 @@ Code marker và test từ commit Thuận `0e2e16f` đã được tích hợp và
 
 Các biến trong `.env` được đọc khi khởi động Expo:
 
-- `EXPO_PUBLIC_USE_MOCK=true` (mặc định): dữ liệu mẫu cục bộ, có thông báo ở Khám phá; không gọi API địa điểm thật.
-- `EXPO_PUBLIC_USE_MOCK=false`: gọi backend thật, không tự chuyển sang mock khi lỗi.
+- `EXPO_PUBLIC_USE_MOCK=true` (chỉ khi chủ động bật mock): dữ liệu mẫu cục bộ, có thông báo ở Khám phá; không gọi API địa điểm thật.
+- `EXPO_PUBLIC_USE_MOCK=false` (mặc định): gọi backend thật dùng chung `backend/data/saigon_stories.db` với hai web, không tự chuyển sang mock khi lỗi.
 - `EXPO_PUBLIC_API_BASE_URL`: URL kết thúc bằng `/api`, ví dụ `http://<IP-LAN-MAY-CHU>:8000/api`. Để trống sẽ thử dùng host Expo; Android emulator dùng `10.0.2.2` nếu không phát hiện host. Trên điện thoại thật, `localhost` là điện thoại, không phải máy tính.
 - `EXPO_PUBLIC_API_STYLE=v1`: dùng API backend hiện tại `/api/v1/categories`, `/api/v1/pois`, `/api/v1/pois/{id}`. Giá trị `contract` là tương thích đường dẫn cũ, backend hiện tại không hỗ trợ.
 

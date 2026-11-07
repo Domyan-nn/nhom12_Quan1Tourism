@@ -1,8 +1,8 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-/** Mặc định dùng dữ liệu giả lập, giống guest-web. Đặt EXPO_PUBLIC_USE_MOCK=false để gọi API thật. */
-export const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK !== 'false';
+/** API thật là mặc định; chỉ bật dữ liệu giả lập khi chọn rõ true. */
+export const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
 
 /** 'v1' = backend hiện tại; 'contract' = docs/API_CONTRACT.md (/public/...). */
 export const API_STYLE = process.env.EXPO_PUBLIC_API_STYLE === 'contract' ? 'contract' : 'v1';

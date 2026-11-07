@@ -1,102 +1,86 @@
-# Hướng dẫn demo Saigon Stories trên máy hiện tại
+# Chạy Saigon Stories với DB chính
 
-Các lệnh dưới đây dùng PowerShell trên máy đang có dự án tại `D:\cnpm\nhom12_Quan1Tourism`. Có thể sao chép nguyên từng khối lệnh; không cần thay đường dẫn. Máy đã có Node/npm, môi trường Python `.venv` và database `local-dev.db`.
+Admin web, Guest web và mobile dùng chung backend FastAPI và **`backend/data/saigon_stories.db`**. DB chính đã nhận nguyên schema và dữ liệu của `local-dev.db` ngày 07/11/2026; các DB demo/preview cũ đã được dọn. DB và bản sao lưu là dữ liệu cục bộ, không nằm trong Git.
 
-| Thành phần | Đường dẫn / địa chỉ trên máy |
+## Bật/tắt toàn hệ thống trên Windows
+
+Từ gốc dự án, sau khi đã cài dependency:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/start-system.ps1
+```
+
+Script tự chọn IPv4 LAN có gateway, sao lưu DB chính vào `backups/`, bật API trên `0.0.0.0:8000`, hai Vite web và Expo SDK 58. Nếu có nhiều card mạng, chọn rõ địa chỉ máy tính:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/start-system.ps1 -LanAddress 192.168.1.31
+```
+
+| Thành phần | Địa chỉ |
 | --- | --- |
-| Dự án | `D:\cnpm\nhom12_Quan1Tourism` |
-| Node/npm | `C:\Program Files\nodejs` |
-| Python | `D:\cnpm\nhom12_Quan1Tourism\.venv\Scripts\python.exe` |
-| Database demo hiện có | `D:\cnpm\nhom12_Quan1Tourism\backend\data\local-dev.db` |
-| Backend | <http://127.0.0.1:8000> |
-| Admin web | <http://127.0.0.1:5174> |
 | Guest web | <http://127.0.0.1:5173> |
+| Admin web | <http://127.0.0.1:5174> |
+| API / tài liệu | <http://127.0.0.1:8000/docs> |
+| Health | <http://127.0.0.1:8000/api/v1/health> |
+| Mobile Expo Go | `exp://<IP-LAN-máy-tính>:8081`, cùng Wi-Fi, tương thích SDK 58 |
 
-## 1. Cửa sổ PowerShell thứ nhất: chạy backend
-
-Chạy backend trước, giữ cửa sổ này mở trong suốt buổi demo. Nếu backend đã chạy tại cổng 8000 thì dùng tiến trình đó hoặc nhấn `Ctrl+C` ở cửa sổ cũ trước khi chạy lại.
-
-Khối lệnh sau sao lưu database vào một tệp mới rồi khởi động API với dữ liệu hiện có. Không chạy lại `init_db.py` hoặc `seed_db.py` trên `local-dev.db`.
+Dùng tài khoản/mật khẩu Admin hiện có từ DB đã chuyển; không seed lại để đặt lại mật khẩu. Log và trạng thái tiến trình ở `storage/runtime/`. Script từ chối khởi động khi cổng đã có dịch vụ hoặc còn tệp trạng thái; dừng dịch vụ trước khi chạy lại:
 
 ```powershell
-Set-Location 'D:\cnpm\nhom12_Quan1Tourism'
-$env:SAIGON_DATABASE = 'D:\cnpm\nhom12_Quan1Tourism\backend\data\local-dev.db'
-if (-not (Test-Path -LiteralPath $env:SAIGON_DATABASE -PathType Leaf)) { throw 'Không tìm thấy local-dev.db' }
-Remove-Item Env:SAIGON_DISABLE_CLEANUP -ErrorAction SilentlyContinue
-$backupPath = Join-Path 'D:\cnpm\nhom12_Quan1Tourism\backend\data' ('local-dev-backup-' + [guid]::NewGuid().ToString('N') + '.db')
+powershell -ExecutionPolicy Bypass -File scripts/stop-system.ps1
+```
+
+Script dừng chỉ các tiến trình do script khởi chạy, kiểm tra PID và thời điểm bắt đầu để tránh dừng tiến trình khác. Với dịch vụ mở thủ công, dùng Ctrl+C tại terminal tương ứng.
+
+## Chạy riêng từng phần
+
+Mỗi khối ở một PowerShell từ gốc repo. Backend mặc định dùng DB chính khi không có `SAIGON_DATABASE`; khối sau chỉ định rõ để tránh biến cũ trỏ DB đã xóa:
+
+```powershell
+$env:SAIGON_DATABASE = (Resolve-Path 'backend/data/saigon_stories.db').Path
+New-Item -ItemType Directory -Path backups -Force | Out-Null
+$backupPath = Join-Path 'backups' ('before-start-' + [guid]::NewGuid().ToString('N') + '.db')
 .\.venv\Scripts\python.exe backend/scripts/backup_db.py --database $env:SAIGON_DATABASE --destination $backupPath
-if ($LASTEXITCODE -ne 0) { throw 'Sao lưu thất bại; chưa khởi động backend' }
-Write-Output "Database backup: $backupPath"
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+if ($LASTEXITCODE -ne 0) { throw 'Sao lưu thất bại' }
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port 8000
 ```
 
-Chờ thấy `Application startup complete` và `Uvicorn running on http://127.0.0.1:8000`. Mở <http://127.0.0.1:8000/api/v1/health>, kết quả cần là `{"status":"ok"}`. Tài liệu API ở <http://127.0.0.1:8000/docs>.
-
-Backend yêu cầu schema danh mục song ngữ và analytics phiên bản 2; không tự tạo hay nâng cấp database. Startup và lịch 00:00 Việt Nam sẽ dọn thống kê ngoài cửa sổ 30 ngày, nên có bước sao lưu trước khi chạy. Health chỉ xác nhận tiến trình; có thể kiểm tra thêm <http://127.0.0.1:8000/api/v1/categories> và <http://127.0.0.1:8000/api/v1/pois> để xác nhận API đọc dữ liệu.
-
-## 2. Cửa sổ PowerShell thứ hai: chạy Admin web
+API không tự init/seed/migrate. Retention dọn thống kê ngoài cửa sổ 30 ngày khi startup và mỗi 00:00 Việt Nam. Giữ bản sao lưu trước khi chạy. Health chỉ xác nhận tiến trình; kiểm tra thêm `/api/v1/categories` và `/api/v1/pois`.
 
 ```powershell
-Set-Location 'D:\cnpm\nhom12_Quan1Tourism'
 $env:Path = "C:\Program Files\nodejs;$env:Path"
-npm.cmd --prefix apps/admin-web run dev -- --strictPort
+npm.cmd --prefix apps/admin-web run dev -- --strictPort --configLoader runner
 ```
 
-Mở <http://127.0.0.1:5174> và đăng nhập bằng tài khoản Admin đã tạo trong `local-dev.db`. Dùng mật khẩu hiện có; chạy lại seed không đặt lại mật khẩu.
-
-## 3. Cửa sổ PowerShell thứ ba: chạy Guest web
-
 ```powershell
-Set-Location 'D:\cnpm\nhom12_Quan1Tourism'
 $env:Path = "C:\Program Files\nodejs;$env:Path"
 $env:VITE_USE_MOCK = 'false'
 $env:VITE_API_BASE_URL = '/api/v1'
-npm.cmd --prefix apps/guest-web run dev -- --strictPort
+npm.cmd --prefix apps/guest-web run dev -- --strictPort --configLoader runner
 ```
 
-Mở <http://127.0.0.1:5173>. Cả hai web chuyển `/api` về backend cổng 8000. Giữ cả ba cửa sổ PowerShell chạy đồng thời; khi kết thúc, nhấn `Ctrl+C` trong từng cửa sổ.
+```powershell
+$env:Path = "C:\Program Files\nodejs;$env:Path"
+$env:EXPO_PUBLIC_USE_MOCK = 'false'
+$env:EXPO_PUBLIC_API_STYLE = 'v1'
+$env:EXPO_PUBLIC_API_BASE_URL = 'http://192.168.1.31:8000/api' # thay bằng IP LAN hiện tại
+Set-Location apps/mobile
+npx.cmd expo start --clear --lan
+```
 
-Guest dùng dữ liệu API thật và chỉ hiển thị địa điểm đã công bố. Nếu database chỉ có bản nháp thì danh sách có thể rỗng; kiểm tra nội dung trong Admin trước khi công bố. Seed tạo nội dung placeholder, chưa được duyệt. Biến môi trường PowerShell ưu tiên hơn `.env`; thay đổi chế độ mock cần dừng và chạy lại Vite. Không có fallback sang mock khi API lỗi.
+Mobile và Guest mặc định gọi API thật, kể cả khi thiếu `.env`; chỉ dùng mock nếu đặt rõ biến tương ứng bằng `true`. `.env.example` đã chọn `false`. Khởi động lại Expo/Vite sau khi đổi cấu hình. Mobile tự nhận host Expo nếu để trống API URL; localhost trên điện thoại là điện thoại. Mock khóa Đồng ý thống kê và không chứng minh UC12 phía server. Không tự chuyển sang mock khi lỗi API.
 
-## Khi gặp lỗi trên máy này
-
-| Hiện tượng | Cách xử lý |
-| --- | --- |
-| `ECONNREFUSED 127.0.0.1:8000` | Backend chưa chạy hoặc đã dừng. Chạy bước 1, chờ startup thành công rồi tải lại web. |
-| `npm.cmd` không được nhận diện | Chạy dòng `$env:Path = "C:\Program Files\nodejs;$env:Path"` trong chính cửa sổ đang dùng npm. |
-| `Không tìm thấy npm.cmd trong thư mục Node` khi dùng hướng dẫn cũ | Dùng đường dẫn thật `C:\Program Files\nodejs` như các khối trên. |
-| Cổng 8000, 5173 hoặc 5174 đã được sử dụng | Dùng cửa sổ đang chạy dịch vụ, hoặc nhấn `Ctrl+C` ở cửa sổ cũ rồi chạy lại. `--strictPort` giữ nguyên cổng web thay vì tự đổi. |
-| Admin báo sai tài khoản/mật khẩu | Dùng tài khoản đã tạo trong `local-dev.db`; không tạo lại database để xử lý lỗi đăng nhập. |
-| Thiếu dependency hoặc thiếu thư mục `node_modules` | Dừng dịch vụ liên quan và chạy khối cài lại dependency bên dưới. |
-
-Các lệnh gọi thẳng Python trong `.venv` và dùng `npm.cmd`, nên không cần kích hoạt `.venv` hoặc đổi Execution Policy để demo web. Việc thêm Node vào PATH chỉ áp dụng cho cửa sổ hiện tại, nên đã được đặt trong cả hai khối chạy web.
-
-## Cài lại dependency khi cần
-
-Máy hiện đã cài dependency backend và hai web. Chỉ chạy khối này khi thiếu dependency hoặc sau khi cập nhật requirements/lockfile; không cần chạy `npm ci` mỗi lần mở demo.
+## Cài dependency khi cần
 
 ```powershell
-Set-Location 'D:\cnpm\nhom12_Quan1Tourism'
 $env:Path = "C:\Program Files\nodejs;$env:Path"
 .\.venv\Scripts\python.exe -m pip install -r backend/requirements-dev.txt
 npm.cmd --prefix apps/admin-web ci
 npm.cmd --prefix apps/guest-web ci
+npm.cmd --prefix apps/mobile ci
 ```
 
-## Mobile (tùy chọn)
-
-Demo hai web trên máy này chỉ cần ba cửa sổ ở trên. Nếu muốn mở thêm Expo với dữ liệu mock trên cùng máy, chạy trong cửa sổ thứ tư:
-
-```powershell
-Set-Location 'D:\cnpm\nhom12_Quan1Tourism\apps\mobile'
-$env:Path = "C:\Program Files\nodejs;$env:Path"
-npm.cmd ci
-if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
-$env:EXPO_PUBLIC_USE_MOCK = 'true'
-npx.cmd expo start
-```
-
-Để dùng API thật trên điện thoại, xem [hướng dẫn mobile](apps/mobile/README.md). Điện thoại cần IP LAN của máy backend và backend lắng nghe `0.0.0.0`; `127.0.0.1` trên điện thoại là chính điện thoại. GPS/TTS trên thiết bị thật vẫn cần kiểm thử riêng.
+Nếu clone mới, tạo `.venv` bằng `python -m venv .venv` trước. DB chính không có trong Git: phục hồi snapshot riêng theo [hướng dẫn sao lưu](docs/deployment/backup-restore.md). Chỉ init/seed khi chủ động tạo DB thử nghiệm mới; không chạy trên DB chính. Cấu trúc ở [CAU_TRUC_DU_AN.md](CAU_TRUC_DU_AN.md).
 
 ## Kiểm thử và build (tùy chọn, không cần để mở demo)
 

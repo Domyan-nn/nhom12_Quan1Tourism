@@ -1,8 +1,8 @@
 -- =====================================================================
 -- Saigon Stories Quận 1 – Schema thống kê ẩn danh (PRD mục 7.1.6, 7.1.7)
--- REFERENCE ONLY: DDL thống nhất tại migrations/002_analytics_constraints.sql.
--- Database mới: chạy scripts/init_db.py (001 rồi 002).
--- Database cũ: scripts/migrate_db.py --database <file> --check, rồi
+-- REFERENCE ONLY: DDL thống nhất tại backend/migrations/002_analytics_constraints.sql.
+-- Database mới: chạy backend/scripts/init_db.py (001 rồi 002).
+-- Database cũ: backend/scripts/migrate_db.py --database <file> --check, rồi
 --             --database <file> --backup <file-backup-moi>.
 -- Không chạy CREATE TABLE IF NOT EXISTS để nâng cấp: lệnh đó không bổ sung
 -- CHECK cho bảng đã tồn tại. Tệp này chỉ giữ truy vấn thiết kế, không tạo bảng.

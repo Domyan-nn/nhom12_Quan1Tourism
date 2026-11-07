@@ -6,11 +6,11 @@
 
 Dự án đã có các luồng UC01–UC12 trên FastAPI/SQLite và các ứng dụng: xác thực Admin, danh mục, địa điểm, thuyết minh, công bố/ẩn và thống kê theo đồng ý. Admin React có Dashboard và điều khiển công bố/ẩn. Guest React có tìm/lọc, Leaflet/OpenStreetMap, Web Speech và quyền riêng tư. Mobile Expo đã nối UC12 với API thật từ commit `48a0908`; GPS chỉ theo dõi foreground phía mobile. Giao diện VI/EN độc lập với các ngôn ngữ bài đã lưu, không tự dịch nội dung.
 
-Đợt bàn giao 06/11/2026 bổ sung kiểm thử chéo, sửa công bố/ẩn, Dashboard, vòng đời TTS và rút đồng ý mobile; xem [báo cáo cùng bảng F01–F12/NFR01–NFR08](docs/testing/integration-2026-11-06.md). [Kiểm tra nghiệm thu kỹ thuật trên commit `4723a49`](docs/testing/acceptance-readiness-2026-11-06.md) xác nhận các bộ tự động backend/web đạt và bản đồ web tải được ảnh nền thật qua nguồn dự phòng; dự án sẵn sàng cho bước demo và kiểm thử hiện trường. GPS/TTS và bản đồ native trên điện thoại, âm thanh thật, nội dung demo được duyệt và cài mới trên máy khác vẫn cần nhóm xác minh. Seed chỉ tạo bản nháp với nội dung placeholder, chưa có ảnh. Upload ảnh **tạm gác**, giữ đường dẫn ảnh hiện có.
+Đợt bàn giao 06/11/2026 bổ sung kiểm thử chéo, sửa công bố/ẩn, Dashboard, vòng đời TTS và rút đồng ý mobile; xem [báo cáo cùng bảng F01–F12/NFR01–NFR08](docs/testing/integration-2026-11-06.md). [Kiểm tra nghiệm thu kỹ thuật trên commit `4723a49`](docs/testing/acceptance-readiness-2026-11-06.md) xác nhận các bộ tự động backend/web đạt và bản đồ web tải được ảnh nền thật qua nguồn dự phòng; dự án sẵn sàng cho bước demo và kiểm thử hiện trường. Ngày 07/11, người dùng xác nhận Admin/Guest web đạt và mobile map, quyền vị trí, GPS, TTS VI/EN hoạt động ổn; UC12 mobile còn chờ xác nhận trên điện thoại với API thật. Xem [kết quả hiện tại](docs/testing/test-results.md). Nội dung demo được duyệt và cài mới trên máy khác vẫn cần nhóm xác minh. Seed chỉ tạo bản nháp với nội dung placeholder, chưa có ảnh. Upload ảnh **tạm gác**, giữ đường dẫn ảnh hiện có.
 
 Xem [hướng dẫn chạy](RUNNING.md), [dữ liệu mẫu](backend/scripts/README.md), [hợp đồng API](docs/API_CONTRACT.md), [sao lưu/phục hồi](docs/deployment/backup-restore.md) và [checklist demo 07/11](docs/deployment/demo-guide.md). API dọn thống kê quá cửa sổ 30 ngày lúc khởi động và mỗi 00:00 Việt Nam; chọn đúng database và sao lưu trước khi chạy.
 
-Hướng dẫn cài đặt, chạy Admin, guest web, mobile và kiểm thử: [RUNNING.md](RUNNING.md).
+Bật tất cả: `powershell -ExecutionPolicy Bypass -File scripts/start-system.ps1`. Hướng dẫn cài đặt, chạy riêng từng phần và kiểm thử: [RUNNING.md](RUNNING.md). Cấu trúc hiện tại: [CAU_TRUC_DU_AN.md](CAU_TRUC_DU_AN.md).
 
 ## Cấu trúc dự án
 
@@ -22,12 +22,14 @@ Hướng dẫn cài đặt, chạy Admin, guest web, mobile và kiểm thử: [R
 | `apps/mobile/` | React Native/Expo cho khách, GPS và TTS |
 | `docs/` | Yêu cầu, thiết kế, kiểm thử, triển khai và báo cáo |
 | `docs/mobile/` | Tài liệu, sơ đồ và checklist thiết bị của mobile |
-| `backend/data/` | Tệp SQLite cục bộ khi chạy; không đưa dữ liệu vận hành lên Git |
+| `backend/data/` | Chỉ DB chính `saigon_stories.db`; không đưa dữ liệu vận hành lên Git |
+| `scripts/` | Bật/tắt toàn hệ thống bằng PowerShell |
+| `backups/`, `storage/runtime/` | Snapshot dự phòng, log và trạng thái dịch vụ cục bộ; Git bỏ qua |
 | `storage/uploads/` | Vị trí dự kiến cho ảnh tải lên; không đưa dữ liệu vận hành lên Git |
 
 Theo thiết kế dự kiến, các ứng dụng dùng chung FastAPI; backend truy cập SQLite cục bộ. GPS tự phát được xử lý trên mobile trong khi ứng dụng hiển thị. Bản đồ và TTS phụ thuộc dịch vụ hoặc thiết bị.
 
-Database được chọn bằng `SAIGON_DATABASE`; không tự khởi tạo database cá nhân. Kết nối và repository nằm trong `backend/app/db/`, request schema trong `backend/app/schemas/` và một số route, migration trong `backend/migrations/`, script trong `backend/scripts/`. Không có lớp ORM trong `app/models/`.
+DB chính duy nhất là `backend/data/saigon_stories.db`, đã nhận nguyên cấu trúc và dữ liệu từ `local-dev.db` ngày 07/11/2026. Admin, Guest web và mobile mặc định dùng API thật chung DB này. `SAIGON_DATABASE` có thể chọn DB riêng khi kiểm thử/phục hồi; không tự init hoặc seed DB chính. Kết nối và repository nằm trong `backend/app/db/`, request schema trong `backend/app/schemas/` và một số route, migration trong `backend/migrations/`, script trong `backend/scripts/`. Không có lớp ORM trong `app/models/`.
 
 ## Ánh xạ khi chuyển sang apps
 
