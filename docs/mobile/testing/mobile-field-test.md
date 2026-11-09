@@ -62,3 +62,4 @@ Commit/working tree: __________. Backend/database tạm và bộ dữ liệu: __
 | 20 | UC12-E1 | Khi rút đang chờ, thử đồng ý lại | Nút đồng ý bị khóa; không mất mã cần rút, không tạo phiên mới | | | |
 | 21 | UC12 / BR15 | Đồng ý rồi đưa app xuống nền/mất mạng | Không gửi heartbeat khi nền/mất mạng; mở lại/online mới gửi | | | |
 | 22 | UC04 / BR08 | Hai điểm chồng vùng, lỗi mẫu GPS/cùng khoảng cách | Lọc ứng viên trước, chọn gần nhất/tie ID; bỏ mẫu quá 15s, tương lai >1s, thiếu/sai độ chính xác | | | |
+| 23 | UC04 / BR01 | Bật Tự phát, Admin ẩn một địa điểm rồi đi vào vùng địa điểm đó (không mở lại app) | Không phát; nhật ký Tự phát ghi "không còn công khai"; marker biến mất khỏi bản đồ | | | |

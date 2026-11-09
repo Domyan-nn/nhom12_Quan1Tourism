@@ -100,7 +100,7 @@ Giữ hai alias `/api/analytics/heartbeat` và `/api/analytics/revoke` của An,
 
 Mỗi request dùng kết nối riêng, bật khóa ngoại, busy timeout 10 giây. Giao dịch `BEGIN IMMEDIATE` tuần tự hóa heartbeat/revoke: tín hiệu đầu tiên ghi một lượt; từ 30 phút không có tín hiệu thì ghi lượt mới, heartbeat liên tục chỉ tăng `last_seen_at`. Revoke tách mã khỏi lượt cũ, giữ tổng số lượt và đặt `consent_granted=0`; nếu mã chưa tồn tại thì tạo dấu thu hồi để chặn heartbeat đến muộn. Không có cơ chế kích hoạt lại mã đã thu hồi khi dấu còn trong database; đồng ý lại dùng UUID mới.
 
-DDL chuẩn là [002_analytics_constraints.sql](../backend/migrations/002_analytics_constraints.sql). `001_initial.sql` được giữ làm lịch sử; init mới chạy 001 rồi 002. [schema_analytics.sql](../backend/data/schema_analytics.sql) chỉ còn truy vấn tham chiếu, không còn DDL song song.
+DDL chuẩn là [002_analytics_constraints.sql](../backend/migrations/002_analytics_constraints.sql). `001_initial.sql` được giữ làm lịch sử; init mới chạy 001, 002 rồi 003 (xem [migrations/README.md](../backend/migrations/README.md)). [analytics-schema-reference.sql](analysis-design/analytics-schema-reference.sql) chỉ còn truy vấn tham chiếu, không còn DDL song song.
 
 - `anonymous_sessions.session_id` và `visit_events.id`: UUID v4 chuẩn, chữ thường, đủ dấu gạch nối, variant hợp lệ.
 - `consent_granted`: INTEGER 0/1, mặc định 1.
