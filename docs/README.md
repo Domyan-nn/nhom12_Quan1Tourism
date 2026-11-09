@@ -22,6 +22,7 @@ Mục lục cho bộ tài liệu nộp môn Công nghệ phần mềm. Cập nh�
 | | [demo-guide.md](deployment/demo-guide.md) | Kịch bản demo |
 | | [demo-images.md](deployment/demo-images.md) | Nguồn và giấy phép ảnh demo |
 | | [backend/migrations/README.md](../backend/migrations/README.md) | Thứ tự migration |
+| Quản lý dự án | [phan-cong-ABCG-2026-11-10.md](project/phan-cong-ABCG-2026-11-10.md) | Phân công 3 người cho phần mở rộng A, B, C, G và bảng theo dõi hằng ngày |
 | Báo cáo | `final-report/` | Báo cáo cuối kỳ (chưa có) |
 
 Các tệp `testing/*-2026-11-0x.md` và `mobile/testing/day*.md` là nhật ký từng đợt tích hợp, giữ làm lịch sử.
