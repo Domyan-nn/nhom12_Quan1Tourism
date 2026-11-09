@@ -1,7 +1,9 @@
 import { ApiError } from './client.js';
 import { categories, pois } from './mockData.js';
 
-const normalize = (s) => s.trim().normalize('NFC').toLowerCase();
+// BR02, giống backend app/core/text.py: bỏ khoảng trắng, hoa/thường, dấu tiếng Việt và đ.
+export const searchKey = (s) => String(s ?? '').trim().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
 
 const asItems = (data) => {
   if (!Array.isArray(data?.items)) throw new ApiError('Phản hồi không hợp lệ.', 200, 'INVALID_RESPONSE');
@@ -16,9 +18,9 @@ export function createPublicApi({ apiGet, useMock }) {
     },
     async listPois({ q = '', categoryId = '' } = {}) {
       if (!useMock) return asItems(await apiGet('/pois', { q, category_id: categoryId }));
-      const key = normalize(q);
+      const key = searchKey(q);
       return pois.filter((p) => (!categoryId || p.category_id === categoryId) &&
-        (!key || normalize(p.name).includes(key))).map(({ narrations, ...poi }) => ({
+        (!key || searchKey(p.name).includes(key))).map(({ narrations, ...poi }) => ({
           ...poi, narration_locales: narrations.map((n) => n.locale),
         }));
     },

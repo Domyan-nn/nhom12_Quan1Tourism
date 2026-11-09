@@ -15,6 +15,8 @@ const PATHS = {
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 /** BR02: cắt khoảng trắng, chuẩn hóa NFC, không phân biệt hoa/thường. */
 export const normalizeText = (s) => String(s ?? '').trim().normalize('NFC').toLocaleLowerCase('vi');
+/** Khóa tìm kiếm giống backend (app/core/text.py): bỏ thêm dấu tiếng Việt và đ. */
+export const searchKey = (s) => normalizeText(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
 
 const asList = (data) => {
   if (Array.isArray(data)) return data;
@@ -33,9 +35,9 @@ function normalizePoi(p) {
 
 /** Lọc cục bộ theo cùng quy tắc BR02 (dùng cho mock và khi mất mạng, NFR02). */
 export function filterPois(list, { q = '', categoryId = '' } = {}) {
-  const key = normalizeText(q);
+  const key = searchKey(q);
   return list.filter(
-    (p) => (!categoryId || p.category_id === categoryId) && (!key || normalizeText(p.name).includes(key))
+    (p) => (!categoryId || p.category_id === categoryId) && (!key || searchKey(p.name).includes(key))
   );
 }
 

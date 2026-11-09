@@ -1,5 +1,31 @@
 # Kết quả kiểm thử
 
+## Sửa nhóm P0 sau rà soát — 09/11/2026
+
+Nền `main` / `538eb4f`, thay đổi chưa commit. Windows, Python 3.12, Node 22; mọi bộ test dùng SQLite tạm.
+
+Trước khi sửa, `unittest discover` chạy 95 test với **5 lỗi**: các test thêm ở `73f93e8`/`538eb4f` dùng `with sqlite3.connect(...)`, chỉ commit mà không đóng kết nối, nên Windows không xóa được DB tạm. Bảng 89/89 ở mục 07/11 không còn đúng với `main` từ 08/11.
+
+| Thay đổi | Phạm vi PRD | Kiểm chứng |
+| --- | --- | --- |
+| Đóng kết nối SQLite trong `test_enrich_demo_content.py` và override của `test_day4.py` | NFR07 | Hai module 19/19 đạt với pytest |
+| Mobile tự phát hỏi lại server trước khi phát; 404 thì bỏ POI khỏi danh sách; lỗi tải/TTS thì chờ 30 giây thay vì thử lại mỗi mẫu GPS | UC04-E2, BR01, BR08 | Jest `tests/location` 36/36, gồm 6 ca mới |
+| Admin giữ phiên khi tải lại trang trong cùng tab (`sessionStorage`, xác nhận lại bằng `/admin/me`) | UC05 bước 2, A1; BR09 | Build Admin đạt; ca Playwright mới (xem bảng dưới) |
+| Tìm kiếm bỏ dấu tiếng Việt và `đ` ở backend, mock web, mock/offline mobile | BR02 | Ca mới ở `test_public_api.py`, `publicApi.test.js`, `exploreFilter.test.js` |
+| Gắn ảnh Wikimedia Commons có giấy phép cho 5 POI trong DB chính, có sao lưu trước | F07, NFR05 | `test_add_demo_images.py` 3/3; [nguồn và ghi công](../deployment/demo-images.md) |
+
+| Bộ kiểm thử sau sửa | Kết quả |
+| --- | --- |
+| Backend `unittest discover -s backend/tests` | 98/98 đạt, exit 0 (pytest cùng thư mục: 98 đạt) |
+| Guest Node + Vitest | 26 + 20 đạt |
+| Mobile Jest | 123 đạt + 4 HTTP bỏ qua (chưa bật fixture riêng) |
+| Build Admin và Guest | Đạt (`--configLoader runner`, output tạm) |
+| Playwright Edge, bốn dịch vụ test tự quản lý, SQLite tạm | 38 đạt + 1 OSM opt-in bỏ qua, exit 0 |
+
+Playwright có ca mới: Admin tải lại trang vẫn giữ phiên; sau đăng xuất hoặc khi token bị thu hồi thì về trang đăng nhập kèm thông báo. Ca UC09 trong `acceptance.spec.js` trước đây đăng nhập lần hai trên cùng tab để làm mới danh sách; nay chuyển sang tải lại trang, vì phiên được giữ theo UC05-A1. Lượt đầu chạy toàn bộ có một ca hết 30 giây khi mở Admin lần đầu (Vite khởi động lạnh) và kéo theo các ca đếm địa điểm; lượt chạy riêng và lượt toàn bộ cuối cùng đều đạt.
+
+Chưa kiểm thử trên điện thoại thật cho thay đổi tự phát; cần thử: bật tự phát, Admin ẩn một POI, đi vào vùng POI đó và xác nhận không phát. Ảnh đang tải trực tiếp từ Wikimedia nên cần Internet; ứng dụng chưa hiển thị tác giả dưới ảnh.
+
 ## Hợp nhất DB chính và thư mục — 07/11/2026
 
 Đã thay `backend/data/saigon_stories.db` bằng snapshot `local-dev.db`, giữ nguyên schema phiên bản 2 và toàn bộ dữ liệu bảy bảng. Đối chiếu schema/từng dòng và kiểm tra toàn vẹn/khóa ngoại đều đạt trước khi chạy lại API. Đã lưu ZIP dự phòng rồi xóa 9 DB phụ. Xem [biên bản chuyển DB](../deployment/database-consolidation-2026-11-07.md).

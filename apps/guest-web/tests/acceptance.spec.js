@@ -32,7 +32,9 @@ test('UC09 Admin publication rejects missing narration, publishes and hides acro
   const poi = await created.json();
   try {
     expect(poi.status).toBe('draft');
-    await login(page);
+    // Reload to see the place created through the API; the session survives reload (UC05-A1).
+    await page.reload();
+    await expect(page.getByText('Đã đăng nhập')).toBeVisible();
     await page.locator('.places > .category-list > li').filter({ hasText: poi.name })
       .getByRole('button', { name: 'Sửa', exact: true }).click();
     page.once('dialog', dialog => dialog.accept());
