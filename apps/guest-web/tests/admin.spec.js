@@ -32,6 +32,26 @@ test('Admin rejects incorrect password, reports network errors, logs out and rej
   expect(reuse.status()).toBe(401);
 });
 
+test('Admin session survives reload in the same tab until logout or revocation (UC05-A1)', async ({ page, request }) => {
+  const token = await login(page);
+  await page.reload();
+  await expect(page.getByText('Đã đăng nhập · browser-admin')).toBeVisible();
+  await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Đăng nhập quản trị' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Đăng nhập quản trị' })).toBeVisible();
+  expect((await request.get('http://127.0.0.1:18082/api/v1/admin/me', { headers: { Authorization: `Bearer ${token}` } })).status()).toBe(401);
+
+  const second = await login(page);
+  // Let the dashboard/category/place loads finish first; a 401 on them would end the page session before reload.
+  await page.waitForLoadState('networkidle');
+  const revoked = await request.post('http://127.0.0.1:18082/api/v1/admin/logout', { headers: { Authorization: `Bearer ${second}` } });
+  expect(revoked.status()).toBe(204);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Đăng nhập quản trị' })).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText('Phiên đã hết hạn hoặc bị thu hồi');
+});
+
 test('Admin category CRUD, NFC duplicates, validation, used category and translated controls', async ({ page }) => {
   await login(page);
   const form = page.locator('.category-form');

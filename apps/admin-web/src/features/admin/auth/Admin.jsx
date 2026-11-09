@@ -1,33 +1,96 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { request } from '../../../services/api.js';
+import { clearSession, loadSession, saveSession } from '../../../services/session.js';
 import Categories from '../categories/Categories.jsx';
 import Places from '../places/Places.jsx';
 import Dashboard from '../analytics/Dashboard.jsx';
 
 export default function Admin({ t, language }) {
   const [session, setSession] = useState(null);
+  const [restoring, setRestoring] = useState(() => loadSession() !== null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const expire = useCallback(() => { setSession(null); setError('AUTH_REQUIRED'); }, []);
+
+  const expire = useCallback(() => { clearSession(); setSession(null); setError('AUTH_REQUIRED'); }, []);
+
+  // UC05 bước 2 / A1: còn phiên hợp lệ trong tab này thì vào thẳng trang quản trị.
   useEffect(() => {
-    if (!session) return;
+    const stored = loadSession();
+    if (!stored) return undefined;
+    let active = true;
+    request('/admin/me', { token: stored.access_token })
+      .then((me) => { if (active) setSession({ ...stored, username: me.username }); })
+      .catch((err) => {
+        if (!active) return;
+        // 401: phiên hết hạn/bị thu hồi. Lỗi khác: giữ bản lưu để lần tải sau thử lại.
+        if (err.status === 401) { clearSession(); setError('AUTH_REQUIRED'); }
+        else setError(err.code || 'SERVER_ERROR');
+      })
+      .finally(() => { if (active) setRestoring(false); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!session) return undefined;
     const timer = setTimeout(expire, Math.max(0, new Date(session.expires_at).getTime() - Date.now()));
     return () => clearTimeout(timer);
-  }, [session]);
+  }, [session, expire]);
+
   async function login(e) {
     e.preventDefault(); setBusy(true); setError('');
-    try { const result = await request('/admin/login', { method: 'POST', body: { username, password } }); setSession(result); setPassword(''); }
-    catch (err) { setError(err.code || 'SERVER_ERROR'); }
+    try {
+      const result = await request('/admin/login', { method: 'POST', body: { username, password } });
+      const next = { ...result, username: username.trim() };
+      saveSession(next);
+      setSession(next);
+      setPassword('');
+    } catch (err) { setError(err.code || 'SERVER_ERROR'); }
     finally { setBusy(false); }
   }
+
   async function logout() {
     setBusy(true); setError('');
-    try { await request('/admin/logout', { method: 'POST', token: session.access_token }); setSession(null); }
-    catch (err) { if (err.status === 401) expire(); else setError(err.code || 'SERVER_ERROR'); }
+    try {
+      await request('/admin/logout', { method: 'POST', token: session.access_token });
+      clearSession();
+      setSession(null);
+    } catch (err) { if (err.status === 401) expire(); else setError(err.code || 'SERVER_ERROR'); }
     finally { setBusy(false); }
   }
+
   const errorMessage = error === 'AUTH_REQUIRED' ? t.sessionExpired : (t[error] || t.SERVER_ERROR);
-  return <main className="container admin-page">{!session ? <section className="panel login"><p className="eyebrow">SAIGON STORIES</p><h1>{t.login}</h1><form onSubmit={login}><label>{t.username}<input autoComplete="username" required value={username} onChange={e => setUsername(e.target.value)} /></label><label>{t.password}<input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <p role="alert" className="error">{errorMessage}</p>}<button disabled={busy}>{busy ? t.signing : t.signIn}</button></form></section> : <section><div className="admin-heading"><div><p className="eyebrow">{t.signedIn} · {username}</p><h1>{t.admin}</h1></div><button className="secondary" onClick={logout} disabled={busy}>{t.logout}</button></div>{error && <p role="alert" className="error">{errorMessage}</p>}<Dashboard language={language} token={session.access_token} onExpired={expire} /><h2>{t.categories}</h2><Categories t={t} token={session.access_token} onExpired={expire} /><Places t={t} language={language} token={session.access_token} onExpired={expire} /></section>}</main>;
+
+  if (restoring) return <main className="container admin-page"><p role="status">{t.loading}</p></main>;
+
+  if (!session) {
+    return <main className="container admin-page">
+      <section className="panel login">
+        <p className="eyebrow">SAIGON STORIES</p>
+        <h1>{t.login}</h1>
+        <form onSubmit={login}>
+          <label>{t.username}<input autoComplete="username" required value={username} onChange={(e) => setUsername(e.target.value)} /></label>
+          <label>{t.password}<input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+          {error && <p role="alert" className="error">{errorMessage}</p>}
+          <button disabled={busy}>{busy ? t.signing : t.signIn}</button>
+        </form>
+      </section>
+    </main>;
+  }
+
+  const token = session.access_token;
+  return <main className="container admin-page">
+    <section>
+      <div className="admin-heading">
+        <div><p className="eyebrow">{t.signedIn} · {session.username}</p><h1>{t.admin}</h1></div>
+        <button className="secondary" onClick={logout} disabled={busy}>{t.logout}</button>
+      </div>
+      {error && <p role="alert" className="error">{errorMessage}</p>}
+      <Dashboard language={language} token={token} onExpired={expire} />
+      <h2>{t.categories}</h2>
+      <Categories t={t} token={token} onExpired={expire} />
+      <Places t={t} language={language} token={token} onExpired={expire} />
+    </section>
+  </main>;
 }

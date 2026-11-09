@@ -47,11 +47,12 @@ if ($LASTEXITCODE -ne 0) { throw 'Sao lưu thất bại' }
 
 API không tự init/seed/migrate. Retention dọn thống kê ngoài cửa sổ 30 ngày khi startup và mỗi 00:00 Việt Nam. Giữ bản sao lưu trước khi chạy. Health chỉ xác nhận tiến trình; kiểm tra thêm `/api/v1/categories` và `/api/v1/pois`.
 
+run admin
 ```powershell
 $env:Path = "C:\Program Files\nodejs;$env:Path"
 npm.cmd --prefix apps/admin-web run dev -- --strictPort --configLoader runner
 ```
-
+run quest web
 ```powershell
 $env:Path = "C:\Program Files\nodejs;$env:Path"
 $env:VITE_USE_MOCK = 'false'

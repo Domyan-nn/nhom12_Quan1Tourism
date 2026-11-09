@@ -3,6 +3,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parents[1]
@@ -21,8 +22,12 @@ class EnrichDemoContentTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         seed(self.database, "demo", "not-a-real-password")
 
+    def db(self):
+        # sqlite3's own context manager commits but never closes; Windows then cannot delete the temp file.
+        return closing(sqlite3.connect(self.database))
+
     def rows(self, sql, *args):
-        with sqlite3.connect(self.database) as db:
+        with self.db() as db:
             db.row_factory = sqlite3.Row
             return db.execute(sql, args).fetchall()
 
@@ -64,7 +69,7 @@ class EnrichDemoContentTests(unittest.TestCase):
 
     def test_never_overwrites_team_edits(self):
         poi_id = stable_id("poi:nha-hat")
-        with sqlite3.connect(self.database) as db:
+        with self.db() as db, db:
             db.execute("UPDATE poi_narrations SET title = ?, body = ? WHERE poi_id = ? AND locale = 'vi'", ("Bản của nhóm", "Nội dung nhóm tự viết.", poi_id))
             db.execute("UPDATE pois SET address = ?, latitude = ? WHERE id = ?", ("Địa chỉ nhóm sửa", 10.5, stable_id("poi:cho-ben-thanh")))
         report = "\n".join(enrich(self.database, apply=True))
@@ -75,7 +80,7 @@ class EnrichDemoContentTests(unittest.TestCase):
         self.assertIn("GIỮ NGUYÊN", report)
 
     def test_skips_places_that_were_not_seeded(self):
-        with sqlite3.connect(self.database) as db:
+        with self.db() as db, db:
             db.execute("PRAGMA foreign_keys = ON")
             db.execute("DELETE FROM pois WHERE id = ?", (stable_id("poi:buu-dien"),))
         report = "\n".join(enrich(self.database, apply=True))

@@ -9,6 +9,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { getNarration } from '../narration/narrationUtils';
 import { player } from '../narration/player';
 import { AutoPlayEngine } from './autoPlayEngine';
+import { loadFreshDetail } from './freshDetail';
 import { createLocationWatcher } from './locationWatcher';
 
 const AutoPlayContext = createContext(null);
@@ -18,7 +19,7 @@ const MAX_EVENTS = 25;
 const fmtTime = (d = new Date()) => d.toLocaleTimeString('vi-VN', { hour12: false });
 
 export function AutoPlayProvider({ children }) {
-  const { pois, getDetail } = useData();
+  const { pois, getDetail, dropPoi } = useData();
   const { locale } = useSettings();
   const [enabled, setEnabledState] = useState(false);
   const [tracking, setTracking] = useState('off'); // off | requesting | tracking | background | denied | error
@@ -66,25 +67,30 @@ export function AutoPlayProvider({ children }) {
       if (!poi || startingRef.current) return;
       startingRef.current = true;
       try {
-        const detail = await getDetail(poi.id);
+        const detail = await loadFreshDetail(getDetail, poi.id);
         if (watcherRef.current !== owner || !owner?.isCurrent(generation)) return;
         const n = getNarration(detail, localeRef.current);
-        if (!n) { log('missingNarration', poi.name); return; }
+        if (!n) { engine.recordFailure(poi.id, Date.now()); log('missingNarration', poi.name); return; }
         const ok = await player.play({ text: `${n.title}. ${n.body}`, locale: localeRef.current, poiId: poi.id });
         if (ok) {
           engine.recordPlaySuccess(poi.id, Date.now()); // chỉ ghi nhận khi TTS đã thực sự bắt đầu
           log('logPlayed', poi.name);
         } else {
+          engine.recordFailure(poi.id, Date.now()); // UC04-E2: chờ rồi mới thử lại
           log('logFailed', poi.name, player.state.errorCode);
         }
       } catch (err) {
-        if (err?.status === 404) log('logGone', poi.name);
-        else log('logLoad', poi.name);
+        engine.recordFailure(poi.id, Date.now());
+        if (err?.status === 404) {
+          // BR01/UC02-E2: địa điểm vừa bị ẩn hoặc xóa -> bỏ khỏi danh sách để không còn là ứng viên.
+          dropPoi(poi.id);
+          log('logGone', poi.name);
+        } else log('logLoad', poi.name);
       } finally {
         startingRef.current = false;
       }
     },
-    [engine, getDetail, log]
+    [engine, getDetail, dropPoi, log]
   );
 
   useEffect(() => {

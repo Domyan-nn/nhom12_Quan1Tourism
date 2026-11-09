@@ -20,6 +20,11 @@ describe('UC01 – tìm và lọc (BR02)', () => {
     expect(filterPois(LIST, { q: nfd }).map((p) => p.id)).toEqual(['3']);
     expect(normalizeText(nfd)).toBe(normalizeText('Bến'));
   });
+  it('không cần gõ dấu: bỏ dấu tiếng Việt và đ', () => {
+    expect(filterPois(LIST, { q: 'cho ben thanh' }).map((p) => p.id)).toEqual(['3']);
+    expect(filterPois(LIST, { q: 'DINH DOC' }).map((p) => p.id)).toEqual(['1']);
+    expect(filterPois(LIST, { q: 'duc ba' }).map((p) => p.id)).toEqual(['2']);
+  });
   it('lọc theo danh mục và kết hợp với từ khóa', () => {
     expect(filterPois(LIST, { categoryId: 'c1' }).map((p) => p.id)).toEqual(['1', '2']);
     expect(filterPois(LIST, { categoryId: 'c1', q: 'thờ' }).map((p) => p.id)).toEqual(['2']);
