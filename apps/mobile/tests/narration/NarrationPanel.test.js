@@ -33,7 +33,7 @@ async function mount() { await act(async () => { screen = renderer.create(<Narra
 
 test('offers exactly the languages with actual database text, including beyond VI/EN', async () => {
   await mount();
-  expect(screen.root.findAllByType('Chip').map((c) => c.props.label)).toEqual(['Tiếng Việt', 'fr']);
+  expect(screen.root.findAllByType('Chip').map((c) => c.props.label)).toEqual(['Tiếng Việt', 'Français']);
   await act(async () => screen.root.findAllByType('Chip')[1].props.onPress());
   expect(mockSettings.setLocale).toHaveBeenCalledWith('fr');
   expect(player.stop).toHaveBeenCalled();

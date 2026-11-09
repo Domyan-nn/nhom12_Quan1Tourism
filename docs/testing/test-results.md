@@ -1,5 +1,30 @@
 # Kết quả kiểm thử
 
+## Nhóm cải thiện P1 — 09/11/2026
+
+Nhánh `feat/p1-improvements` tách từ `fix/p0-review-2026-11-09` (`1deb9bc`), thay đổi chưa commit. Windows, Python 3.12, Node 22; mọi bộ test dùng SQLite tạm.
+
+| Thay đổi | Phạm vi PRD | Kiểm chứng |
+| --- | --- | --- |
+| Danh sách ngôn ngữ hỗ trợ ở backend (`app/core/locales.py`: vi, en, fr, zh, ja, ko) và `GET /api/v1/locales`; API từ chối mã ngoài danh sách; Admin chọn ngôn ngữ từ danh sách, ngôn ngữ đã có bài bị khóa; web khách và mobile hiện tên ngôn ngữ thay cho mã | PRD 5.6, BR03, BR05 | `test_admin_pois.py`, `narrationUtils.test.js`, Playwright Admin |
+| Xóa bài thuyết minh (`DELETE …/narrations/{id}`); không cho xóa bài hợp lệ cuối của địa điểm đang công khai (409 `NARRATION_REQUIRED`) | UC08, BR03 | `test_admin_pois.py`; Playwright: hủy xác nhận giữ bài, đồng ý thì xóa |
+| Giới hạn đăng nhập sai: 5 lần/15 phút theo username, trả 429 kèm `Retry-After`; đăng nhập thành công xóa phiên hết hạn quá 7 ngày | NFR01, BR10 | `test_admin_api.py` (2 ca mới); Playwright hiện thông báo khóa tạm |
+| SQL song ngữ danh mục chuyển vào `migrations/003_category_bilingual.sql`; script đọc từ tệp; thêm `migrations/README.md` về thứ tự và cách nhận diện | NFR03, NFR06 | `test_category_preparation.py` 5/5; DB chính `--check` báo đã áp dụng, không ghi |
+| Admin chia tab Tổng quan / Danh mục / Địa điểm (giữ tab qua `#hash` khi tải lại); `Places.jsx` tách thành `PlaceList`, `PlaceForm`, `PublicationPanel`, `NarrationEditor`, `strings`; danh sách địa điểm có tìm không dấu, lọc trạng thái, nhãn trạng thái tiếng Việt, xem trước ảnh | NFR04, UC07, UC09 | Build Admin; Playwright Admin/acceptance |
+| Dashboard: biểu đồ cột lượt theo ngày cho khoảng đã chọn, rê chuột/Tab để đọc số; khoảng mặc định 7 ngày gần nhất | UC10, BR16, BR19 | Ca Playwright mới với 30 ngày dữ liệu fixture, kiểm tra 375 px không tràn trang |
+
+| Bộ kiểm thử | Kết quả |
+| --- | --- |
+| Backend `unittest discover -s backend/tests` | 102/102 đạt |
+| Guest Node + Vitest | 26 + 20 đạt |
+| Mobile Jest | 124 đạt + 4 HTTP bỏ qua |
+| Build Admin và Guest | Đạt |
+| Playwright Edge, bốn dịch vụ test tự quản lý | 40 đạt + 1 OSM opt-in bỏ qua, exit 0 (gồm 2 ca mới: khóa tạm đăng nhập, biểu đồ) |
+
+Thay đổi hành vi khiến test cũ phải sửa: Admin không còn hiển thị mọi phần trên một trang (test mở đúng tab); ô "Mã ngôn ngữ" thành danh sách chọn "Ngôn ngữ thuyết minh" nên không còn gõ được mã trùng (ca trùng 409 vẫn kiểm ở backend); trạng thái hiện "Nháp" thay cho `draft`; web khách và mobile hiện "Français" thay cho `fr`.
+
+`user_version` vẫn chỉ đánh dấu migration 002. Chưa làm: upload ảnh, cột ghi công ảnh, chuyển logic địa điểm sang lớp service, ESLint/Prettier/ruff, CI.
+
 ## Sửa nhóm P0 sau rà soát — 09/11/2026
 
 Nền `main` / `538eb4f`, thay đổi chưa commit. Windows, Python 3.12, Node 22; mọi bộ test dùng SQLite tạm.

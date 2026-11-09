@@ -31,10 +31,10 @@ test('real API lists only published POIs, renders locales and supports languages
   await expect(page.locator('.mode-notice')).toHaveCount(0);
   await expect(page.locator('.card').first()).toContainText('EN / FR / VI');
   await page.locator('.card').filter({ hasText: 'Dinh Độc Lập' }).click();
-  await page.getByRole('button', { name: 'fr', exact: true }).click();
+  await page.getByRole('button', { name: 'Français', exact: true }).click();
   await expect(page.locator('.narration h2')).toHaveText('Title fr');
   await page.getByLabel('Ngôn ngữ giao diện').selectOption('en');
-  await expect(page.getByRole('button', { name: 'fr', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Français', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.narration h2')).toHaveText('Title fr');
   expect(errors).toEqual([]);
 });

@@ -51,7 +51,7 @@ class PlaceAPITests(unittest.TestCase):
 
     def test_place_routes_reject_invalid_sessions(self):
         base = '/api/v1/admin/pois'
-        for method, path in [('GET',base),('POST',base),('GET',base+'/x'),('PUT',base+'/x'),('DELETE',base+'/x'),('GET',base+'/x/narrations'),('POST',base+'/x/narrations'),('PUT',base+'/x/narrations/y')]:
+        for method, path in [('GET',base),('POST',base),('GET',base+'/x'),('PUT',base+'/x'),('DELETE',base+'/x'),('GET',base+'/x/narrations'),('POST',base+'/x/narrations'),('PUT',base+'/x/narrations/y'),('DELETE',base+'/x/narrations/y')]:
             for headers in ({}, self.headers('invalid')):
                 self.assertEqual(self.client.request(method,path,headers=headers,json={}).status_code, 401)
         token = self.login()
@@ -78,3 +78,32 @@ class PlaceAPITests(unittest.TestCase):
             self.assertEqual(self.client.put(path + '/narrations/' + narration['id'], headers=headers, json=payload).status_code, 422)
         self.assertEqual(self.client.get(path + '/narrations', headers=headers).json()['items'][0]['body'], 'Body')
         self.assertEqual(self.client.get('/api/v1/pois/' + second['id']).status_code, 404)
+
+    def test_supported_locales_and_narration_delete_rules(self):
+        locales = self.client.get('/api/v1/locales')
+        self.assertEqual(locales.status_code, 200)
+        codes = [item['code'] for item in locales.json()['items']]
+        self.assertEqual(codes[:2], ['vi', 'en'])
+        self.assertTrue(all({'code', 'name', 'name_en', 'speech_tag'} <= set(item) for item in locales.json()['items']))
+        base = '/api/v1/admin/pois'
+        headers = self.headers(self.login())
+        body = {'category_id': stable_id('category:history'), 'name': 'Delete rules', 'address': 'Address',
+                'latitude': 10.7, 'longitude': 106.7, 'radius_m': 100}
+        path = base + '/' + self.client.post(base, headers=headers, json=body).json()['id']
+        # A well-formed code outside the supported list is rejected (PRD 5.6 "danh sách hỗ trợ").
+        for code in ('xx', 'de', 'vi-vn'):
+            self.assertEqual(self.client.post(path + '/narrations', headers=headers, json={'locale': code, 'title': 'T', 'body': 'B'}).status_code, 422, code)
+        vi = self.client.post(path + '/narrations', headers=headers, json={'locale': 'vi', 'title': 'T', 'body': 'B'}).json()
+        en = self.client.post(path + '/narrations', headers=headers, json={'locale': 'en', 'title': 'T', 'body': 'B'}).json()
+        self.assertEqual(self.client.delete(path + '/narrations/missing', headers=headers).status_code, 404)
+        other = base + '/' + self.client.post(base, headers=headers, json={**body, 'name': 'Other'}).json()['id']
+        self.assertEqual(self.client.delete(other + '/narrations/' + vi['id'], headers=headers).status_code, 404)
+        self.assertEqual(self.client.post(path + '/publish', headers=headers).status_code, 200)
+        self.assertEqual(self.client.delete(path + '/narrations/' + en['id'], headers=headers).status_code, 204)
+        refused = self.client.delete(path + '/narrations/' + vi['id'], headers=headers)
+        self.assertEqual(refused.status_code, 409)
+        self.assertEqual(refused.json()['error']['code'], 'NARRATION_REQUIRED')
+        self.assertEqual([n['locale'] for n in self.client.get('/api/v1/pois/' + path.rsplit('/', 1)[1]).json()['narrations']], ['vi'])
+        self.assertEqual(self.client.post(path + '/hide', headers=headers).status_code, 200)
+        self.assertEqual(self.client.delete(path + '/narrations/' + vi['id'], headers=headers).status_code, 204)
+        self.assertEqual(self.client.get(path + '/narrations', headers=headers).json()['items'], [])

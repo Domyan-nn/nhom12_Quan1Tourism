@@ -22,3 +22,8 @@ def find_session(db: sqlite3.Connection, token_digest: str):
 
 def revoke_session(db: sqlite3.Connection, session_id: str, revoked: str) -> None:
     db.execute("UPDATE admin_sessions SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL", (revoked, session_id))
+
+
+def delete_sessions_expired_before(db: sqlite3.Connection, cutoff: str) -> int:
+    # expires_at is always written by services.auth.timestamp(), so text order is time order.
+    return db.execute("DELETE FROM admin_sessions WHERE expires_at < ?", (cutoff,)).rowcount

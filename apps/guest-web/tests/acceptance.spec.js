@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 const admin = 'http://127.0.0.1:18175';
 const guest = 'http://127.0.0.1:18174';
 const api = 'http://127.0.0.1:18082/api/v1';
+const openTab = (page, name) => page.getByRole('tab', { name, exact: true }).click();
 const tile = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==', 'base64');
 
 async function login(page) {
@@ -35,6 +36,7 @@ test('UC09 Admin publication rejects missing narration, publishes and hides acro
     // Reload to see the place created through the API; the session survives reload (UC05-A1).
     await page.reload();
     await expect(page.getByText('Đã đăng nhập')).toBeVisible();
+    await openTab(page, 'Địa điểm');
     await page.locator('.places > .category-list > li').filter({ hasText: poi.name })
       .getByRole('button', { name: 'Sửa', exact: true }).click();
     page.once('dialog', dialog => dialog.accept());
@@ -44,7 +46,7 @@ test('UC09 Admin publication rejects missing narration, publishes and hides acro
     expect((await request.get(`${api}/pois/${poi.id}`)).status()).toBe(404);
 
     const narration = page.locator('.places .place-form').last();
-    await narration.getByLabel('Mã ngôn ngữ').fill('fr');
+    await narration.getByLabel('Ngôn ngữ thuyết minh').selectOption('fr');
     await narration.getByLabel('Tiêu đề').fill('Fixture reviewed only for testing');
     await narration.getByLabel('Nội dung').fill('Disposable test narration, not approved tourism content.');
     await narration.getByRole('button', { name: 'Lưu', exact: true }).click();
@@ -131,6 +133,29 @@ test('UC10-11 dashboard shows real numbers and Vietnam dates, refreshes after 30
   expect((await request.post(`${api}/analytics/revoke`, { data: { session_id } })).status()).toBe(204);
 });
 
+test('UC10 range chart draws one bar per Vietnam day with a hover readout and stays inside a 375px page', async ({ page }, testInfo) => {
+  // Fixture data only for the chart geometry; the real API path is covered by the UC10-11 test above.
+  const days = Array.from({ length: 30 }, (_, i) => ({ date: `2026-10-${String(i + 1).padStart(2, '0')}`, visits: [0, 3, 7, 12, 5, 9][i % 6] }));
+  await page.route((url) => url.pathname.endsWith('/admin/stats/visits') && url.searchParams.has('date_from'), (r) => r.fulfill({ json: {
+    timezone: 'Asia/Ho_Chi_Minh', measured_at: '2026-10-30T05:00:00.000Z', today: 9, last_7_days: 41,
+    range: { from: days[0].date, to: days.at(-1).date, total: days.reduce((n, d) => n + d.visits, 0), days }, note: 'fixture' } }));
+  await page.setViewportSize({ width: 375, height: 900 });
+  await login(page);
+  const dashboard = page.locator('.dashboard');
+  await dashboard.getByRole('button', { name: 'Xem', exact: true }).click();
+  const chart = dashboard.locator('.visits-chart');
+  await expect(chart.locator('figcaption')).toContainText('Lượt truy cập theo ngày');
+  await expect(chart.locator('rect[aria-label]')).toHaveCount(30);
+  await expect(dashboard.locator('tbody tr')).toHaveCount(30);
+  await chart.locator('rect[aria-label]').nth(3).hover();
+  await expect(chart.locator('.visits-chart-tooltip')).toContainText('12 lượt');
+  await expect(chart.locator('.visits-chart-tooltip')).toContainText('2026-10-04');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await chart.screenshot({ path: testInfo.outputPath('dashboard-chart-375.png') });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await chart.screenshot({ path: testInfo.outputPath('dashboard-chart-1280.png') });
+});
+
 for (const width of [375, 768, 1440]) {
   test(`NFR04 guest list/map/detail/privacy and Admin fit ${width}px with VI/EN controls`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
@@ -162,11 +187,18 @@ for (const width of [375, 768, 1440]) {
     }
     await login(page);
     await expect(page.locator('.dashboard .stat-row .stat-number')).toHaveCount(2);
-    await expect(page.locator('.category-form').locator('..').locator('.category-list > li')).toHaveCount(2);
-    await expect(page.locator('.places > .category-list > li')).toHaveCount(4);
-    for (const language of ['vi', 'en']) {
-      await page.locator('nav select').selectOption(language);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Admin ${language} at ${width}px`).toBe(true);
+    for (const [tab, check] of [
+      ['Tổng quan', () => expect(page.locator('.dashboard .stat-row .stat-number')).toHaveCount(2)],
+      ['Danh mục', () => expect(page.locator('.category-form').locator('..').locator('.category-list > li')).toHaveCount(2)],
+      ['Địa điểm', () => expect(page.locator('.places > .category-list > li')).toHaveCount(4)],
+    ]) {
+      await page.locator('nav select').selectOption('vi');
+      await openTab(page, tab);
+      await check();
+      for (const language of ['vi', 'en']) {
+        await page.locator('nav select').selectOption(language);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Admin ${tab} ${language} at ${width}px`).toBe(true);
+      }
     }
     await page.screenshot({ path: testInfo.outputPath(`admin-${width}.png`), fullPage: true });
   });

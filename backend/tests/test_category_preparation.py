@@ -10,7 +10,7 @@ from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND))
-from scripts.prepare_category_bilingual import MigrationError, migrate
+from scripts.prepare_category_bilingual import MIGRATION, MigrationError, migrate, statements
 
 
 class CategoryPreparationTests(unittest.TestCase):
@@ -21,6 +21,12 @@ class CategoryPreparationTests(unittest.TestCase):
         self.backup = Path(self.directory.name) / 'backup.db'
         with closing(sqlite3.connect(self.database)) as db:
             db.executescript((BACKEND / 'migrations' / '001_initial.sql').read_text(encoding='utf-8'))
+
+    def test_sql_lives_in_numbered_migration_file(self):
+        self.assertEqual(MIGRATION.name, '003_category_bilingual.sql')
+        sql = list(statements())
+        self.assertEqual(len(sql), 3)
+        self.assertTrue(all(not line.lstrip().startswith('--') for line in sql))
 
     def test_empty_new_database_check_and_migration(self):
         migrate(self.database, check_only=True)

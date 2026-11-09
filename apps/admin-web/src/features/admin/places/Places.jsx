@@ -1,49 +1,102 @@
 import React, { useEffect, useState } from 'react';
 import { request } from '../../../services/api.js';
+import NarrationEditor from './NarrationEditor.jsx';
+import PlaceForm, { blankPlace, validatePlace } from './PlaceForm.jsx';
+import PlaceList from './PlaceList.jsx';
+import PublicationPanel from './PublicationPanel.jsx';
+import { placeMessage, placeStrings, publicationStrings, statusLabels } from './strings.js';
 
-const strings = {
-  vi: { places:'Địa điểm', create:'Thêm địa điểm', name:'Tên', address:'Địa chỉ', category:'Danh mục', choose:'Chọn danh mục', latitude:'Vĩ độ', longitude:'Kinh độ', radius:'Bán kính (m)', image:'Đường dẫn ảnh HTTP(S), không bắt buộc', upload:'Chưa hỗ trợ tải ảnh lên; có thể nhập URL ảnh sẵn có.', status:'Trạng thái', narrations:'Thuyết minh', locale:'Mã ngôn ngữ (ví dụ vi, en, fr)', title:'Tiêu đề', body:'Nội dung', newText:'Thêm bài', saved:'Đã lưu thành công.', deleted:'Đã xóa.', confirm:'Xóa địa điểm và tất cả bài thuyết minh liên quan?', invalid:'Kiểm tra các trường bắt buộc, tọa độ, bán kính 20–1000 và URL ảnh.', duplicate:'Ngôn ngữ này đã có bài.', missing:'Không tìm thấy địa điểm hoặc bài thuyết minh.', empty:'Chưa có địa điểm.', noText:'Chưa có bài thuyết minh.', select:'Chọn một địa điểm để xem hoặc sửa.', retry:'Thử lại' },
-  en: { places:'Places', create:'Add place', name:'Name', address:'Address', category:'Category', choose:'Choose category', latitude:'Latitude', longitude:'Longitude', radius:'Radius (m)', image:'Image HTTP(S) URL, optional', upload:'Image upload is not available; an existing image URL may be entered.', status:'Status', narrations:'Narrations', locale:'Language code (e.g. vi, en, fr)', title:'Title', body:'Content', newText:'Add narration', saved:'Saved successfully.', deleted:'Deleted.', confirm:'Delete this place and all its narrations?', invalid:'Check required fields, coordinates, radius 20–1000 and image URL.', duplicate:'A narration already exists for this language.', missing:'Place or narration not found.', empty:'No places yet.', noText:'No narrations yet.', select:'Choose a place to view or edit.', retry:'Retry' },
-};
-const blank = { name:'', address:'', category_id:'', latitude:'', longitude:'', radius_m:'100', image_url:'' };
-const textBlank = { locale:'', title:'', body:'' };
-const publicationStrings = {
-  vi: { publish:'Công bố', hide:'Ẩn địa điểm', confirmPublish:'Công bố địa điểm và các bài thuyết minh? Chỉ tiếp tục với nội dung đã được nhóm kiểm duyệt.', confirmHide:'Ẩn địa điểm khỏi ứng dụng khách?', published:'Đã công bố.', hidden:'Đã ẩn địa điểm.', missingFields:'Chưa đủ điều kiện công bố. Kiểm tra:', changed:'Trạng thái đã thay đổi. Chọn lại địa điểm để cập nhật.', name:'Tên', address:'Địa chỉ', category:'Danh mục', coordinates:'Tọa độ và bán kính', narration:'Thuyết minh hợp lệ', image_url:'Đường dẫn ảnh', draft:'Nháp', publishedStatus:'Công khai', hiddenStatus:'Ẩn' },
-  en: { publish:'Publish', hide:'Hide place', confirmPublish:'Publish this place and its narrations? Continue only with content reviewed by the team.', confirmHide:'Hide this place from guest apps?', published:'Published.', hidden:'Place hidden.', missingFields:'This place is not ready to publish. Check:', changed:'The status has changed. Select the place again to refresh it.', name:'Name', address:'Address', category:'Category', coordinates:'Coordinates and radius', narration:'Valid narration', image_url:'Image URL', draft:'Draft', publishedStatus:'Published', hiddenStatus:'Hidden' },
-};
-
+/** UC07–UC09: danh sách, biểu mẫu địa điểm, công bố/ẩn và bài thuyết minh của địa điểm đang chọn. */
 export default function Places({ t, language, token, onExpired }) {
-  const s = strings[language];
+  const s = placeStrings[language];
   const p = publicationStrings[language];
-  const [items,setItems]=useState([]), [categories,setCategories]=useState([]), [selected,setSelected]=useState(null), [form,setForm]=useState(blank);
-  const [texts,setTexts]=useState([]), [editing,setEditing]=useState(null), [text,setText]=useState(textBlank);
-  const [loading,setLoading]=useState(true), [textLoading,setTextLoading]=useState(false), [error,setError]=useState(''), [textError,setTextError]=useState(''), [notice,setNotice]=useState(''), [busy,setBusy]=useState(false), [version,setVersion]=useState(0), [textVersion,setTextVersion]=useState(0);
-  const [publicationError,setPublicationError]=useState(null);
-  const fail = (e, setter) => { if(e.status===401) onExpired(); else setter(e.code || 'SERVER_ERROR'); };
-  useEffect(() => { let active=true; setLoading(true); setError(''); Promise.all([request('/admin/pois',{token}),request('/admin/categories',{token})]).then(([p,c])=>{if(active){setItems(p.items);setCategories(c.items);}}).catch(e=>{if(active)fail(e,setError);}).finally(()=>{if(active)setLoading(false);}); return ()=>{active=false;}; },[token,version]);
-  useEffect(() => { if(!selected){setTexts([]);return;} let active=true; setTextLoading(true); setTextError(''); request(`/admin/pois/${encodeURIComponent(selected)}/narrations`,{token}).then(d=>{if(active)setTexts(d.items);}).catch(e=>{if(active)fail(e,setTextError);}).finally(()=>{if(active)setTextLoading(false);}); return ()=>{active=false;}; },[selected,token,textVersion]);
-  const message = code => ({VALIDATION_ERROR:s.invalid,CATEGORY_NOT_FOUND:s.invalid,NARRATION_DUPLICATE:s.duplicate,NARRATION_NOT_FOUND:s.missing,POI_NOT_FOUND:s.missing}[code] || t[code] || t.SERVER_ERROR);
-  function choose(item){setSelected(item.id);setForm({...blank,...item, image_url:item.image_url || ''});setEditing(null);setText(textBlank);setNotice('');setError('');setPublicationError(null);}
-  function fresh(){setSelected(null);setForm(blank);setEditing(null);setText(textBlank);setNotice('');setError('');setPublicationError(null);}
-  async function changeStatus(action){
-    if(!window.confirm(action==='publish'?p.confirmPublish:p.confirmHide))return;
-    setBusy(true);setPublicationError(null);setNotice('');
-    try{const data=await request(`/admin/pois/${encodeURIComponent(selected)}/${action}`,{method:'POST',token});setForm(current=>({...current,status:data.status}));setVersion(v=>v+1);setNotice(action==='publish'?p.published:p.hidden);}
-    catch(err){if(err.status===401)onExpired();else setPublicationError(err);}
-    finally{setBusy(false);}
+  const labels = statusLabels[language];
+  const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [locales, setLocales] = useState([]);
+  const [localesError, setLocalesError] = useState('');
+  const [selected, setSelected] = useState(null);
+  const [form, setForm] = useState(blankPlace);
+  const [loading, setLoading] = useState(true);
+  const [listError, setListError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [publicationError, setPublicationError] = useState(null);
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [version, setVersion] = useState(0);
+
+  const fail = (err, setter) => { if (err.status === 401) onExpired(); else setter(err.code || 'SERVER_ERROR'); };
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setListError('');
+    Promise.all([request('/admin/pois', { token }), request('/admin/categories', { token })])
+      .then(([places, cats]) => { if (active) { setItems(places.items); setCategories(cats.items); } })
+      .catch((err) => { if (active) fail(err, setListError); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, version]);
+
+  useEffect(() => {
+    let active = true;
+    request('/locales')
+      .then((d) => { if (active) setLocales(d.items); })
+      .catch((err) => { if (active) setLocalesError(err.code || 'SERVER_ERROR'); });
+    return () => { active = false; };
+  }, []);
+
+  function clearMessages() { setNotice(''); setFormError(''); setPublicationError(null); }
+  function choose(item) { setSelected(item.id); setForm({ ...blankPlace, ...item, image_url: item.image_url || '' }); clearMessages(); }
+  function fresh() { setSelected(null); setForm(blankPlace); clearMessages(); }
+
+  async function changeStatus(action) {
+    if (!window.confirm(action === 'publish' ? p.confirmPublish : p.confirmHide)) return;
+    setBusy(true); setPublicationError(null); setNotice('');
+    try {
+      const data = await request(`/admin/pois/${encodeURIComponent(selected)}/${action}`, { method: 'POST', token });
+      setForm((current) => ({ ...current, status: data.status }));
+      setVersion((v) => v + 1);
+      setNotice(action === 'publish' ? p.published : p.hidden);
+    } catch (err) { if (err.status === 401) onExpired(); else setPublicationError(err); }
+    finally { setBusy(false); }
   }
-  async function save(e){e.preventDefault(); setNotice('');setError('');
-    const lat=Number(form.latitude), lon=Number(form.longitude), radius=Number(form.radius_m);
-    if(!form.name.trim() || !form.address.trim() || !form.category_id || form.latitude==='' || form.longitude==='' || !Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180 || !Number.isInteger(radius) || radius<20 || radius>1000 || (form.image_url && !/^https?:\/\/[^\s/]+\S*$/i.test(form.image_url))){setError('VALIDATION_ERROR');return;}
-    setBusy(true); try {const data=await request(selected?`/admin/pois/${encodeURIComponent(selected)}`:'/admin/pois',{method:selected?'PUT':'POST',token,body:{name:form.name,address:form.address,category_id:form.category_id,latitude:lat,longitude:lon,radius_m:radius,image_url:form.image_url || null}});setSelected(data.id);setForm({...data,image_url:data.image_url || ''});setVersion(v=>v+1);setNotice(s.saved);} catch(err){fail(err,setError);} finally{setBusy(false);}
+
+  async function save(e) {
+    e.preventDefault(); setNotice(''); setFormError('');
+    const invalid = validatePlace(form);
+    if (invalid) { setFormError(invalid); return; }
+    setBusy(true);
+    try {
+      const body = { name: form.name, address: form.address, category_id: form.category_id, latitude: Number(form.latitude),
+        longitude: Number(form.longitude), radius_m: Number(form.radius_m), image_url: form.image_url || null };
+      const data = await request(selected ? `/admin/pois/${encodeURIComponent(selected)}` : '/admin/pois', { method: selected ? 'PUT' : 'POST', token, body });
+      setSelected(data.id); setForm({ ...data, image_url: data.image_url || '' }); setVersion((v) => v + 1); setNotice(s.saved);
+    } catch (err) { fail(err, setFormError); }
+    finally { setBusy(false); }
   }
-  async function remove(){if(!window.confirm(s.confirm))return;setBusy(true);setError('');try{await request(`/admin/pois/${encodeURIComponent(selected)}`,{method:'DELETE',token});fresh();setNotice(s.deleted);setVersion(v=>v+1);}catch(e){fail(e,setError);}finally{setBusy(false);}}
-  async function saveText(e){e.preventDefault();setTextError('');setNotice('');if(!text.title.trim() || !text.body.trim() || (!editing && !/^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(text.locale.trim()))){setTextError('VALIDATION_ERROR');return;}setBusy(true);try{await request(`/admin/pois/${encodeURIComponent(selected)}/narrations${editing?'/'+encodeURIComponent(editing):''}`,{method:editing?'PUT':'POST',token,body:editing?{title:text.title,body:text.body}:text});setText(textBlank);setEditing(null);setTextVersion(v=>v+1);setNotice(s.saved);}catch(err){fail(err,setTextError);}finally{setBusy(false);}}
-  const field=(key,label,props={})=><label>{label}<input {...props} disabled={busy} value={form[key]} onChange={e=>setForm({...form,[key]:e.target.value})} /></label>;
-  return <div className="panel places"><h2>{s.places}</h2><button type="button" className="secondary" disabled={busy} onClick={fresh}>{s.create}</button>{loading?<p role="status">{t.loading}</p>:error?<p role="alert" className="error">{message(error)} <button className="text-button" onClick={()=>setVersion(v=>v+1)}>{s.retry}</button></p>:!items.length?<p>{s.empty}</p>:<ul className="category-list">{items.map(p=><li key={p.id}><span>{p.name} · {p.status}</span><button className="text-button" disabled={busy} onClick={()=>choose(p)}>{t.edit}</button></li>)}</ul>}
+
+  async function remove() {
+    if (!window.confirm(s.confirm)) return;
+    setBusy(true); setFormError('');
+    try {
+      await request(`/admin/pois/${encodeURIComponent(selected)}`, { method: 'DELETE', token });
+      fresh(); setNotice(s.deleted); setVersion((v) => v + 1);
+    } catch (err) { fail(err, setFormError); }
+    finally { setBusy(false); }
+  }
+
+  return <div className="panel places">
+    <h2>{s.places}</h2>
+    <button type="button" className="secondary" disabled={busy} onClick={fresh}>{s.create}</button>
+    {loading ? <p role="status">{t.loading}</p>
+      : listError ? <p role="alert" className="error">{placeMessage(s, t, listError)} <button className="text-button" onClick={() => setVersion((v) => v + 1)}>{s.retry}</button></p>
+      : <PlaceList s={s} t={t} labels={labels} items={items} busy={busy} onChoose={choose} />}
     {notice && <p role="status">{notice}</p>}
-    {selected && <section aria-label={s.status}><p>{s.status}: {({draft:p.draft,published:p.publishedStatus,hidden:p.hiddenStatus})[form.status] || form.status}</p><button type="button" disabled={busy} onClick={()=>changeStatus(form.status==='published'?'hide':'publish')}>{form.status==='published'?p.hide:p.publish}</button>{publicationError && <p role="alert" className="error">{publicationError.code==='POI_NOT_PUBLISHABLE'?`${p.missingFields} ${publicationError.details.map(key=>p[key] || key).join(', ')}`:publicationError.code==='INVALID_STATUS_TRANSITION'?p.changed:message(publicationError.code)}</p>}</section>}
-    <form className="place-form" onSubmit={save}><h3>{selected ? s.places : s.create}</h3>{selected && <p>{s.status}: {form.status}</p>}{field('name',s.name,{required:true,maxLength:200})}{field('address',s.address,{required:true,maxLength:500})}<label>{s.category}<select required disabled={busy} value={form.category_id} onChange={e=>setForm({...form,category_id:e.target.value})}><option value="">{s.choose}</option>{categories.map(c=><option key={c.id} value={c.id}>{language==='en' ? (c.name_en || c.name) : c.name}</option>)}</select></label>{field('latitude',s.latitude,{type:'number',step:'any',min:-90,max:90,required:true})}{field('longitude',s.longitude,{type:'number',step:'any',min:-180,max:180,required:true})}{field('radius_m',s.radius,{type:'number',min:20,max:1000,step:1,required:true})}{field('image_url',s.image,{type:'url',maxLength:2048})}<p>{s.upload}</p><button disabled={busy}>{busy?t.saving:t.save}</button>{selected && <button type="button" className="secondary" disabled={busy} onClick={remove}>{t.delete}</button>}</form>
-    {selected && <section><h3>{s.narrations}</h3>{textLoading?<p role="status">{t.loading}</p>:textError?<p role="alert" className="error">{message(textError)} <button className="text-button" onClick={()=>setTextVersion(v=>v+1)}>{s.retry}</button></p>:!texts.length?<p>{s.noText}</p>:<ul className="category-list">{texts.map(n=><li key={n.id}><span>{n.locale} · {n.title}</span><button className="text-button" disabled={busy} onClick={()=>{setEditing(n.id);setText({locale:n.locale,title:n.title,body:n.body});setTextError('');}}>{t.edit}</button></li>)}</ul>}<form className="place-form" onSubmit={saveText}><h4>{editing ? `${t.edit}: ${text.locale}` : s.newText}</h4><label>{s.locale}<input required disabled={busy || !!editing} value={text.locale} onChange={e=>setText({...text,locale:e.target.value})}/></label><label>{s.title}<input required disabled={busy} maxLength="500" value={text.title} onChange={e=>setText({...text,title:e.target.value})}/></label><label>{s.body}<textarea required disabled={busy} rows="8" value={text.body} onChange={e=>setText({...text,body:e.target.value})}/></label><button disabled={busy}>{t.save}</button>{editing && <button type="button" className="secondary" disabled={busy} onClick={()=>{setEditing(null);setText(textBlank);}}>{t.cancel}</button>}</form></section>}
+    {selected && <PublicationPanel s={s} p={p} t={t} labels={labels} status={form.status} busy={busy} error={publicationError} onChange={changeStatus} />}
+    <PlaceForm s={s} t={t} language={language} form={form} setForm={setForm} categories={categories} selected={selected}
+      busy={busy} error={formError} onSave={save} onDelete={remove} />
+    {selected && <NarrationEditor key={selected} s={s} t={t} language={language} token={token} poiId={selected} locales={locales}
+      localesError={localesError} busy={busy} setBusy={setBusy} onExpired={onExpired} onNotice={setNotice} />}
   </div>;
 }

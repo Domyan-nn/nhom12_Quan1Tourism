@@ -1,4 +1,4 @@
-"""Add bilingual category columns to an existing database.
+"""Apply migrations/003_category_bilingual.sql (English category names) to an existing database.
 
 Stop all database writers before running. A new backup is mandatory when applying.
 No translations are inferred. The existing name remains the Vietnamese name.
@@ -9,9 +9,24 @@ import sqlite3
 from contextlib import closing
 from pathlib import Path
 
+MIGRATION = Path(__file__).resolve().parents[1] / 'migrations' / '003_category_bilingual.sql'
+
 
 class MigrationError(ValueError):
     pass
+
+
+def statements():
+    pending = ''
+    for line in MIGRATION.read_text(encoding='utf-8').splitlines():
+        if not pending and line.lstrip().startswith('--'):
+            continue
+        pending += line + '\n'
+        if sqlite3.complete_statement(pending):
+            yield pending
+            pending = ''
+    if pending.strip():
+        raise MigrationError('Incomplete migration SQL')
 
 
 def upgrade_connection(db):
@@ -27,9 +42,8 @@ def upgrade_connection(db):
             raise MigrationError('Existing foreign-key violation; review before migrating.')
         if db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
             raise MigrationError('Database integrity check failed.')
-        db.execute("ALTER TABLE categories ADD COLUMN name_en TEXT CHECK (name_en IS NULL OR length(trim(name_en)) > 0)")
-        db.execute("ALTER TABLE categories ADD COLUMN normalized_name_en TEXT CHECK (normalized_name_en IS NULL OR length(trim(normalized_name_en)) > 0)")
-        db.execute('CREATE UNIQUE INDEX idx_categories_normalized_name_en ON categories(normalized_name_en) WHERE normalized_name_en IS NOT NULL')
+        for sql in statements():
+            db.execute(sql)
         if db.execute('PRAGMA foreign_key_check').fetchone():
             raise MigrationError('Foreign-key validation failed.')
         if db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':

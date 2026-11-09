@@ -3,6 +3,7 @@
 import sqlite3
 from fastapi import APIRouter, Depends, HTTPException
 from app.api.dependencies import get_db
+from app.core.locales import locale_items
 from app.db import poi_repository
 from app.services import categories
 
@@ -12,6 +13,12 @@ router = APIRouter(prefix="/api/v1", tags=["public catalog"])
 @router.get("/categories")
 def list_categories(db: sqlite3.Connection = Depends(get_db)):
     return {"items": categories.list_categories(db)}
+
+
+@router.get("/locales")
+def list_locales():
+    """Ngôn ngữ thuyết minh được hỗ trợ; không phụ thuộc nội dung đã có."""
+    return {"items": locale_items()}
 
 
 @router.get("/pois")

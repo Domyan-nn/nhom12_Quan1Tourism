@@ -1,4 +1,4 @@
-import { availableLocales, getNarration, pickVoice, splitIntoChunks, voiceMatchesLocale } from '../../src/features/narration/narrationUtils';
+import { SUPPORTED_LOCALES, availableLocales, getNarration, localeLabel, pickVoice, speechTagFor, splitIntoChunks, voiceMatchesLocale } from '../../src/features/narration/narrationUtils';
 import { NarrationPlayer } from '../../src/features/narration/NarrationPlayer';
 
 const poi = {
@@ -92,5 +92,14 @@ describe('NarrationPlayer', () => {
     await p.play({ text: 'a', locale: 'vi' });
     p.state = { ...p.state, status: 'playing' };
     expect(await p.pause()).toBe(false);
+  });
+});
+
+describe('ngôn ngữ hỗ trợ (cùng backend app/core/locales.py)', () => {
+  it('có tên và giọng cho 6 mã; mã lạ giữ nguyên mã', () => {
+    expect(SUPPORTED_LOCALES.map((l) => l.code)).toEqual(['vi', 'en', 'fr', 'zh', 'ja', 'ko']);
+    expect(localeLabel('ko')).toBe('한국어');
+    expect(speechTagFor('ja')).toBe('ja-JP');
+    expect(localeLabel('de')).toBe('de');
   });
 });

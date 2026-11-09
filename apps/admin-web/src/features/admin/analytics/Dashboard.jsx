@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { request } from '../../../services/api.js';
+import VisitsChart from './VisitsChart.jsx';
 
 const REFRESH_MS = 30000; // BR17: tự làm mới mỗi 30 giây khi trang hiển thị
 const strings = {
   vi: { title: 'Thống kê truy cập', active: 'Số khách đang hoạt động', activeHint: 'Ước lượng theo mã phiên ẩn danh có tín hiệu trong 90 giây gần nhất; không phải số người duy nhất.',
     today: 'Lượt hôm nay', last7: '7 ngày gần nhất (gồm hôm nay)', measured: 'Đo lúc', lastOk: 'Lần thành công gần nhất', unavailable: 'Không khả dụng', retry: 'Thử lại', refresh: 'Làm mới',
     range: 'Khoảng ngày (tối đa 30 ngày gần nhất)', from: 'Từ ngày', to: 'Đến ngày', apply: 'Xem', clear: 'Bỏ lọc', total: 'Tổng lượt trong khoảng', date: 'Ngày', visits: 'Lượt',
-    tz: 'Ngày tính theo giờ Việt Nam (UTC+7). Chỉ gồm khách đã đồng ý thống kê.', loading: 'Đang tải…',
+    tz: 'Ngày tính theo giờ Việt Nam (UTC+7). Chỉ gồm khách đã đồng ý thống kê.', loading: 'Đang tải…', chart: 'Lượt truy cập theo ngày', visitsUnit: 'lượt',
     INVALID_DATE_RANGE: 'Khoảng ngày không hợp lệ hoặc ngoài 30 ngày gần nhất.', NETWORK_ERROR: 'Không kết nối được API.', SERVER_ERROR: 'Không thể tải số liệu.' },
   en: { title: 'Traffic statistics', active: 'Active visitors', activeHint: 'Estimate based on anonymous session IDs seen in the last 90 seconds; not unique people.',
     today: 'Visits today', last7: 'Last 7 days (including today)', measured: 'Measured at', lastOk: 'Last successful update', unavailable: 'Unavailable', retry: 'Retry', refresh: 'Refresh',
     range: 'Date range (within the last 30 days)', from: 'From', to: 'To', apply: 'View', clear: 'Clear filter', total: 'Total visits in range', date: 'Date', visits: 'Visits',
-    tz: 'Days use Vietnam time (UTC+7). Only visitors who consented are counted.', loading: 'Loading…',
+    tz: 'Days use Vietnam time (UTC+7). Only visitors who consented are counted.', loading: 'Loading…', chart: 'Visits per day', visitsUnit: 'visits',
     INVALID_DATE_RANGE: 'Invalid range or outside the last 30 days.', NETWORK_ERROR: 'Cannot reach the API.', SERVER_ERROR: 'Unable to load statistics.' },
 };
 
@@ -25,7 +26,8 @@ export default function Dashboard({ language, token, onExpired }) {
   const s = strings[language] || strings.vi;
   const [active, setActive] = useState(null), [activeErr, setActiveErr] = useState(''), [lastOk, setLastOk] = useState('');
   const [visits, setVisits] = useState(null), [visitsErr, setVisitsErr] = useState('');
-  const [from, setFrom] = useState(''), [to, setTo] = useState(''), [rangeErr, setRangeErr] = useState('');
+  // Khoảng mặc định: 7 ngày gần nhất (gồm hôm nay), Admin chỉ cần bấm Xem.
+  const [from, setFrom] = useState(() => vnDate(-6)), [to, setTo] = useState(() => vnDate(0)), [rangeErr, setRangeErr] = useState('');
   const [query, setQuery] = useState(''), [tick, setTick] = useState(0);
   const activeRequest = useRef(null);
 
@@ -66,7 +68,7 @@ export default function Dashboard({ language, token, onExpired }) {
     if (!from || !to || from > to || from < min || to > max) { setRangeErr('INVALID_DATE_RANGE'); return; }
     setQuery(`?date_from=${from}&date_to=${to}`);
   }
-  function clear() { setFrom(''); setTo(''); setRangeErr(''); setQuery(''); }
+  function clear() { setFrom(vnDate(-6)); setTo(vnDate(0)); setRangeErr(''); setQuery(''); }
 
   const num = v => <strong className="stat-number">{v}</strong>;
   const unavailable = (code, retry) => <p role="alert" className="error">{s.unavailable} · {s[code] || s.SERVER_ERROR} <button className="text-button" onClick={retry}>{s.retry}</button></p>;
@@ -88,6 +90,7 @@ export default function Dashboard({ language, token, onExpired }) {
         <button>{s.apply}</button>{query && <button type="button" className="secondary" onClick={clear}>{s.clear}</button>}
         {rangeErr && <p role="alert" className="error">{s[rangeErr]}</p>}</form>
       {visits?.range && <div><p>{s.total} ({visits.range.from} → {visits.range.to}): {num(visits.range.total)}</p>
+        <VisitsChart days={visits.range.days} title={`${s.chart} (${visits.range.from} → ${visits.range.to})`} visitsLabel={s.visitsUnit} />
         <table className="stat-table"><thead><tr><th>{s.date}</th><th>{s.visits}</th></tr></thead><tbody>{visits.range.days.map(d => <tr key={d.date}><td>{d.date}</td><td>{d.visits}</td></tr>)}</tbody></table></div>}
     </section></div>;
 }

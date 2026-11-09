@@ -1,4 +1,7 @@
-"""Initialize the SQLite schema in a database without existing tables or views."""
+"""Initialize the SQLite schema in a database without existing tables or views.
+
+Applies migrations/001, 002 and 003 in order (see migrations/README.md).
+"""
 
 import argparse
 import sqlite3

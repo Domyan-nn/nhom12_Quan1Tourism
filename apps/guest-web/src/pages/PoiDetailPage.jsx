@@ -6,7 +6,8 @@ import { useLanguage } from '../i18n/LanguageContext.jsx';
 import { Loading, ErrorState } from '../components/StateViews.jsx';
 import TtsControls from '../components/TtsControls.jsx';
 
-const LOCALE_NAMES = { vi: 'Tiếng Việt', en: 'English' };
+// Cùng danh sách với backend app/core/locales.py; mã lạ vẫn hiện nguyên mã.
+const LOCALE_NAMES = { vi: 'Tiếng Việt', en: 'English', fr: 'Français', zh: '中文', ja: '日本語', ko: '한국어' };
 
 // UC01 (chi tiết) + UC03 (chọn ngôn ngữ). Chỉ hiện ngôn ngữ có nội dung (BR03).
 export default function PoiDetailPage() {

@@ -29,9 +29,9 @@ test('real public API map draws published markers, opens summary and correct mul
   await expect(page.getByRole('article', { name: 'Tóm tắt địa điểm' })).toContainText('Dinh Độc Lập');
   await page.getByRole('link', { name: 'Xem chi tiết', exact: true }).click();
   await expect(page).toHaveURL(`${real}/poi/palace`);
-  await page.getByRole('button', { name: 'fr', exact: true }).click();
+  await page.getByRole('button', { name: 'Français', exact: true }).click();
   await page.getByLabel('Ngôn ngữ giao diện').selectOption('en');
-  await expect(page.getByRole('button', { name: 'fr', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Français', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.narration h2')).toHaveText('Title fr');
   expect(errors).toEqual([]);
 });

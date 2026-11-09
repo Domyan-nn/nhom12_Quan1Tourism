@@ -1,8 +1,13 @@
 // Hàm thuần cho UC03: chọn bài theo ngôn ngữ, chọn giọng TTS, chia đoạn văn bản dài.
 
+// Cùng danh sách với backend app/core/locales.py (GET /api/v1/locales).
 export const SUPPORTED_LOCALES = [
   { code: 'vi', label: 'Tiếng Việt', speechTag: 'vi-VN' },
   { code: 'en', label: 'English', speechTag: 'en-US' },
+  { code: 'fr', label: 'Français', speechTag: 'fr-FR' },
+  { code: 'zh', label: '中文', speechTag: 'zh-CN' },
+  { code: 'ja', label: '日本語', speechTag: 'ja-JP' },
+  { code: 'ko', label: '한국어', speechTag: 'ko-KR' },
 ];
 
 export const localeLabel = (code) => SUPPORTED_LOCALES.find((l) => l.code === code)?.label ?? code;

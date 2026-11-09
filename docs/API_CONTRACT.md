@@ -18,10 +18,11 @@ Cập nhật 06/11/2026 theo mã FastAPI. Tài liệu này là nguồn chung cho
 | --- | --- | --- |
 | GET /api/v1/health | Không | 200 `{"status":"ok"}`; chỉ kiểm tra tiến trình, không kiểm tra database |
 | GET /api/v1/categories | Không | 200 `{"items":[{"id":"cat-1","name":"Di tích","name_en":"Heritage"}]}` |
+| GET /api/v1/locales | Không | 200 `{"items":[{"code":"vi","name":"Tiếng Việt","name_en":"Vietnamese","speech_tag":"vi-VN"}, ...]}`; ngôn ngữ thuyết minh được hỗ trợ (09/11) |
 | GET /api/v1/pois | `q`, `category_id` đều tùy chọn | 200 `{"items":[<POI tóm tắt>]}` |
 | GET /api/v1/pois/{id} | ID chuỗi | 200 POI chi tiết; 404 nếu không công khai/không tồn tại |
 
-`q` được trim, chuẩn hóa NFC và casefold; tìm chuỗi con trong tên, giữ phân biệt dấu. `category_id` lọc chính xác; kết hợp với tìm tên bằng AND. Danh mục không tồn tại trả danh sách rỗng. POI sắp theo name rồi ID; danh mục sắp theo normalized_name rồi ID. Danh mục trả toàn bộ danh mục, kể cả danh mục chưa có POI công khai.
+`q` được trim, bỏ dấu tiếng Việt (kể cả `đ`) và casefold ở cả từ khóa lẫn tên, rồi tìm chuỗi con: "ben thanh" khớp "Chợ Bến Thành" (09/11; trước đó phân biệt dấu). `category_id` lọc chính xác; kết hợp với tìm tên bằng AND. Danh mục không tồn tại trả danh sách rỗng. POI sắp theo name rồi ID; danh mục sắp theo normalized_name rồi ID. Danh mục trả toàn bộ danh mục, kể cả danh mục chưa có POI công khai.
 
 POI tóm tắt:
 
@@ -52,7 +53,7 @@ Ngoại trừ login, mọi route Admin yêu cầu `Authorization: Bearer <token>
 
 | Phương thức, đường dẫn | Request | Thành công |
 | --- | --- | --- |
-| POST /api/v1/admin/login | `{"username":"demo-admin","password":"..."}` | 200 `{"access_token":"...","expires_at":"..."}`; Cache-Control: no-store |
+| POST /api/v1/admin/login | `{"username":"demo-admin","password":"..."}` | 200 `{"access_token":"...","expires_at":"..."}`; Cache-Control: no-store. Sai 5 lần trong 15 phút cho cùng username thì trả 429 kèm `Retry-After` |
 | GET /api/v1/admin/me | Không body | 200 `{"id":"...","username":"..."}` |
 | POST /api/v1/admin/logout | Không body | 204 không body; thu hồi phiên |
 | GET /api/v1/admin/categories | Không body | 200 `{"items":[{"id":"...","name":"...","name_en":"..."}]}` |
@@ -60,7 +61,7 @@ Ngoại trừ login, mọi route Admin yêu cầu `Authorization: Bearer <token>
 | PATCH /api/v1/admin/categories/{id} | `{"name":"...","name_en":"..."}` | 200 `{"id":"...","name":"...","name_en":"..."}` |
 | DELETE /api/v1/admin/categories/{id} | Không body | 204 không body |
 
-Token ngẫu nhiên, chỉ lưu hash, hết hạn sau 8 giờ. Không có đăng ký Admin công khai. Hai tên danh mục là bắt buộc khi tạo hoặc sửa, mỗi tên tối đa 200 ký tự trước trim, được trim/NFC và casefold để so trùng riêng theo ngôn ngữ. `name` là tiếng Việt; `name_en` có thể là null đối với dữ liệu cũ chưa được dịch. Username tối đa 150, password tối đa 1024 ký tự. Giới hạn hiện tại chưa phải cam kết production.
+Token ngẫu nhiên, chỉ lưu hash, hết hạn sau 8 giờ. Không có đăng ký Admin công khai. Hai tên danh mục là bắt buộc khi tạo hoặc sửa, mỗi tên tối đa 200 ký tự trước trim, được trim/NFC và casefold để so trùng riêng theo ngôn ngữ. `name` là tiếng Việt; `name_en` có thể là null đối với dữ liệu cũ chưa được dịch. Username tối đa 150, password tối đa 1024 ký tự. Bộ đếm đăng nhập sai nằm trong bộ nhớ tiến trình API (khởi động lại thì về 0), tính theo username đã chuẩn hóa, kể cả tên không tồn tại; khi đang bị khóa, mật khẩu không được kiểm tra. Mỗi lần đăng nhập thành công xóa phiên đã hết hạn quá 7 ngày. Giới hạn hiện tại chưa phải cam kết production.
 
 ## 4. Lỗi thực tế
 
@@ -74,15 +75,17 @@ Client xử lý theo code/status, không phân tích chuỗi message. Message ba
 | --- | --- | --- |
 | 401 | INVALID_CREDENTIALS | Sai thông tin đăng nhập hoặc tài khoản bị khóa, cùng thông báo |
 | 401 | AUTH_REQUIRED | Thiếu/sai/hết hạn/thu hồi token hoặc tài khoản không còn hoạt động |
+| 429 | TOO_MANY_ATTEMPTS | Đăng nhập sai quá 5 lần trong 15 phút; header `Retry-After` là số giây cần chờ |
 | 404 | POI_NOT_FOUND | POI không tồn tại hoặc không công khai |
 | 404 | CATEGORY_NOT_FOUND | Không tìm thấy danh mục khi sửa/xóa |
 | 409 | CATEGORY_DUPLICATE | Trùng tên chuẩn hóa |
 | 409 | CATEGORY_IN_USE | Xóa danh mục đang có POI sử dụng |
+| 409 | NARRATION_REQUIRED | Xóa bài thuyết minh hợp lệ cuối cùng của POI đang công khai |
 | 422 | VALIDATION_ERROR | Sai request; details hiện là mảng rỗng |
 | 500 | DATABASE_ERROR | Lỗi SQLite, không lộ chi tiết nội bộ |
 | Tùy trường hợp | HTTP_ERROR | Lỗi HTTP khác, gồm route không tồn tại |
 
-Chưa triển khai rate limiting, nên không cam kết 429. Chưa ánh xạ SQLite lock thành 503; hiện thuộc DATABASE_ERROR.
+Rate limiting chỉ áp dụng cho đăng nhập Admin (429 ở trên). Chưa ánh xạ SQLite lock thành 503; hiện thuộc DATABASE_ERROR.
 
 ## 5. Analytics UC12 đã tích hợp
 
@@ -132,9 +135,10 @@ Các endpoint dưới đây yêu cầu `Authorization: Bearer <token>`; phiên t
 * `GET /api/v1/admin/pois` trả `{ "items": [ ... ] }` gồm mọi trạng thái; `GET /api/v1/admin/pois/{id}` trả một bản ghi hoặc 404 `POI_NOT_FOUND`.
 * `POST /api/v1/admin/pois` trả 201 và bản ghi mới `status: "draft"`; `PUT /api/v1/admin/pois/{id}` thay các trường biên tập, giữ trạng thái cũ. Body: `{ "category_id": "id", "name": "Tên", "address": "Địa chỉ", "latitude": 10.7, "longitude": 106.7, "radius_m": 100, "image_url": null }`. Tên và địa chỉ bắt buộc, danh mục phải tồn tại, tọa độ lần lượt trong [-90,90] và [-180,180], bán kính nguyên 20–1000; URL ảnh tùy chọn phải dùng HTTP(S). Sai dữ liệu trả 422; danh mục không tồn tại có mã `CATEGORY_NOT_FOUND`.
 * `DELETE /api/v1/admin/pois/{id}` trả 204, xóa các thuyết minh liên quan theo khóa ngoại CASCADE; không tồn tại trả 404.
-* `GET /api/v1/admin/pois/{id}/narrations` trả `{ "items": [ ... ] }`. `POST` cùng đường dẫn nhận `{ "locale": "vi", "title": "Tiêu đề", "body": "Nội dung" }`, trả 201; mã được chuẩn hóa chữ thường, gồm 2–3 chữ cái và các phần tùy chọn phân cách bằng dấu gạch ngang. Mỗi ngôn ngữ chỉ có một bài cho một địa điểm; trùng trả 409 `NARRATION_DUPLICATE`. `PUT /api/v1/admin/pois/{id}/narrations/{narration_id}` nhận `{ "title": "...", "body": "..." }`, giữ nguyên locale và trả bài đã lưu. Thiếu địa điểm hoặc bài trả 404; tiêu đề/nội dung rỗng hoặc sai định dạng trả 422.
+* `GET /api/v1/admin/pois/{id}/narrations` trả `{ "items": [ ... ] }`. `POST` cùng đường dẫn nhận `{ "locale": "vi", "title": "Tiêu đề", "body": "Nội dung" }`, trả 201; mã được trim, chuyển chữ thường và phải nằm trong danh sách `GET /api/v1/locales` (vi, en, fr, zh, ja, ko — sửa tại `backend/app/core/locales.py`), ngoài danh sách trả 422. Mỗi ngôn ngữ chỉ có một bài cho một địa điểm; trùng trả 409 `NARRATION_DUPLICATE`. `PUT /api/v1/admin/pois/{id}/narrations/{narration_id}` nhận `{ "title": "...", "body": "..." }`, giữ nguyên locale và trả bài đã lưu. Thiếu địa điểm hoặc bài trả 404; tiêu đề/nội dung rỗng hoặc sai định dạng trả 422.
+* `DELETE /api/v1/admin/pois/{id}/narrations/{narration_id}` trả 204 (09/11). Bài không thuộc địa điểm đó trả 404 `NARRATION_NOT_FOUND`. Nếu địa điểm đang công khai và đây là bài hợp lệ cuối cùng thì trả 409 `NARRATION_REQUIRED`, không xóa (BR03); ẩn địa điểm trước rồi mới xóa được.
 
-Không có API upload hoặc phục vụ ảnh mới; URL do quản trị viên cung cấp. Không có endpoint xóa riêng bài. Thay đổi trạng thái công bố từ commit mới của An được ghi ở mục 9. Không thay schema hoặc chạy migration; API công khai giữ nguyên.
+Không có API upload hoặc phục vụ ảnh mới; URL do quản trị viên cung cấp. Thay đổi trạng thái công bố từ commit mới của An được ghi ở mục 9. Không thay schema hoặc chạy migration; API công khai giữ nguyên.
 
 ## 9. Phần ngày 04/11 của An được giữ khi rebase
 

@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const admin = 'http://127.0.0.1:18175';
 const guest = 'http://127.0.0.1:18174';
+const openTab = (page, name) => page.getByRole('tab', { name, exact: true }).click();
 
 async function login(page) {
   await page.goto(admin);
@@ -32,6 +33,22 @@ test('Admin rejects incorrect password, reports network errors, logs out and rej
   expect(reuse.status()).toBe(401);
 });
 
+test('Repeated failed sign-ins are throttled with a clear message (NFR01)', async ({ page }) => {
+  // A separate, non-existent name: the shared browser-admin account must stay usable for later tests.
+  await page.goto(admin);
+  await page.getByLabel('Tên đăng nhập').fill('throttle-check');
+  await page.getByLabel('Mật khẩu').fill('wrong-test-password');
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const answered = page.waitForResponse((r) => r.url().endsWith('/api/v1/admin/login') && r.status() === 401);
+    await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+    await answered;
+  }
+  const blocked = page.waitForResponse((r) => r.url().endsWith('/api/v1/admin/login') && r.status() === 429);
+  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+  await blocked;
+  await expect(page.getByRole('alert')).toContainText('Đăng nhập sai quá nhiều lần');
+});
+
 test('Admin session survives reload in the same tab until logout or revocation (UC05-A1)', async ({ page, request }) => {
   const token = await login(page);
   await page.reload();
@@ -54,6 +71,7 @@ test('Admin session survives reload in the same tab until logout or revocation (
 
 test('Admin category CRUD, NFC duplicates, validation, used category and translated controls', async ({ page }) => {
   await login(page);
+  await openTab(page, 'Danh mục');
   const form = page.locator('.category-form');
   const list = page.locator('.category-form').locator('..').locator('.category-list');
   await form.getByLabel('Tên tiếng Việt').fill('   ');
@@ -88,6 +106,7 @@ test('Admin category CRUD, NFC duplicates, validation, used category and transla
 test('Admin category load error retries and revoked session returns to sign in', async ({ page, request }) => {
   await page.route('**/api/v1/admin/categories', (r) => r.abort());
   const token = await login(page);
+  await openTab(page, 'Danh mục');
   const categories = page.locator('.category-form').locator('..');
   await expect(categories.getByRole('alert')).toContainText('Không kết nối được API');
   await page.unroute('**/api/v1/admin/categories');
@@ -108,6 +127,16 @@ test('Admin saves a draft and narration, while guest sees only published places'
   await page.getByLabel('Mật khẩu').fill('browser-test-only');
   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
   await expect(page.getByText('Đã đăng nhập')).toBeVisible();
+  await openTab(page, 'Địa điểm');
+  await expect(page).toHaveURL(/#places$/);
+  await expect(page.locator('.places .category-list li')).toHaveCount(4);
+  // Filters: diacritic-insensitive name search and status filter, then back to all places.
+  await page.getByLabel('Tìm địa điểm').fill('cho ben');
+  await expect(page.locator('.places .category-list li')).toHaveCount(1);
+  await page.getByLabel('Tìm địa điểm').fill('');
+  await page.getByLabel('Lọc trạng thái').selectOption('hidden');
+  await expect(page.locator('.places .category-list li')).toHaveText([/Private hidden · Ẩn/]);
+  await page.getByLabel('Lọc trạng thái').selectOption('');
   await expect(page.locator('.places .category-list li')).toHaveCount(4);
   await page.getByRole('button', { name: 'Thêm địa điểm' }).click();
   const form = page.locator('.places .place-form').first();
@@ -120,29 +149,27 @@ test('Admin saves a draft and narration, while guest sees only published places'
   const creating = page.waitForResponse(r => r.url().endsWith('/api/v1/admin/pois') && r.status() === 201);
   await form.getByRole('button', { name: 'Lưu' }).click();
   const poiId = (await (await creating).json()).id;
-  await expect(page.locator('.places .category-list li').filter({ hasText: 'Browser test place' })).toContainText('draft');
+  await expect(page.locator('.places .category-list li').filter({ hasText: 'Browser test place' })).toContainText('Nháp');
   await expect(page.getByText('Đã lưu thành công.')).toBeVisible();
 
   await form.getByLabel('Tên').fill('Browser edited place');
   await form.getByLabel('Bán kính (m)').fill('1000');
   await form.getByRole('button', { name: 'Lưu' }).click();
-  await expect(page.locator('.places .category-list li').filter({ hasText: 'Browser edited place' })).toContainText('draft');
+  await expect(page.locator('.places .category-list li').filter({ hasText: 'Browser edited place' })).toContainText('Nháp');
 
   const narr = page.locator('.places .place-form').last();
-  await narr.getByLabel('Mã ngôn ngữ').fill('fr');
+  await expect(narr.locator('option[value="xx"]')).toHaveCount(0);
+  await narr.getByLabel('Ngôn ngữ thuyết minh').selectOption('fr');
   await narr.getByLabel('Tiêu đề').fill('Titre de test');
   await narr.getByLabel('Nội dung').fill('Texte saisi par le test');
   await narr.getByRole('button', { name: 'Lưu' }).click();
   await expect(page.locator('.places .category-list li').filter({ hasText: 'fr · Titre de test' })).toBeVisible();
 
-  await narr.getByLabel('Mã ngôn ngữ').fill('FR');
-  await narr.getByLabel('Tiêu đề').fill('Duplicate');
-  await narr.getByLabel('Nội dung').fill('Duplicate');
-  await narr.getByRole('button', { name: 'Lưu' }).click();
-  await expect(page.locator('.places [role="alert"]')).toContainText('Ngôn ngữ này đã có bài');
-  await page.locator('.places').getByRole('button', { name: 'Thử lại', exact: true }).click();
+  // BR03: a language that already has a narration cannot be chosen again (the API also returns 409).
+  await expect(narr.locator('option[value="fr"]')).toHaveAttribute('disabled', '');
+  await expect(narr.locator('option[value="fr"]')).toContainText('đã có bài');
   await page.locator('.places li').filter({ hasText: 'fr · Titre de test' }).getByRole('button', { name: 'Sửa', exact: true }).click();
-  await expect(narr.getByLabel('Mã ngôn ngữ')).toBeDisabled();
+  await expect(narr.getByLabel('Ngôn ngữ thuyết minh')).toBeDisabled();
   await narr.getByLabel('Tiêu đề').fill('   ');
   await narr.getByRole('button', { name: 'Lưu' }).click();
   await expect(page.locator('.places [role="alert"]')).toContainText('Kiểm tra các trường bắt buộc');
@@ -172,6 +199,17 @@ test('Admin saves a draft and narration, while guest sees only published places'
   await expect(guestPage.locator('.card')).toHaveCount(2);
   await expect(guestPage.getByText('Browser edited place')).toHaveCount(0);
   await guestPage.close();
+
+  // UC08: delete a narration typed by mistake; cancelling the confirmation keeps it.
+  const frRow = page.locator('.places li').filter({ hasText: 'fr · Titre modifié' });
+  page.once('dialog', dialog => dialog.dismiss());
+  await frRow.getByRole('button', { name: 'Xóa', exact: true }).click();
+  await expect(frRow).toBeVisible();
+  page.once('dialog', dialog => dialog.accept());
+  await frRow.getByRole('button', { name: 'Xóa', exact: true }).click();
+  await expect(frRow).toHaveCount(0);
+  await expect(page.getByText('Chưa có bài thuyết minh.')).toBeVisible();
+  await expect(narr.locator('option[value="fr"]')).not.toHaveAttribute('disabled');
 
   page.once('dialog', dialog => dialog.dismiss());
   await form.getByRole('button', { name: 'Xóa' }).click();

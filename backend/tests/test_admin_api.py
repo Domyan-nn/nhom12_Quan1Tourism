@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -15,6 +16,7 @@ sys.path.insert(0, str(BACKEND))
 from app.api.dependencies import get_db
 from app.db.connection import connect
 from app.main import app
+from app.services import auth as auth_service
 from scripts.seed_db import seed, stable_id
 
 
@@ -37,6 +39,9 @@ class AdminAPITests(unittest.TestCase):
 
         app.dependency_overrides[get_db] = test_db
         self.addCleanup(app.dependency_overrides.clear)
+        # The login throttle lives in the API process; never let one test's failures leak into another.
+        auth_service.throttle.clear()
+        self.addCleanup(auth_service.throttle.clear)
         self.client = TestClient(app)
         self.addCleanup(self.client.close)
 
@@ -149,6 +154,42 @@ class AdminAPITests(unittest.TestCase):
         created = self.client.post("/api/v1/admin/categories", headers=headers, json={"name": "Unused", "name_en": "Unused"}).json()["id"]
         self.assertEqual(self.client.delete("/api/v1/admin/categories/" + created, headers=headers).status_code, 204)
         self.assertEqual(self.client.delete("/api/v1/admin/categories/" + created, headers=headers).status_code, 404)
+
+
+    def test_repeated_failures_are_throttled_per_username(self):
+        wrong = {"username": "demoadmin", "password": "not-the-password"}
+        for _ in range(5):
+            self.assertEqual(self.client.post("/api/v1/admin/login", json=wrong).status_code, 401)
+        # Even the right password waits: the sixth guess is never checked (NFR01).
+        blocked = self.client.post("/api/v1/admin/login", json={"username": " DEMOADMIN ", "password": self.password})
+        self.assertEqual(blocked.status_code, 429)
+        self.assertEqual(blocked.json()["error"]["code"], "TOO_MANY_ATTEMPTS")
+        self.assertGreater(int(blocked.headers["retry-after"]), 0)
+        self.assertNotIn(self.password, blocked.text)
+        # Another name is counted separately.
+        self.assertEqual(self.client.post("/api/v1/admin/login", json={"username": "other", "password": "x"}).status_code, 401)
+        later = auth_service.utc_now() + auth_service.throttle.window
+        with unittest.mock.patch.object(auth_service, "utc_now", return_value=later):
+            self.assertEqual(self.client.post("/api/v1/admin/login", json={"username": "demoadmin", "password": self.password}).status_code, 200)
+        # Success clears the counter.
+        self.assertEqual(self.client.post("/api/v1/admin/login", json=wrong).status_code, 401)
+        self.login()
+
+    def test_login_removes_long_expired_sessions_only(self):
+        token = self.login()
+        old = datetime.now(timezone.utc) - timedelta(days=auth_service.STALE_SESSION_DAYS + 1)
+        recent = datetime.now(timezone.utc) - timedelta(days=1)
+        with closing(connect(self.database)) as db, db:
+            for session_id, when in (("old", old), ("recent", recent)):
+                db.execute("INSERT INTO admin_sessions (id, admin_id, token_hash, issued_at, expires_at) "
+                           "SELECT ?, id, ?, ?, ? FROM admin_accounts",
+                           (session_id, session_id * 8, auth_service.timestamp(when - timedelta(hours=8)), auth_service.timestamp(when)))
+        self.login()
+        with closing(connect(self.database)) as db:
+            ids = {row[0] for row in db.execute("SELECT id FROM admin_sessions")}
+        self.assertNotIn("old", ids)
+        self.assertIn("recent", ids)
+        self.assertEqual(self.client.get("/api/v1/admin/me", headers=self.headers(token)).status_code, 200)
 
 
 if __name__ == "__main__":

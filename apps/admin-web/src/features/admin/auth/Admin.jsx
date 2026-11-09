@@ -5,7 +5,14 @@ import Categories from '../categories/Categories.jsx';
 import Places from '../places/Places.jsx';
 import Dashboard from '../analytics/Dashboard.jsx';
 
+const TABS = ['dashboard', 'categories', 'places'];
+const tabFromHash = () => {
+  const value = window.location.hash.replace('#', '');
+  return TABS.includes(value) ? value : 'dashboard';
+};
+
 export default function Admin({ t, language }) {
+  const [tab, setTab] = useState(tabFromHash);
   const [session, setSession] = useState(null);
   const [restoring, setRestoring] = useState(() => loadSession() !== null);
   const [username, setUsername] = useState('');
@@ -31,6 +38,17 @@ export default function Admin({ t, language }) {
       .finally(() => { if (active) setRestoring(false); });
     return () => { active = false; };
   }, []);
+
+  // Tab lưu trên URL (#categories...) để tải lại trang vẫn ở đúng chỗ; Back/Forward cũng đổi tab.
+  useEffect(() => {
+    const onHash = () => setTab(tabFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  function openTab(next) {
+    setTab(next);
+    if (window.location.hash !== `#${next}`) window.history.replaceState(null, '', `#${next}`);
+  }
 
   useEffect(() => {
     if (!session) return undefined;
@@ -87,10 +105,16 @@ export default function Admin({ t, language }) {
         <button className="secondary" onClick={logout} disabled={busy}>{t.logout}</button>
       </div>
       {error && <p role="alert" className="error">{errorMessage}</p>}
-      <Dashboard language={language} token={token} onExpired={expire} />
-      <h2>{t.categories}</h2>
-      <Categories t={t} token={token} onExpired={expire} />
-      <Places t={t} language={language} token={token} onExpired={expire} />
+      <div className="admin-tabs" role="tablist" aria-label={t.admin}>
+        {TABS.map((name) => <button key={name} type="button" role="tab" id={`tab-${name}`} aria-controls={`panel-${name}`}
+          aria-selected={tab === name} className={tab === name ? 'active' : ''} onClick={() => openTab(name)}>{t[`tab_${name}`]}</button>)}
+      </div>
+      {/* Chỉ panel đang mở được dựng: Dashboard chỉ tự làm mới khi đang hiển thị (BR17). */}
+      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+        {tab === 'dashboard' && <Dashboard language={language} token={token} onExpired={expire} />}
+        {tab === 'categories' && <><h2>{t.categories}</h2><Categories t={t} token={token} onExpired={expire} /></>}
+        {tab === 'places' && <Places t={t} language={language} token={token} onExpired={expire} />}
+      </div>
     </section>
   </main>;
 }

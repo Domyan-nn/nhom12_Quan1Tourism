@@ -11,7 +11,10 @@ router = APIRouter(prefix="/api/v1/admin", tags=["admin authentication"])
 
 @router.post("/login")
 def login(body: LoginRequest, response: Response, db: sqlite3.Connection = Depends(get_db)):
-    result = auth.login(db, body.username, body.password)
+    try:
+        result = auth.login(db, body.username, body.password)
+    except auth.LoginThrottled as exc:
+        raise HTTPException(status_code=429, detail="TOO_MANY_ATTEMPTS", headers={"Retry-After": str(exc.retry_after)})
     if result is None:
         raise HTTPException(status_code=401, detail="INVALID_CREDENTIALS")
     response.headers["Cache-Control"] = "no-store"

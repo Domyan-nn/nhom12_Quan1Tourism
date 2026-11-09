@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from app.api.dependencies import get_db, require_admin
+from app.core.locales import SUPPORTED_LOCALES
 from app.services.auth import timestamp, utc_now
 
 router = APIRouter(prefix="/api/v1/admin/pois", tags=["admin places"], dependencies=[Depends(require_admin)])
@@ -61,8 +62,8 @@ class NarrationCreate(NarrationInput):
     @classmethod
     def valid_locale(cls, value):
         value = value.strip().lower()
-        if not re.fullmatch(r"[a-z]{2,3}(?:-[a-z0-9]{2,8})*", value):
-            raise ValueError("Invalid locale")
+        if value not in SUPPORTED_LOCALES:
+            raise ValueError("Unsupported locale")
         return value
 
 
@@ -148,6 +149,20 @@ def update_narration(poi_id: str, narration_id: str, body: NarrationInput, db: s
         if not db.execute("UPDATE poi_narrations SET title=?, body=?, updated_at=? WHERE id=? AND poi_id=?", (body.title, body.body, timestamp(utc_now()), narration_id, poi_id)).rowcount:
             raise HTTPException(404, "NARRATION_NOT_FOUND")
     return dict(db.execute("SELECT * FROM poi_narrations WHERE id=?", (narration_id,)).fetchone())
+
+
+@router.delete("/{poi_id}/narrations/{narration_id}", status_code=204)
+def delete_narration(poi_id: str, narration_id: str, db: sqlite3.Connection = Depends(get_db)):
+    """UC08: xóa bài nhập nhầm. Địa điểm Công khai phải còn ít nhất một bài hợp lệ (BR03)."""
+    with db:
+        # Same lock as publishing, so a publish cannot interleave with removing the last narration.
+        db.execute("BEGIN IMMEDIATE")
+        row = place(db, poi_id)
+        if not db.execute("DELETE FROM poi_narrations WHERE id=? AND poi_id=?", (narration_id, poi_id)).rowcount:
+            raise HTTPException(404, "NARRATION_NOT_FOUND")
+        if row["status"] == "published" and "narration" in publish_problems(db, row):
+            raise HTTPException(409, "NARRATION_REQUIRED")
+    return Response(status_code=204)
 
 
 def publish_problems(db, row):
