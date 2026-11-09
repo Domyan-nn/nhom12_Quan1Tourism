@@ -1,6 +1,6 @@
 # Ma trận truy vết yêu cầu
 
-Cập nhật 09/11/2026, `main` `c0c01ad`. Nối yêu cầu trong PRD (F, BR, NFR) với use case, API, mã nguồn và [ca kiểm thử](test-cases.md). Trạng thái lấy từ lượt chạy tự động 09/11 (mọi bộ exit 0) và [phiếu thực địa mobile](../mobile/testing/mobile-field-test.md).
+Cập nhật 09/11/2026, `main` `c0c01ad`. Nối yêu cầu trong PRD bản 1.1 (F, BR, NFR) với use case, API, mã nguồn và [ca kiểm thử](test-cases.md). Trạng thái lấy từ lượt chạy tự động 09/11 (mọi bộ exit 0) và [phiếu thực địa mobile](../mobile/testing/mobile-field-test.md).
 
 Đường dẫn mã: `be/` = `backend/app/`, `admin/` = `apps/admin-web/src/`, `guest/` = `apps/guest-web/src/`, `mobile/` = `apps/mobile/src/`. API đều có tiền tố `/api/v1`.
 
@@ -45,7 +45,7 @@ Cập nhật 09/11/2026, `main` `c0c01ad`. Nối yêu cầu trong PRD (F, BR, NF
 | BR18 | Rút đồng ý: dừng gửi, loại khỏi đang hoạt động, tách mã khỏi lượt | `analytics_service.py::revoke_session`; client giữ mã chờ khi mất mạng | TC-12-04, TC-12-05 |
 | BR19 | Không có dữ liệu → 0; lỗi → Không khả dụng + Thử lại; nêu giới hạn ước lượng | `Dashboard.jsx` | TC-10-04, TC-11-02 |
 
-## 3. Yêu cầu phi chức năng NFR01–NFR08
+## 3. Yêu cầu phi chức năng NFR01–NFR11
 
 | NFR | Yêu cầu | Ca kiểm thử | Trạng thái |
 | --- | --- | --- | --- |
@@ -57,6 +57,9 @@ Cập nhật 09/11/2026, `main` `c0c01ad`. Nối yêu cầu trong PRD (F, BR, NF
 | NFR06 | Hướng dẫn cài đặt, cấu hình SQLite, tài khoản demo, dữ liệu mẫu, sao lưu, chạy web/mobile | TC-NFR06 | Đạt; cài mới trên máy khác chưa thử |
 | NFR07 | Ghi kết quả luồng chính, ngoại lệ, phân quyền, thống kê; thử GPS/TTS thật | TC-NFR07 | Một phần: còn thiếu minh chứng thiết bị |
 | NFR08 | 95% của 20 request danh sách dưới 3 giây | TC-NFR08 | Đạt 06/11 (20/20) |
+| NFR09 | Tiếp cận: bàn phím, nhãn ô nhập, không chỉ dựa vào màu, biểu đồ có bảng số liệu (thêm ở PRD 1.1) | TC-10-05 (đọc biểu đồ bằng Tab), TC-02-01 (marker chọn được bằng Enter) | Một phần: chưa có ca riêng cho toàn bộ yêu cầu |
+| NFR10 | Nền tảng: Chrome/Edge, 375–1.440 px, Android/iOS qua Expo Go SDK 58, giao diện VI/EN (thêm ở PRD 1.1) | TC-NFR04 | Web đạt trên Edge; Chrome và điện thoại chưa ghi kết quả riêng |
+| NFR11 | Quyền riêng tư: chỉ thu khi đồng ý, không thu tên/số điện thoại/tọa độ, thông báo mục đích và cách rút (thêm ở PRD 1.1) | TC-12-01 → TC-12-08 | Kỹ thuật đạt; chưa đối chiếu pháp lý |
 
 ## 4. Khoảng trống còn mở
 

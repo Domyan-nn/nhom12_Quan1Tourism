@@ -1,6 +1,6 @@
 # Sơ đồ
 
-Cập nhật 09/11/2026. Ảnh trong `use-case/`, `activity/`, `database/`, `architecture/` được trích nguyên từ [PRD](../../PRD_Saigon_Stories_Quan1_SQLite.docx) (bản 30/10/2026) và đặt tên theo chú thích hình. Repo chưa có tệp nguồn chỉnh sửa được của các hình này; khi sửa sơ đồ, cập nhật cả PRD và ảnh tại đây. Sơ đồ tuần tự có nguồn Mermaid ngay trong tệp.
+Cập nhật 09/11/2026. Ảnh trong `use-case/`, `activity/`, `database/`, `architecture/` được trích nguyên từ [PRD](../../PRD_Saigon_Stories_Quan1_SQLite.docx) (các hình không đổi giữa bản 1.0 ngày 30/10/2026 và bản 1.1 ngày 09/11/2026) và đặt tên theo chú thích hình. Repo chưa có tệp nguồn chỉnh sửa được của các hình này; khi sửa sơ đồ, cập nhật cả PRD và ảnh tại đây. Sơ đồ tuần tự có nguồn Mermaid ngay trong tệp.
 
 | Loại | Tệp | Nguồn trong PRD |
 | --- | --- | --- |

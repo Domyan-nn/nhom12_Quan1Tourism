@@ -4,7 +4,7 @@ Mục lục cho bộ tài liệu nộp môn Công nghệ phần mềm. Cập nh�
 
 | Nhóm | Tài liệu | Nội dung |
 | --- | --- | --- |
-| Yêu cầu | [PRD](../PRD_Saigon_Stories_Quan1_SQLite.docx) | Vấn đề, phạm vi, F01–F12, BR01–BR19, NFR01–NFR08, đặc tả UC01–UC12 |
+| Yêu cầu | [PRD](../PRD_Saigon_Stories_Quan1_SQLite.docx) (bản 1.1) | Lịch sử phiên bản, thuật ngữ, vấn đề, người dùng, chỉ số đánh giá, phạm vi, F01–F12, BR01–BR19, NFR01–NFR11, đặc tả UC01–UC12 |
 | | [requirements/](requirements/README.md) | Quy ước quản lý phiên bản PRD |
 | Phân tích – thiết kế | [use-cases.md](analysis-design/use-cases.md) | Danh sách use case |
 | | [architecture.md](analysis-design/architecture.md) | Kiến trúc đối chiếu mã nguồn |
