@@ -3,11 +3,12 @@ import re
 import sqlite3
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from app.api.dependencies import get_db, require_admin
 from app.core.locales import SUPPORTED_LOCALES
+from app.services import media
 from app.services.auth import timestamp, utc_now
 
 router = APIRouter(prefix="/api/v1/admin/pois", tags=["admin places"], dependencies=[Depends(require_admin)])
@@ -22,6 +23,7 @@ class PlaceInput(BaseModel):
     longitude: float = Field(ge=-180, le=180, strict=True)
     radius_m: int = Field(default=100, ge=20, le=1000, strict=True)
     image_url: str | None = Field(default=None, max_length=2048)
+    image_credit: str | None = Field(default=None, max_length=300)
 
     @field_validator("category_id", "name", "address")
     @classmethod
@@ -37,9 +39,19 @@ class PlaceInput(BaseModel):
         if value is None or not value.strip():
             return None
         value = value.strip()
+        if media.path_for(value) is not None:
+            return value  # an image uploaded through PUT /{poi_id}/image
         if not re.match(r"^https?://[^\s/]+", value, re.I) or any(c.isspace() for c in value):
             raise ValueError("Image must be an HTTP(S) URL")
         return value
+
+    @field_validator("image_credit")
+    @classmethod
+    def credit(cls, value):
+        """Author, licence and source of the image; shown under the image (BR04)."""
+        if value is None or not value.strip():
+            return None
+        return " ".join(value.split())
 
 
 class NarrationInput(BaseModel):
@@ -86,17 +98,23 @@ def get_place(poi_id: str, db: sqlite3.Connection = Depends(get_db)):
 
 def save_place(db, body, poi_id=None):
     now = timestamp(utc_now())
+    old_image = None
     with db:
         if poi_id:
-            place(db, poi_id)
+            old_image = place(db, poi_id)["image_url"]
         if not db.execute("SELECT 1 FROM categories WHERE id=?", (body.category_id,)).fetchone():
             raise HTTPException(422, "CATEGORY_NOT_FOUND")
-        values = (body.category_id, body.name, body.address, body.latitude, body.longitude, body.radius_m, body.image_url)
+        # An uploaded file may only stay on the place it was uploaded for, never be pointed at by another one.
+        if media.path_for(body.image_url) is not None and body.image_url != old_image:
+            raise HTTPException(422, "VALIDATION_ERROR")
+        values = (body.category_id, body.name, body.address, body.latitude, body.longitude, body.radius_m, body.image_url, body.image_credit)
         if poi_id:
-            db.execute("UPDATE pois SET category_id=?, name=?, address=?, latitude=?, longitude=?, radius_m=?, image_url=?, updated_at=? WHERE id=?", (*values, now, poi_id))
+            db.execute("UPDATE pois SET category_id=?, name=?, address=?, latitude=?, longitude=?, radius_m=?, image_url=?, image_credit=?, updated_at=? WHERE id=?", (*values, now, poi_id))
         else:
             poi_id = str(uuid.uuid4())
-            db.execute("INSERT INTO pois (category_id,name,address,latitude,longitude,radius_m,image_url,id,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,'draft',?,?)", (*values, poi_id, now, now))
+            db.execute("INSERT INTO pois (category_id,name,address,latitude,longitude,radius_m,image_url,image_credit,id,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,'draft',?,?)", (*values, poi_id, now, now))
+    if old_image and old_image != body.image_url:
+        media.delete_media(old_image)  # replaced by a URL or removed: drop the uploaded file
     return place(db, poi_id)
 
 
@@ -113,9 +131,52 @@ def update_place(poi_id: str, body: PlaceInput, db: sqlite3.Connection = Depends
 @router.delete("/{poi_id}", status_code=204)
 def delete_place(poi_id: str, db: sqlite3.Connection = Depends(get_db)):
     with db:
-        if not db.execute("DELETE FROM pois WHERE id=?", (poi_id,)).rowcount:
-            raise HTTPException(404, "POI_NOT_FOUND")
+        image = place(db, poi_id)["image_url"]
+        db.execute("DELETE FROM pois WHERE id=?", (poi_id,))
+    media.delete_media(image)
     return Response(status_code=204)
+
+
+@router.put("/{poi_id}/image")
+async def upload_image(poi_id: str, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    """F07/UC07: body là nội dung tệp ảnh, Content-Type image/jpeg|png|webp, tối đa 2 MB."""
+    place(db, poi_id)
+    declared = request.headers.get("content-type")
+    if (declared or "").split(";")[0].strip().lower() not in media.TYPES:
+        raise HTTPException(415, "UNSUPPORTED_IMAGE_TYPE")
+    length = request.headers.get("content-length")
+    if length and length.isdigit() and int(length) > media.MAX_BYTES:
+        raise HTTPException(413, "IMAGE_TOO_LARGE")
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > media.MAX_BYTES:
+            raise HTTPException(413, "IMAGE_TOO_LARGE")
+    try:
+        extension = media.extension_for(declared, bytes(data))
+    except (media.UnsupportedImage, media.InvalidImage):
+        raise HTTPException(422, "INVALID_IMAGE")
+    url = media.save_poi_image(bytes(data), extension)
+    try:
+        with db:
+            old_image = place(db, poi_id)["image_url"]
+            db.execute("UPDATE pois SET image_url=?, updated_at=? WHERE id=?", (url, timestamp(utc_now()), poi_id))
+    except Exception:
+        media.delete_media(url)
+        raise
+    if old_image != url:
+        media.delete_media(old_image)
+    return place(db, poi_id)
+
+
+@router.delete("/{poi_id}/image")
+def delete_image(poi_id: str, db: sqlite3.Connection = Depends(get_db)):
+    """Bỏ ảnh và ghi công ảnh của địa điểm; tệp đã tải lên bị xóa."""
+    with db:
+        old_image = place(db, poi_id)["image_url"]
+        db.execute("UPDATE pois SET image_url=NULL, image_credit=NULL, updated_at=? WHERE id=?", (timestamp(utc_now()), poi_id))
+    media.delete_media(old_image)
+    return place(db, poi_id)
 
 
 @router.get("/{poi_id}/narrations")

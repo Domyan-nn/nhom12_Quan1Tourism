@@ -7,7 +7,8 @@ Thứ tự áp dụng và cách nhận diện từng bước. API không tự mi
 | `001_initial.sql` | Bảy bảng theo PRD mục 7.1 | `scripts/init_db.py` (chỉ DB mới, trống) | Có bảng `categories`, `pois`… |
 | `002_analytics_constraints.sql` | Dựng lại `anonymous_sessions`, `visit_events` với CHECK chặt cho UUID/thời gian | `scripts/migrate_db.py --database <db> --backup <tệp mới>` | `PRAGMA user_version = 2` |
 | `003_category_bilingual.sql` | Thêm `name_en`, `normalized_name_en` và chỉ mục duy nhất | `scripts/prepare_category_bilingual.py --database <db> --backup <tệp mới>` | Có cột `categories.name_en` |
+| `004_poi_image_credit.sql` | Thêm `pois.image_credit` (ghi công ảnh) | `scripts/migrate_004_poi_image_credit.py --database <db> --backup <tệp mới>` | `PRAGMA user_version = 4` |
 
-`init_db.py` áp dụng đủ 001 → 002 → 003 cho DB mới. DB cũ: chạy `--check` trước (thử trên bản sao trong bộ nhớ, không đổi tệp), rồi chạy kèm `--backup` tới một tệp chưa tồn tại. Mỗi runner kiểm tra `integrity_check` và `foreign_key_check` trước/sau và rollback toàn bộ nếu lỗi.
+`init_db.py` áp dụng đủ 001 → 002 → 003 → 004 cho DB mới. DB cũ: chạy `--check` trước (thử trên bản sao trong bộ nhớ, không đổi tệp), rồi chạy kèm `--backup` tới một tệp chưa tồn tại. Mỗi runner kiểm tra `integrity_check` và `foreign_key_check` trước/sau và rollback toàn bộ nếu lỗi.
 
-`user_version` hiện chỉ đánh dấu bước 002 vì 003 được thêm sau, khi các DB của nhóm đã có cột song ngữ. Migration mới nên đặt `PRAGMA user_version = 4` và cập nhật kiểm tra khởi động, để từ đó phiên bản schema chỉ đọc từ một chỗ.
+Từ migration 004, `user_version` là phiên bản schema chung: 4 nghĩa là đã có 001 → 004. API khởi động yêu cầu ít nhất 4 và có cột `pois.image_credit`; DB cũ (phiên bản 2) bị từ chối kèm hướng dẫn chạy script 004. Migration tiếp theo đặt `user_version = 5` và nâng mức yêu cầu trong `app/db/connection.py::validate_schema_version`.

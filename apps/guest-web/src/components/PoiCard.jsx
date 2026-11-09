@@ -7,7 +7,7 @@ export default function PoiCard({ poi, categoryName }) {
   return (
     <Link to={`/poi/${poi.id}`} className="card">
       <div className="card-thumb" aria-hidden="true">
-        {poi.image_url ? <img src={poi.image_url} alt="" /> : poi.name.charAt(0)}
+        {poi.image_url ? <img src={poi.image_url} alt="" title={poi.image_credit || undefined} /> : poi.name.charAt(0)}
       </div>
       <div className="card-body">
         <h3>{poi.name}</h3>

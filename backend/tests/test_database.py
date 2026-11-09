@@ -56,7 +56,8 @@ class DatabaseTests(unittest.TestCase):
         db = connect(self.database)
         self.addCleanup(db.close)
         db.execute("INSERT INTO categories (id, name, normalized_name, created_at, updated_at) VALUES ('c','Name','name','now','now')")
-        statement = "INSERT INTO pois VALUES (?, ?, 'Place', 'Address', ?, ?, ?, NULL, 'draft', 'now', 'now')"
+        statement = ("INSERT INTO pois (id, category_id, name, address, latitude, longitude, radius_m, image_url, status, created_at, updated_at) "
+                     "VALUES (?, ?, 'Place', 'Address', ?, ?, ?, NULL, 'draft', 'now', 'now')")
         for lat, lon, radius in [(91, 0, 100), (-91, 0, 100), (0, 181, 100), (0, -181, 100), (0, 0, 19), (0, 0, 1001)]:
             with self.subTest(lat=lat, lon=lon, radius=radius), self.assertRaises(sqlite3.IntegrityError):
                 db.execute(statement, ('bad', 'c', lat, lon, radius))

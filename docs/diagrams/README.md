@@ -18,7 +18,7 @@ Cập nhật 09/11/2026. Ảnh trong `use-case/`, `activity/`, `database/`, `arc
 | Sơ đồ | PRD | Mã nguồn 09/11 |
 | --- | --- | --- |
 | Lược đồ dữ liệu | `categories` chỉ có `name`, `normalized_name` | Thêm `name_en`, `normalized_name_en` và chỉ mục duy nhất ([migration 003](../../backend/migrations/003_category_bilingual.sql)); chi tiết ở [data-dictionary.md](../analysis-design/data-dictionary.md) |
-| Thành phần | Có giao diện `IImageStore` lưu ảnh | Chưa có lưu trữ ảnh; Admin nhập URL ảnh HTTP(S) |
+| Thành phần | Có giao diện `IImageStore` lưu ảnh | Từ 09/11: ảnh tải lên lưu ở `storage/uploads/` qua `backend/app/services/media.py`, phục vụ tại `/api/media/`; vẫn nhận URL HTTP(S) |
 | Triển khai | Máy chủ ứng dụng phục vụ `guest-web`, `admin-web`, HTTPS | Demo chạy Vite dev server và API HTTP trên LAN; chưa có cấu hình HTTPS/phục vụ bản build |
 | Hoạt động UC08 | Thêm và sửa bài | Có thêm xóa bài; không xóa được bài hợp lệ cuối của địa điểm đang công khai |
 | Hoạt động UC05 | Đăng nhập, phiên hết hạn, đăng xuất | Có thêm khóa tạm sau 5 lần sai trong 15 phút (429) và giữ phiên khi tải lại trang trong cùng tab; xem [SD-01](sequence/README.md#sd-01--đăng-nhập-khôi-phục-phiên-đăng-xuất-uc05) |

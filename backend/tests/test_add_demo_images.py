@@ -54,13 +54,27 @@ class AddDemoImagesTests(unittest.TestCase):
         self.assertIn("GIỮ NGUYÊN", report)
         for key in IMAGES.keys() - {"nha-hat"}:
             self.assertEqual(images[stable_id("poi:" + key)], IMAGES[key]["url"])
+        with closing(sqlite3.connect(self.database)) as db:
+            credits = dict(db.execute("SELECT id, image_credit FROM pois"))
+        self.assertEqual(credits[stable_id("poi:dinh-doc-lap")], "Balon Greyjoy, CC0 1.0, Wikimedia Commons")
+        self.assertIsNone(credits[team])  # a team image keeps whatever credit the team wrote
         with closing(sqlite3.connect(backup)) as db:
             self.assertEqual(db.execute("SELECT count(*) FROM pois WHERE image_url LIKE 'https://upload.wikimedia.org/%'").fetchone()[0], 0)
         with self.assertRaises(FileExistsError):
             add_images(self.database, apply=True, backup=backup)
         again = add_images(self.database, apply=True, backup=Path(self.tmp.name) / "second.db")
         self.assertEqual(images, self.images())
-        self.assertFalse(any("gắn ảnh" in line for line in again))
+        self.assertFalse(any("gắn ảnh" in line or "thêm ghi công" in line for line in again))
+
+    def test_fills_missing_credit_for_an_image_already_attached(self):
+        palace = stable_id("poi:dinh-doc-lap")
+        with closing(sqlite3.connect(self.database)) as db, db:
+            db.execute("UPDATE pois SET image_url = ? WHERE id = ?", (IMAGES["dinh-doc-lap"]["url"], palace))
+        report = add_images(self.database, apply=True, backup=Path(self.tmp.name) / "credit.db")
+        self.assertTrue(any(line.startswith("[dinh-doc-lap] thêm ghi công") for line in report))
+        with closing(sqlite3.connect(self.database)) as db:
+            self.assertEqual(db.execute("SELECT image_credit FROM pois WHERE id = ?", (palace,)).fetchone()[0],
+                             "Balon Greyjoy, CC0 1.0, Wikimedia Commons")
 
 
 if __name__ == "__main__":

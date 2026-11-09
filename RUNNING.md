@@ -45,7 +45,14 @@ if ($LASTEXITCODE -ne 0) { throw 'Sao lưu thất bại' }
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port 8000
 ```
 
-API không tự init/seed/migrate. Retention dọn thống kê ngoài cửa sổ 30 ngày khi startup và mỗi 00:00 Việt Nam. Giữ bản sao lưu trước khi chạy. Health chỉ xác nhận tiến trình; kiểm tra thêm `/api/v1/categories` và `/api/v1/pois`.
+**DB tạo trước 09/11/2026 (schema 2)** phải chạy migration 004 một lần trước khi bật API mới, nếu không API từ chối khởi động:
+
+```powershell
+.\.venv\Scripts\python.exe backend/scripts/migrate_004_poi_image_credit.py --database backend/data/saigon_stories.db --check
+.\.venv\Scripts\python.exe backend/scripts/migrate_004_poi_image_credit.py --database backend/data/saigon_stories.db --backup backups/before-migration-004.db
+```
+
+Ảnh tải lên lưu ở `storage/uploads/` (Git bỏ qua); khi chuyển DB sang máy khác, chép kèm thư mục này. API không tự init/seed/migrate. Retention dọn thống kê ngoài cửa sổ 30 ngày khi startup và mỗi 00:00 Việt Nam. Giữ bản sao lưu trước khi chạy. Health chỉ xác nhận tiến trình; kiểm tra thêm `/api/v1/categories` và `/api/v1/pois`.
 
 run admin
 ```powershell

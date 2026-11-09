@@ -41,7 +41,7 @@ def validate_analytics_schema(database: Path) -> None:
             'anonymous_sessions': {'session_id', 'consent_granted', 'created_at', 'last_seen_at'},
             'visit_events': {'id', 'session_id', 'started_at'},
         }
-        valid = version == 2 and all(
+        valid = version >= 2 and all(
             columns <= {row[1] for row in connection.execute(f'PRAGMA table_info({table})')}
             for table, columns in required.items()
         )
@@ -51,6 +51,21 @@ def validate_analytics_schema(database: Path) -> None:
         raise RuntimeError(
             f"Database {database} chưa có schema analytics phiên bản 2. "
             "Sao lưu và kiểm tra bằng backend/scripts/migrate_db.py theo RUNNING.md; API không tự migration."
+        )
+
+
+def validate_schema_version(database: Path) -> None:
+    """Schema 4 (migration 004) adds pois.image_credit; refuse older databases without changing them."""
+    connection = sqlite3.connect(Path(database).resolve().as_uri() + "?mode=ro", uri=True)
+    try:
+        version = connection.execute("PRAGMA user_version").fetchone()[0]
+        has_credit = "image_credit" in {row[1] for row in connection.execute("PRAGMA table_info(pois)")}
+    finally:
+        connection.close()
+    if version < 4 or not has_credit:
+        raise RuntimeError(
+            f"Database {database} chưa có migration 004 (pois.image_credit, user_version 4). "
+            "Sao lưu rồi chạy backend/scripts/migrate_004_poi_image_credit.py theo RUNNING.md; API không tự migration."
         )
 
 

@@ -10,7 +10,7 @@ Cập nhật 06/11/2026 theo mã FastAPI. Tài liệu này là nguồn chung cho
 - Ngôn ngữ giao diện guest: VI/EN. Ngôn ngữ thuyết minh lấy từ dữ liệu, độc lập với giao diện; không giới hạn còn hai ngôn ngữ và không tự tạo bản dịch.
 - Chỉ POI `published` xuất hiện ở Public. `draft`, `hidden` và ID không tồn tại cùng trả `404 POI_NOT_FOUND` ở chi tiết.
 - Thời gian Admin là ISO 8601 UTC của backend, không cam kết độ dài 24. Định dạng cố định cho **hai bảng analytics** được quy định riêng tại mục 5.
-- `image_url` có thể null. Chưa có API upload hoặc phục vụ `/media` trong FastAPI hiện tại.
+- `image_url` có thể null; là URL HTTP(S) hoặc đường dẫn ảnh đã tải lên `/api/media/pois/<uuid>.<jpg|png|webp>` (phục vụ công khai, qua proxy `/api` sẵn có). `image_credit` (tác giả, giấy phép, nguồn; có thể null) đi kèm ảnh và phải hiển thị dưới ảnh (09/11).
 
 ## 2. Public API đã triển khai
 
@@ -30,7 +30,7 @@ POI tóm tắt:
 {
   "id": "poi-1", "name": "Dinh Độc Lập", "category_id": "cat-1",
   "address": "...", "latitude": 10.777, "longitude": 106.6953,
-  "radius_m": 100, "image_url": null, "narration_locales": ["en", "vi"]
+  "radius_m": 100, "image_url": null, "image_credit": null, "narration_locales": ["en", "vi"]
 }
 ```
 
@@ -81,6 +81,9 @@ Client xử lý theo code/status, không phân tích chuỗi message. Message ba
 | 409 | CATEGORY_DUPLICATE | Trùng tên chuẩn hóa |
 | 409 | CATEGORY_IN_USE | Xóa danh mục đang có POI sử dụng |
 | 409 | NARRATION_REQUIRED | Xóa bài thuyết minh hợp lệ cuối cùng của POI đang công khai |
+| 413 | IMAGE_TOO_LARGE | Ảnh tải lên quá 2 MB |
+| 415 | UNSUPPORTED_IMAGE_TYPE | Ảnh không phải JPG, PNG, WebP |
+| 422 | INVALID_IMAGE | Nội dung tệp không khớp loại ảnh đã khai báo |
 | 422 | VALIDATION_ERROR | Sai request; details hiện là mảng rỗng |
 | 500 | DATABASE_ERROR | Lỗi SQLite, không lộ chi tiết nội bộ |
 | Tùy trường hợp | HTTP_ERROR | Lỗi HTTP khác, gồm route không tồn tại |
@@ -133,12 +136,14 @@ Phần Public/Admin ở trên ghi nhận mã đã có, không giả định đã
 Các endpoint dưới đây yêu cầu `Authorization: Bearer <token>`; phiên thiếu, sai, hết hạn hoặc bị thu hồi trả 401 `AUTH_REQUIRED`. Response lỗi dạng `{ "error": { "code": "...", "message": "...", "details": [] } }`. Lỗi 422 không trả dữ liệu đã nhập.
 
 * `GET /api/v1/admin/pois` trả `{ "items": [ ... ] }` gồm mọi trạng thái; `GET /api/v1/admin/pois/{id}` trả một bản ghi hoặc 404 `POI_NOT_FOUND`.
-* `POST /api/v1/admin/pois` trả 201 và bản ghi mới `status: "draft"`; `PUT /api/v1/admin/pois/{id}` thay các trường biên tập, giữ trạng thái cũ. Body: `{ "category_id": "id", "name": "Tên", "address": "Địa chỉ", "latitude": 10.7, "longitude": 106.7, "radius_m": 100, "image_url": null }`. Tên và địa chỉ bắt buộc, danh mục phải tồn tại, tọa độ lần lượt trong [-90,90] và [-180,180], bán kính nguyên 20–1000; URL ảnh tùy chọn phải dùng HTTP(S). Sai dữ liệu trả 422; danh mục không tồn tại có mã `CATEGORY_NOT_FOUND`.
+* `POST /api/v1/admin/pois` trả 201 và bản ghi mới `status: "draft"`; `PUT /api/v1/admin/pois/{id}` thay các trường biên tập, giữ trạng thái cũ. Body: `{ "category_id": "id", "name": "Tên", "address": "Địa chỉ", "latitude": 10.7, "longitude": 106.7, "radius_m": 100, "image_url": null, "image_credit": null }`. Tên và địa chỉ bắt buộc, danh mục phải tồn tại, tọa độ lần lượt trong [-90,90] và [-180,180], bán kính nguyên 20–1000; `image_url` tùy chọn là URL HTTP(S) hoặc chính đường dẫn ảnh đã tải lên cho địa điểm này (đường dẫn của địa điểm khác hoặc tự đặt trả 422); `image_credit` ≤ 300 ký tự, khoảng trắng được gộp. Đổi ảnh tải lên sang URL hoặc xóa địa điểm thì tệp ảnh cũ bị xóa. Sai dữ liệu trả 422; danh mục không tồn tại có mã `CATEGORY_NOT_FOUND`.
 * `DELETE /api/v1/admin/pois/{id}` trả 204, xóa các thuyết minh liên quan theo khóa ngoại CASCADE; không tồn tại trả 404.
 * `GET /api/v1/admin/pois/{id}/narrations` trả `{ "items": [ ... ] }`. `POST` cùng đường dẫn nhận `{ "locale": "vi", "title": "Tiêu đề", "body": "Nội dung" }`, trả 201; mã được trim, chuyển chữ thường và phải nằm trong danh sách `GET /api/v1/locales` (vi, en, fr, zh, ja, ko — sửa tại `backend/app/core/locales.py`), ngoài danh sách trả 422. Mỗi ngôn ngữ chỉ có một bài cho một địa điểm; trùng trả 409 `NARRATION_DUPLICATE`. `PUT /api/v1/admin/pois/{id}/narrations/{narration_id}` nhận `{ "title": "...", "body": "..." }`, giữ nguyên locale và trả bài đã lưu. Thiếu địa điểm hoặc bài trả 404; tiêu đề/nội dung rỗng hoặc sai định dạng trả 422.
+* `PUT /api/v1/admin/pois/{id}/image` (09/11): body là nguyên nội dung tệp, `Content-Type` `image/jpeg`, `image/png` hoặc `image/webp`, tối đa 2 MB. Trả 200 kèm địa điểm có `image_url` mới; ảnh cũ đã tải lên bị xóa. Sai loại trả 415 `UNSUPPORTED_IMAGE_TYPE`, quá 2 MB trả 413 `IMAGE_TOO_LARGE`, nội dung không khớp chữ ký tệp trả 422 `INVALID_IMAGE`. `DELETE` cùng đường dẫn bỏ ảnh và `image_credit`, xóa tệp.
+* `GET /api/media/pois/{uuid}.{jpg|png|webp}` (công khai): trả tệp với đúng `Content-Type`, `X-Content-Type-Options: nosniff`; tên không hợp lệ hoặc không có tệp trả 404 `MEDIA_NOT_FOUND`. Thư mục lưu: `storage/uploads/` (đổi bằng `SAIGON_UPLOADS`).
 * `DELETE /api/v1/admin/pois/{id}/narrations/{narration_id}` trả 204 (09/11). Bài không thuộc địa điểm đó trả 404 `NARRATION_NOT_FOUND`. Nếu địa điểm đang công khai và đây là bài hợp lệ cuối cùng thì trả 409 `NARRATION_REQUIRED`, không xóa (BR03); ẩn địa điểm trước rồi mới xóa được.
 
-Không có API upload hoặc phục vụ ảnh mới; URL do quản trị viên cung cấp. Thay đổi trạng thái công bố từ commit mới của An được ghi ở mục 9. Không thay schema hoặc chạy migration; API công khai giữ nguyên.
+Từ 09/11 có upload ảnh (xem trên); vẫn nhận URL ảnh HTTP(S) do quản trị viên nhập. Thay đổi trạng thái công bố từ commit mới của An được ghi ở mục 9. Không thay schema hoặc chạy migration; API công khai giữ nguyên.
 
 ## 9. Phần ngày 04/11 của An được giữ khi rebase
 

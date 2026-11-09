@@ -101,3 +101,6 @@ input[type='search'] { width: 100%; padding: .7rem .9rem; font: inherit; border:
 .btn:disabled { opacity: .55; cursor: not-allowed; }
 .tts .muted, .tts-alert { margin-top: .5rem; min-height: 1.4em; }
 .tts-alert { color: var(--danger); font-weight: 600; }
+.poi-photo { margin: 16px 0; }
+.poi-photo img { display: block; width: 100%; max-height: 360px; object-fit: cover; border-radius: 12px; }
+.poi-photo figcaption { margin-top: 6px; font-size: 13px; color: var(--muted, #5f6b66); }

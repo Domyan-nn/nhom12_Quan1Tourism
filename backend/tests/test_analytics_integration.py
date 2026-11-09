@@ -21,6 +21,7 @@ from app.main import app
 from app.services import analytics_service as svc, analytics_retention as retention
 from scripts.migrate_db import upgrade_connection
 from scripts.prepare_category_bilingual import upgrade_connection as upgrade_categories
+from scripts.migrate_004_poi_image_credit import upgrade_connection as upgrade_image_credit
 
 
 def initialize(path):
@@ -28,6 +29,7 @@ def initialize(path):
         db.executescript((BACKEND / 'migrations/001_initial.sql').read_text(encoding='utf-8'))
         upgrade_connection(db)
         upgrade_categories(db)
+        upgrade_image_credit(db)
 
 
 class MainAnalyticsTests(unittest.TestCase):

@@ -1,5 +1,26 @@
 # Kết quả kiểm thử
 
+## Phần mở rộng A: upload ảnh và ghi công ảnh — 09/11/2026
+
+Nhánh `feat/a-image-upload` tách từ `main` `bfe907c`, thay đổi chưa commit. Phân công ở [phan-cong-ABCG-2026-11-10.md](../project/phan-cong-ABCG-2026-11-10.md).
+
+| Thay đổi | Kiểm chứng |
+| --- | --- |
+| Migration 004 thêm `pois.image_credit`, `user_version = 4`; script `migrate_004_poi_image_credit.py` (kiểm thử trên bản sao, bắt buộc sao lưu); API từ chối DB schema 2 | `test_poi_images.py` nhóm `Migration004Tests` (3 ca) |
+| `PUT/DELETE /api/v1/admin/pois/{id}/image`: JPG/PNG/WebP ≤ 2 MB, kiểm tra cả Content-Type và chữ ký tệp; `GET /api/media/pois/{file}`; xóa tệp cũ khi thay ảnh, đổi sang URL hoặc xóa địa điểm; chặn dùng lại đường dẫn của địa điểm khác và đường dẫn `../` | `test_poi_images.py` (7 ca API) |
+| Admin: ô tải ảnh, xem trước, nút Xóa ảnh, ô Ghi công ảnh; web khách và mobile hiện ảnh kèm "Ảnh: …" ở trang chi tiết | `admin.spec.js › "Admin uploads an image with credit…"` (tải ảnh, kiểm ảnh hiển thị và ghi công ở trang khách, xóa ảnh) |
+| `add_demo_images.py` điền ghi công cho 5 ảnh Wikimedia | `test_add_demo_images.py` (4 ca) |
+
+| Bộ kiểm thử (lượt cuối) | Kết quả |
+| --- | --- |
+| Backend `unittest discover -s backend/tests` | 113/113 đạt |
+| Guest Node + Vitest | 26 + 20 đạt |
+| Mobile Jest | 124 đạt + 4 HTTP bỏ qua |
+| Build Admin và Guest | Đạt |
+| Playwright Edge | 41 đạt + 1 OSM opt-in bỏ qua, exit 0 |
+
+DB chính: `--check` rồi áp dụng migration 004 (bản trước: `backups/before-migration-004-20261109T143253Z.db`), điền ghi công 5 ảnh (bản trước: `backups/before-image-credits-20261109T143253Z.db`). API khởi động lại với DB chính, `/api/v1/pois` trả `image_credit` cho 5 địa điểm. Chưa thử hiển thị ghi công trên điện thoại thật (giao cho LeeNaimThwuan ngày 12/11).
+
 ## Nhóm cải thiện P1 — 09/11/2026
 
 Nhánh `feat/p1-improvements` tách từ `fix/p0-review-2026-11-09` (`1deb9bc`), thay đổi chưa commit. Windows, Python 3.12, Node 22; mọi bộ test dùng SQLite tạm.

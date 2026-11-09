@@ -1,7 +1,7 @@
 export const translations = {
   vi: {
     explore: 'Khám phá', map: 'Bản đồ', autoplay: 'Tự phát', privacy: 'Riêng tư', detail: 'Chi tiết',
-    uiLanguage: 'Ngôn ngữ giao diện', narrationLanguage: 'Ngôn ngữ thuyết minh',
+    uiLanguage: 'Ngôn ngữ giao diện', narrationLanguage: 'Ngôn ngữ thuyết minh', photoCredit: 'Ảnh',
     loading: 'Đang tải…', error: 'Có lỗi xảy ra', retry: 'Thử lại',
     networkError: 'Không kết nối được tới máy chủ.', serverError: 'Không tải được dữ liệu. Vui lòng thử lại.', invalidResponse: 'Phản hồi từ máy chủ không hợp lệ.',
     search: 'Tìm địa điểm theo tên…', all: 'Tất cả', emptyPlaces: 'Không tìm thấy địa điểm phù hợp', emptyHint: 'Hãy đổi từ khóa hoặc chọn danh mục khác.',
@@ -31,7 +31,7 @@ export const translations = {
   },
   en: {
     explore: 'Explore', map: 'Map', autoplay: 'Auto play', privacy: 'Privacy', detail: 'Details',
-    uiLanguage: 'Interface language', narrationLanguage: 'Narration language',
+    uiLanguage: 'Interface language', narrationLanguage: 'Narration language', photoCredit: 'Photo',
     loading: 'Loading…', error: 'Something went wrong', retry: 'Try again',
     networkError: 'Could not connect to the server.', serverError: 'Could not load data. Please try again.', invalidResponse: 'The server response is invalid.',
     search: 'Search places by name…', all: 'All', emptyPlaces: 'No matching places', emptyHint: 'Try a different search or category.',

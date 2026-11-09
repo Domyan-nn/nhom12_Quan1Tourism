@@ -9,4 +9,6 @@ PRD hiện hành: [PRD_Saigon_Stories_Quan1_SQLite.docx](../../PRD_Saigon_Storie
 
 Khi mở bản 1.1 lần đầu, Word hỏi có cập nhật các trường không: chọn **Yes** để mục lục lấy đúng số trang (mục lục giờ là trường tự cập nhật, gồm cả tiêu đề cấp 2). Trong Google Docs, bấm vào mục lục rồi chọn làm mới.
 
+Sau bản 1.1, phần mở rộng A (09/11) đã thêm upload ảnh, cột `pois.image_credit` (migration 004) và hiển thị ghi công: các chỗ PRD 1.1 ghi "chưa có tải ảnh lên" (BR04, 5.1, 7.3) cần sửa ở bản 1.2.
+
 Trang bìa còn để trống Trường, Khoa, Giảng viên hướng dẫn và danh sách sinh viên; nhóm điền trước khi nộp. Sơ đồ hoạt động UC05 và UC08 trong PRD chưa vẽ các nhánh mới (khóa tạm đăng nhập, xóa bài thuyết minh); PRD có ghi chú ngay dưới hai hình đó.

@@ -11,6 +11,10 @@ export const placeStrings = {
     empty: 'Chưa có địa điểm.', noMatch: 'Không có địa điểm phù hợp bộ lọc.', noText: 'Chưa có bài thuyết minh.', retry: 'Thử lại',
     search: 'Tìm địa điểm', filter: 'Lọc trạng thái', allStatuses: 'Tất cả trạng thái', localesError: 'Không tải được danh sách ngôn ngữ.',
     liveEdit: 'Địa điểm đang công khai: thay đổi hợp lệ hiển thị cho khách ngay sau khi lưu.',
+    credit: 'Ghi công ảnh (tác giả, giấy phép, nguồn)', creditHint: 'Bắt buộc với ảnh có giấy phép CC BY/CC BY-SA; hiển thị dưới ảnh cho khách.',
+    uploadImage: 'Tải ảnh lên (JPG, PNG, WebP, tối đa 2 MB)', uploadAfterSave: 'Lưu địa điểm trước rồi mới tải ảnh lên.',
+    removeImage: 'Xóa ảnh', confirmRemoveImage: 'Xóa ảnh và ghi công ảnh của địa điểm?', imageUploaded: 'Đã tải ảnh lên.', imageRemoved: 'Đã xóa ảnh.',
+    UNSUPPORTED_IMAGE_TYPE: 'Chỉ nhận ảnh JPG, PNG hoặc WebP.', IMAGE_TOO_LARGE: 'Ảnh vượt quá 2 MB.', INVALID_IMAGE: 'Tệp không phải ảnh hợp lệ.',
   },
   en: {
     places: 'Places', create: 'Add place', name: 'Name', address: 'Address', category: 'Category', choose: 'Choose category',
@@ -24,6 +28,10 @@ export const placeStrings = {
     empty: 'No places yet.', noMatch: 'No places match the filter.', noText: 'No narrations yet.', retry: 'Retry',
     search: 'Search places', filter: 'Filter by status', allStatuses: 'All statuses', localesError: 'Could not load the language list.',
     liveEdit: 'This place is published: valid changes are visible to visitors as soon as they are saved.',
+    credit: 'Image credit (author, licence, source)', creditHint: 'Required for CC BY/CC BY-SA images; shown under the image to visitors.',
+    uploadImage: 'Upload image (JPG, PNG, WebP, up to 2 MB)', uploadAfterSave: 'Save the place before uploading an image.',
+    removeImage: 'Remove image', confirmRemoveImage: 'Remove the image and its credit from this place?', imageUploaded: 'Image uploaded.', imageRemoved: 'Image removed.',
+    UNSUPPORTED_IMAGE_TYPE: 'Only JPG, PNG or WebP images are accepted.', IMAGE_TOO_LARGE: 'The image is larger than 2 MB.', INVALID_IMAGE: 'The file is not a valid image.',
   },
 };
 
@@ -52,5 +60,6 @@ export function placeMessage(s, t, code) {
   return ({
     VALIDATION_ERROR: s.invalid, CATEGORY_NOT_FOUND: s.invalid, NARRATION_DUPLICATE: s.duplicate,
     NARRATION_NOT_FOUND: s.missing, POI_NOT_FOUND: s.missing, NARRATION_REQUIRED: s.lastNarration,
+    UNSUPPORTED_IMAGE_TYPE: s.UNSUPPORTED_IMAGE_TYPE, IMAGE_TOO_LARGE: s.IMAGE_TOO_LARGE, INVALID_IMAGE: s.INVALID_IMAGE,
   })[code] || t[code] || t.SERVER_ERROR;
 }

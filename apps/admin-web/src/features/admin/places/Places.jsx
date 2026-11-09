@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { request } from '../../../services/api.js';
+import { request, upload } from '../../../services/api.js';
 import NarrationEditor from './NarrationEditor.jsx';
-import PlaceForm, { blankPlace, validatePlace } from './PlaceForm.jsx';
+import PlaceForm, { IMAGE_TYPES, MAX_IMAGE_BYTES, blankPlace, validatePlace } from './PlaceForm.jsx';
 import PlaceList from './PlaceList.jsx';
 import PublicationPanel from './PublicationPanel.jsx';
 import { placeMessage, placeStrings, publicationStrings, statusLabels } from './strings.js';
@@ -47,7 +47,8 @@ export default function Places({ t, language, token, onExpired }) {
   }, []);
 
   function clearMessages() { setNotice(''); setFormError(''); setPublicationError(null); }
-  function choose(item) { setSelected(item.id); setForm({ ...blankPlace, ...item, image_url: item.image_url || '' }); clearMessages(); }
+  const toForm = (item) => ({ ...blankPlace, ...item, image_url: item.image_url || '', image_credit: item.image_credit || '' });
+  function choose(item) { setSelected(item.id); setForm(toForm(item)); clearMessages(); }
   function fresh() { setSelected(null); setForm(blankPlace); clearMessages(); }
 
   async function changeStatus(action) {
@@ -69,9 +70,34 @@ export default function Places({ t, language, token, onExpired }) {
     setBusy(true);
     try {
       const body = { name: form.name, address: form.address, category_id: form.category_id, latitude: Number(form.latitude),
-        longitude: Number(form.longitude), radius_m: Number(form.radius_m), image_url: form.image_url || null };
+        longitude: Number(form.longitude), radius_m: Number(form.radius_m), image_url: form.image_url || null, image_credit: form.image_credit.trim() || null };
       const data = await request(selected ? `/admin/pois/${encodeURIComponent(selected)}` : '/admin/pois', { method: selected ? 'PUT' : 'POST', token, body });
-      setSelected(data.id); setForm({ ...data, image_url: data.image_url || '' }); setVersion((v) => v + 1); setNotice(s.saved);
+      setSelected(data.id); setForm(toForm(data)); setVersion((v) => v + 1); setNotice(s.saved);
+    } catch (err) { fail(err, setFormError); }
+    finally { setBusy(false); }
+  }
+
+  // F07: ảnh được lưu ngay khi tải lên; các ô khác của biểu mẫu vẫn giữ giá trị đang sửa.
+  async function uploadImage(file) {
+    setNotice(''); setFormError('');
+    if (!IMAGE_TYPES.includes(file.type)) { setFormError('UNSUPPORTED_IMAGE_TYPE'); return; }
+    if (file.size > MAX_IMAGE_BYTES) { setFormError('IMAGE_TOO_LARGE'); return; }
+    setBusy(true);
+    try {
+      const data = await upload(`/admin/pois/${encodeURIComponent(selected)}/image`, { token, file });
+      setForm((current) => ({ ...current, image_url: data.image_url, status: data.status }));
+      setVersion((v) => v + 1); setNotice(s.imageUploaded);
+    } catch (err) { fail(err, setFormError); }
+    finally { setBusy(false); }
+  }
+
+  async function removeImage() {
+    if (!window.confirm(s.confirmRemoveImage)) return;
+    setNotice(''); setFormError(''); setBusy(true);
+    try {
+      await request(`/admin/pois/${encodeURIComponent(selected)}/image`, { method: 'DELETE', token });
+      setForm((current) => ({ ...current, image_url: '', image_credit: '' }));
+      setVersion((v) => v + 1); setNotice(s.imageRemoved);
     } catch (err) { fail(err, setFormError); }
     finally { setBusy(false); }
   }
@@ -95,7 +121,7 @@ export default function Places({ t, language, token, onExpired }) {
     {notice && <p role="status">{notice}</p>}
     {selected && <PublicationPanel s={s} p={p} t={t} labels={labels} status={form.status} busy={busy} error={publicationError} onChange={changeStatus} />}
     <PlaceForm s={s} t={t} language={language} form={form} setForm={setForm} categories={categories} selected={selected}
-      busy={busy} error={formError} onSave={save} onDelete={remove} />
+      busy={busy} error={formError} onSave={save} onDelete={remove} onUpload={uploadImage} onRemoveImage={removeImage} />
     {selected && <NarrationEditor key={selected} s={s} t={t} language={language} token={token} poiId={selected} locales={locales}
       localesError={localesError} busy={busy} setBusy={setBusy} onExpired={onExpired} onNotice={setNotice} />}
   </div>;

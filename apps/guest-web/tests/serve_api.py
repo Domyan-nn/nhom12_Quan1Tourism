@@ -28,13 +28,15 @@ if __name__ == '__main__':
                 ('draft', 'Private draft', 'history', 'draft'),
                 ('hidden', 'Private hidden', 'history', 'hidden'),
             ]:
-                db.execute('INSERT INTO pois VALUES (?,?,?,?,?,?,?,NULL,?,?,?)',
+                db.execute('INSERT INTO pois (id,category_id,name,address,latitude,longitude,radius_m,image_url,status,created_at,updated_at) '
+                           'VALUES (?,?,?,?,?,?,?,NULL,?,?,?)',
                            (poi_id, category, name, 'Test address', 10.777 if poi_id == 'palace' else 10.772,
                             106.695 if poi_id == 'palace' else 106.699, 100, status, 'now', 'now'))
                 for locale in ('vi', 'en', 'fr'):
                     db.execute('INSERT INTO poi_narrations VALUES (?,?,?,?,?,?,?)',
                                (poi_id + locale, poi_id, locale, 'Title ' + locale, 'Test body ' + locale, 'now', 'now'))
         os.environ['SAIGON_DATABASE'] = str(database)
+        os.environ['SAIGON_UPLOADS'] = str(Path(directory) / 'uploads')  # uploaded test images die with the fixture
         from app.main import app
         from fastapi import HTTPException
 

@@ -34,6 +34,12 @@ export default function PoiDetailPage() {
       <Link to="/" className="back">{t.back}</Link>
       <h1>{poi.name}</h1>
       <p className="muted">{poi.address}</p>
+      {poi.image_url && (
+        <figure className="poi-photo">
+          <img src={poi.image_url} alt={poi.name} />
+          {poi.image_credit && <figcaption>{t.photoCredit}: {poi.image_credit}</figcaption>}
+        </figure>
+      )}
 
       <div className="chips" role="group" aria-label={t.narrationLanguage}>
         {poi.narrations.map((n) => (

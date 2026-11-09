@@ -6,7 +6,7 @@ from app.core.text import search_key
 
 
 def list_pois(db: sqlite3.Connection, query: str = "", category_id: str | None = None):
-    sql = "SELECT id, name, category_id, address, latitude, longitude, radius_m, image_url FROM pois WHERE status = 'published'"
+    sql = "SELECT id, name, category_id, address, latitude, longitude, radius_m, image_url, image_credit FROM pois WHERE status = 'published'"
     params = []
     if category_id is not None:
         sql += " AND category_id = ?"
@@ -25,7 +25,7 @@ def list_pois(db: sqlite3.Connection, query: str = "", category_id: str | None =
 
 
 def get_poi(db: sqlite3.Connection, poi_id: str):
-    row = db.execute("SELECT id, name, category_id, address, latitude, longitude, radius_m, image_url FROM pois WHERE id = ? AND status = 'published'", (poi_id,)).fetchone()
+    row = db.execute("SELECT id, name, category_id, address, latitude, longitude, radius_m, image_url, image_credit FROM pois WHERE id = ? AND status = 'published'", (poi_id,)).fetchone()
     if row is None:
         return None
     item = dict(row)

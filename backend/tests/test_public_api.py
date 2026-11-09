@@ -20,7 +20,7 @@ class PublicAPITests(unittest.TestCase):
         with closing(connect(self.database)) as db, db:
             db.execute("UPDATE pois SET status='published' WHERE id=?", (palace,))
         summary = self.client.get('/api/v1/pois').json()['items'][0]
-        self.assertEqual(set(summary), {'id', 'name', 'category_id', 'address', 'latitude', 'longitude', 'radius_m', 'image_url', 'narration_locales'})
+        self.assertEqual(set(summary), {'id', 'name', 'category_id', 'address', 'latitude', 'longitude', 'radius_m', 'image_url', 'image_credit', 'narration_locales'})
         detail = self.client.get('/api/v1/pois/' + palace).json()
         self.assertEqual(set(detail), set(summary) | {'narrations'})
         self.assertEqual(detail['narration_locales'], [n['locale'] for n in detail['narrations']])

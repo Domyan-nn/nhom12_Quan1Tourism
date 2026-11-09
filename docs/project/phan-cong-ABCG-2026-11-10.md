@@ -67,7 +67,7 @@ Mỗi tối người phụ trách ghi link PR/commit và tình trạng; Domyan-n
 
 | Ngày | Người | Mục tiêu cuối ngày | Bằng chứng (PR, commit, ảnh) | Tự đánh giá | Kiểm tra |
 | --- | --- | --- | --- | --- | --- |
-| 10/11 | Domyan-nn | Migration 004 + API upload có test đạt | | | ☐ |
+| 10/11 | Domyan-nn | Migration 004 + API upload có test đạt | Xong sớm 09/11 trên nhánh `feat/a-image-upload` (cả phần Admin, web, mobile); xem test-results 09/11 | Đạt | ☐ |
 | 10/11 | LeeNaimThwuan | Hàm sắp xếp + test; nút Gần tôi trên web | | | ☐ |
 | 10/11 | qannee | Bảng log + ghi log danh mục/auth + test | | | ☐ |
 | 11/11 | Domyan-nn | PR A mở, Playwright đạt, đã merge | | | ☐ |

@@ -1,7 +1,8 @@
-"""Gắn ảnh Wikimedia Commons có giấy phép mở cho 5 địa điểm demo (mặc định chỉ xem trước).
+"""Gắn ảnh Wikimedia Commons có giấy phép mở và ghi công ảnh cho 5 địa điểm demo (mặc định chỉ xem trước).
 
 Quy tắc an toàn:
   * Chỉ điền image_url còn trống của các địa điểm do seed_db.py tạo (ID ổn định); ảnh nhóm đã nhập được giữ.
+  * Điền image_credit (tác giả, giấy phép, nguồn) khi địa điểm đang dùng đúng ảnh này và chưa có ghi công.
   * Không đổi trạng thái, nội dung hay tọa độ.
   * Ghi (--apply) bắt buộc kèm --backup tới một tệp MỚI; bản sao được kiểm tra toàn vẹn trước khi ghi.
 
@@ -53,6 +54,10 @@ IMAGES = {
 }
 
 
+def credit(image: dict) -> str:
+    return f"{image['author']}, {image['license']}, Wikimedia Commons"
+
+
 def add_images(database: Path, apply: bool, backup: Path | None = None) -> list[str]:
     if apply:
         if backup is None:
@@ -65,17 +70,21 @@ def add_images(database: Path, apply: bool, backup: Path | None = None) -> list[
         with connection:
             connection.execute("BEGIN IMMEDIATE")
             for key, image in IMAGES.items():
-                row = connection.execute("SELECT image_url FROM pois WHERE id = ?", (stable_id("poi:" + key),)).fetchone()
+                poi_id = stable_id("poi:" + key)
+                row = connection.execute("SELECT image_url, image_credit FROM pois WHERE id = ?", (poi_id,)).fetchone()
                 if row is None:
                     report.append(f"[{key}] BỎ QUA: chưa có địa điểm này (chạy seed_db.py trước)")
+                elif row["image_url"] == image["url"] and row["image_credit"]:
+                    report.append(f"[{key}] đã có ảnh và ghi công, không đổi")
                 elif row["image_url"] == image["url"]:
-                    report.append(f"[{key}] đã có ảnh này, không đổi")
+                    report.append(f"[{key}] thêm ghi công: {credit(image)}")
+                    connection.execute("UPDATE pois SET image_credit = ?, updated_at = ? WHERE id = ?", (credit(image), now, poi_id))
                 elif row["image_url"]:
                     report.append(f"[{key}] GIỮ NGUYÊN: địa điểm đã có ảnh khác")
                 else:
                     report.append(f"[{key}] gắn ảnh {image['license']} của {image['author']}")
-                    connection.execute("UPDATE pois SET image_url = ?, updated_at = ? WHERE id = ?",
-                                       (image["url"], now, stable_id("poi:" + key)))
+                    connection.execute("UPDATE pois SET image_url = ?, image_credit = ?, updated_at = ? WHERE id = ?",
+                                       (image["url"], credit(image), now, poi_id))
             if not apply:
                 connection.rollback()
     finally:

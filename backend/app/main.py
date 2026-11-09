@@ -10,8 +10,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.routes import auth, categories, public, admin_pois, admin_stats, analytics
-from app.db.connection import configured_database, validate_category_schema, validate_analytics_schema
+from app.api.routes import auth, categories, public, admin_pois, admin_stats, analytics, media
+from app.db.connection import configured_database, validate_analytics_schema, validate_category_schema, validate_schema_version
 from app.services.analytics_retention import cleanup_database, retention_loop
 
 
@@ -25,6 +25,7 @@ async def lifespan(app: FastAPI):
     database = configured_database()
     validate_category_schema(database)
     validate_analytics_schema(database)
+    validate_schema_version(database)
     # Existing schema only: never initialize or migrate a developer database.
     retention = None
     if os.environ.get("SAIGON_DISABLE_CLEANUP") != "1":
@@ -45,6 +46,7 @@ app.include_router(categories.router)
 app.include_router(public.router)
 app.include_router(admin_pois.router)
 app.include_router(admin_stats.router)
+app.include_router(media.router)
 # Giữ đường dẫn cũ /api/analytics (client hiện tại) và đường dẫn theo hợp đồng /api/v1/analytics.
 app.include_router(analytics.router)
 app.include_router(analytics.v1_router)
@@ -63,6 +65,10 @@ ERROR_MESSAGES = {
     "POI_NOT_PUBLISHABLE": "Địa điểm chưa đủ điều kiện công bố.",
     "INVALID_STATUS_TRANSITION": "Trạng thái hiện tại không cho phép thao tác này.",
     "INVALID_DATE_RANGE": "Khoảng ngày không hợp lệ hoặc ngoài 30 ngày gần nhất.",
+    "UNSUPPORTED_IMAGE_TYPE": "Chỉ nhận ảnh JPG, PNG hoặc WebP.",
+    "IMAGE_TOO_LARGE": "Ảnh vượt quá 2 MB.",
+    "INVALID_IMAGE": "Nội dung tệp không phải ảnh đúng loại đã khai báo.",
+    "MEDIA_NOT_FOUND": "Không tìm thấy ảnh.",
     "session_revoked": "Phiên thống kê đã rút đồng ý.",
 }
 

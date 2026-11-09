@@ -53,7 +53,8 @@ export default function PoiDetailScreen({ route, navigation }) {
   const catName = categoryName(data.categories.find((c) => c.id === poi.category_id), uiLanguage);
   return (
     <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: space.xl }}>
-      {uri ? <Image source={{ uri }} style={styles.hero} /> : null}
+      {uri ? <Image source={{ uri }} style={styles.hero} accessibilityLabel={poi.name} /> : null}
+      {uri && poi.image_credit ? <Text style={styles.credit}>{`${t.photoCredit}: ${poi.image_credit}`}</Text> : null}
       <View style={styles.info}>
         {catName ? <Text style={styles.cat}>{catName}</Text> : null}
         <Text style={styles.name}>{poi.name}</Text>
@@ -67,6 +68,7 @@ export default function PoiDetailScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   hero: { width: '100%', height: 220 },
+  credit: { color: colors.muted, fontSize: 12, paddingHorizontal: space.md, paddingTop: 4 },
   info: { padding: space.md, gap: 4 },
   cat: { color: colors.accent, fontWeight: '700', fontSize: 12, textTransform: 'uppercase' },
   name: { color: colors.text, fontSize: 24, fontWeight: '800' },

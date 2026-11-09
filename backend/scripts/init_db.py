@@ -1,6 +1,6 @@
 """Initialize the SQLite schema in a database without existing tables or views.
 
-Applies migrations/001, 002 and 003 in order (see migrations/README.md).
+Applies migrations/001, 002, 003 and 004 in order (see migrations/README.md).
 """
 
 import argparse
@@ -13,6 +13,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_DIR))
 from scripts.migrate_db import upgrade_connection
 from scripts.prepare_category_bilingual import upgrade_connection as upgrade_categories
+from scripts.migrate_004_poi_image_credit import upgrade_connection as upgrade_image_credit
 
 DEFAULT_DATABASE = BACKEND_DIR / "data" / "saigon_stories.db"
 MIGRATION = BACKEND_DIR / "migrations" / "001_initial.sql"
@@ -40,6 +41,7 @@ def main() -> None:
             connection.executescript(MIGRATION.read_text(encoding="utf-8"))
             upgrade_connection(connection)
             upgrade_categories(connection)
+            upgrade_image_credit(connection)
         except sqlite3.Error:
             connection.rollback()
             raise

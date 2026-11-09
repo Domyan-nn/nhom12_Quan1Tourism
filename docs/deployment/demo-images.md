@@ -10,7 +10,7 @@ Cập nhật 09/11/2026. Năm địa điểm demo dùng ảnh từ Wikimedia Com
 | Chợ Bến Thành | Diego Delso | CC BY-SA 3.0 | [File:Ben Thanh… DD 01.JPG](https://commons.wikimedia.org/wiki/File:Ben_Thanh,_Ciudad_Ho_Chi_Minh,_Vietnam,_2013-08-14,_DD_01.JPG) |
 | Nhà hát Thành phố | Jorge Láscar | CC BY 2.0 | [File:Lascar Municipal Theatre (4608017466).jpg](https://commons.wikimedia.org/wiki/File:Lascar_Municipal_Theatre_(4608017466).jpg) |
 
-Giấy phép lấy từ metadata Commons ngày 09/11/2026. CC BY và CC BY-SA yêu cầu ghi tác giả, giấy phép và nguồn khi trình bày ảnh: đưa bảng này vào báo cáo và slide. Ứng dụng chưa có cột ghi công nên chưa hiện tác giả dưới ảnh; đây là việc tiếp theo (thêm `image_credit` vào `pois` và hiển thị ở trang chi tiết).
+Giấy phép lấy từ metadata Commons ngày 09/11/2026. CC BY và CC BY-SA yêu cầu ghi tác giả, giấy phép và nguồn khi trình bày ảnh: đưa bảng này vào báo cáo và slide. Từ 09/11 ghi công được lưu ở cột `pois.image_credit` (migration 004) và hiện dưới ảnh ở trang chi tiết web và mobile; script trên điền ghi công cho 5 ảnh này. DB chính đã được điền ngày 09/11 (bản trước: `backups/before-image-credits-20261109T143253Z.db`).
 
 ## Chạy lại trên database khác
 

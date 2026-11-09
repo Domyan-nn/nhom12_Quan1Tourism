@@ -221,3 +221,40 @@ test('Admin saves a draft and narration, while guest sees only published places'
   expect((await pois.json()).items).toHaveLength(2);
   expect(errors).toEqual([]);
 });
+
+test('Admin uploads an image with credit, guest sees both, and removing it clears them (F07)', async ({ page }) => {
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==', 'base64');
+  await login(page);
+  await openTab(page, 'Địa điểm');
+  await page.locator('.places .category-list li').filter({ hasText: 'Dinh Độc Lập' }).getByRole('button', { name: 'Sửa', exact: true }).click();
+  const form = page.locator('.places .place-form').first();
+
+  // Wrong type is refused before any upload.
+  await form.getByLabel('Tải ảnh lên').setInputFiles({ name: 'animation.gif', mimeType: 'image/gif', buffer: Buffer.from('GIF89a') });
+  await expect(form.getByRole('alert')).toContainText('Chỉ nhận ảnh JPG, PNG hoặc WebP');
+
+  const uploaded = page.waitForResponse((r) => r.url().endsWith('/image') && r.request().method() === 'PUT' && r.status() === 200);
+  await form.getByLabel('Tải ảnh lên').setInputFiles({ name: 'palace.png', mimeType: 'image/png', buffer: png });
+  const imageUrl = (await (await uploaded).json()).image_url;
+  expect(imageUrl).toMatch(/^\/api\/media\/pois\/[0-9a-f-]{36}\.png$/);
+  await expect(page.getByText('Đã tải ảnh lên.')).toBeVisible();
+  await expect(form.locator('img.place-preview')).toHaveAttribute('src', imageUrl);
+  await form.getByLabel('Ghi công ảnh').fill('Test photographer, CC BY 4.0, Wikimedia Commons');
+  await form.getByRole('button', { name: 'Lưu', exact: true }).click();
+  await expect(page.getByText('Đã lưu thành công.')).toBeVisible();
+
+  const guestPage = await page.context().newPage();
+  await guestPage.goto(`${guest}/poi/palace`);
+  const photo = guestPage.locator('.poi-photo');
+  await expect(photo.locator('figcaption')).toHaveText('Ảnh: Test photographer, CC BY 4.0, Wikimedia Commons');
+  await expect.poll(() => photo.locator('img').evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
+
+  page.once('dialog', (dialog) => dialog.accept());
+  await form.getByRole('button', { name: 'Xóa ảnh', exact: true }).click();
+  await expect(page.getByText('Đã xóa ảnh.')).toBeVisible();
+  await expect(form.getByLabel('Ghi công ảnh')).toHaveValue('');
+  await guestPage.reload();
+  await expect(guestPage.locator('h1')).toHaveText('Dinh Độc Lập');
+  await expect(guestPage.locator('.poi-photo')).toHaveCount(0);
+  await guestPage.close();
+});

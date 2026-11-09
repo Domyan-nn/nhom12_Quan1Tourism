@@ -7,7 +7,7 @@ Cập nhật 09/11/2026 theo PRD và mã nguồn `main` (`c0c01ad`). Chiến lư
 - Mã ca: `TC-<UC>-<số>`. Ca phi chức năng là `TC-NFRxx`, ca dữ liệu/hạ tầng là `TC-DB-xx`.
 - Cột *Kiểm chứng* chỉ tới test tự động: tên test Python (`tệp.py::hàm`) hoặc tên test JavaScript (`tệp.js › "tiêu đề"`), đường dẫn tương đối từ `backend/tests/`, `apps/guest-web/tests/` hoặc `apps/mobile/tests/`.
 - `FT-n` là ca số n trong [phiếu thực địa mobile](../mobile/testing/mobile-field-test.md).
-- *Kết quả*: "Đạt 09/11" là lượt chạy tự động ngày 09/11/2026: backend 102/102, guest 26 + 20, mobile 124 (+4 HTTP bỏ qua), Playwright 40 (+1 OSM bỏ qua). Ca thủ công chưa có kết quả ghi "Chưa thử".
+- *Kết quả*: "Đạt 09/11" là lượt chạy tự động ngày 09/11/2026 (lượt cuối, sau phần upload ảnh): backend 113/113, guest 26 + 20, mobile 124 (+4 HTTP bỏ qua), Playwright 41 (+1 OSM bỏ qua). Ca thủ công chưa có kết quả ghi "Chưa thử".
 
 Mã cũ (đợt 02/11) đổi tên: API-01 → TC-01-01, API-02 → TC-01-02, API-03 → TC-01-04, WEB-01 → TC-01-05, WEB-02 → TC-01-07, WEB-03 → TC-01-04, WEB-04 → TC-01-05, WEB-05 → TC-12-01, DB-01..06 → TC-DB-01..06.
 
@@ -87,7 +87,9 @@ Mã cũ (đợt 02/11) đổi tên: API-01 → TC-01-01, API-02 → TC-01-02, AP
 | TC-07-03 | Xóa địa điểm: hủy rồi xác nhận | Hủy giữ nguyên (A2); xác nhận xóa địa điểm và mọi bài liên quan (A1) | BR12 | `admin.spec.js` (cùng ca lưu nháp); `test_admin_pois.py::test_places_and_narrations` | Đạt 09/11 |
 | TC-07-04 | Bấm Lưu khi request trước chưa xong | Khóa nút và ô nhập đến khi xong (chống gửi đúp) | — | `admin.spec.js` (cùng ca lưu nháp) | Đạt 09/11 |
 | TC-07-05 | Danh sách Admin: tìm "cho ben", lọc trạng thái Ẩn | Đúng địa điểm; nhãn trạng thái tiếng Việt | — | `admin.spec.js` (cùng ca lưu nháp) | Đạt 09/11 |
-| TC-07-06 | Lưu ảnh khi upload lỗi (E2) | Không áp dụng: chưa có upload, Admin nhập URL ảnh | BR04 | — | Ngoài phạm vi hiện tại |
+| TC-07-06 | Tải ảnh lên: JPG/PNG/WebP hợp lệ; GIF/SVG; nội dung giả mạo; > 2 MB; địa điểm không tồn tại; không đăng nhập (E2) | Ảnh hợp lệ được lưu, phục vụ đúng loại, ảnh cũ bị xóa; còn lại 415/422/413/404/401, không lưu tệp nào | BR04, BR09 | `test_poi_images.py::test_upload_each_allowed_type…`, `::test_rejects_wrong_type_spoofed_content_oversize_and_missing_place`, `::test_upload_and_delete_require_admin`; `admin.spec.js › "Admin uploads an image with credit…"` | Đạt 09/11 |
+| TC-07-07 | Ghi công ảnh; xóa ảnh; đổi sang URL; xóa địa điểm | Ghi công ≤ 300 ký tự, hiện ở API khách và dưới ảnh trang chi tiết; xóa ảnh/đổi URL/xóa địa điểm thì tệp cũ bị xóa | BR04 | `test_poi_images.py::test_credit_is_saved_trimmed_public_and_cleared_with_the_image`, `::test_switching_to_url_or_deleting_place_removes_uploaded_file`; `admin.spec.js` (cùng ca) | Đạt 09/11 |
+| TC-07-08 | Gán đường dẫn ảnh của địa điểm khác; đường dẫn giả mạo `../`; tải tệp không tồn tại | 422; 404; không đọc được tệp ngoài thư mục ảnh | NFR01 | `test_poi_images.py::test_uploaded_url_cannot_be_reused_by_another_place_or_forged` | Đạt 09/11 |
 
 ## UC08 — Quản lý thuyết minh đa ngôn ngữ
 
@@ -165,4 +167,5 @@ Mã cũ (đợt 02/11) đổi tên: API-01 → TC-01-01, API-02 → TC-01-02, AP
 | TC-DB-06 | `CREATE TABLE IF NOT EXISTS` trên bảng cũ | Bảng cũ vẫn nhận dữ liệu sai; migration kiểm tra và từ chối | `test_analytics_migration.py::test_create_if_not_exists_cannot_upgrade_old_constraints` | Đạt 09/11 |
 | TC-DB-07 | Migration 003 song ngữ danh mục | Đọc SQL từ tệp 003; giữ dữ liệu và quan hệ; từ chối áp dụng lặp hoặc khi có vi phạm FK | `test_category_preparation.py` (5 ca) | Đạt 09/11 |
 | TC-DB-08 | API khởi động với DB thiếu, schema cũ, analytics chưa nâng cấp | Từ chối, không tạo/sửa DB | `test_startup.py` (4 ca) | Đạt 09/11 |
+| TC-DB-10 | Migration 004 trên DB schema 2 | `--check` không đổi tệp; áp dụng giữ dữ liệu, `user_version = 4`, backup giữ schema cũ; từ chối chạy lặp, thiếu backup hoặc sai phiên bản; API từ chối DB schema 2 | `test_poi_images.py` nhóm `Migration004Tests` (3 ca) | Đạt 09/11 |
 | TC-DB-09 | Seed và nội dung demo chạy lặp | Không ghi đè dữ liệu/mật khẩu nhóm đã sửa; xung đột thì rollback toàn bộ | `test_database.py::test_seed_*`, `::test_collision_rolls_back_whole_seed`; `test_enrich_demo_content.py`; `test_add_demo_images.py` | Đạt 09/11 |

@@ -35,7 +35,7 @@ class AnalyticsMigrationTests(unittest.TestCase):
         result = subprocess.run([sys.executable, str(BACKEND / 'scripts/init_db.py'), '--database', str(new_path)], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         with closing(sqlite3.connect(new_path)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 2)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 4)  # init_db applies 001-004
             self.assert_constraints(db)
 
     def test_upgrade_preserves_rows_backup_and_foreign_keys(self):
