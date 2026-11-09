@@ -170,3 +170,31 @@ describe('BR08 – chờ 600 giây và phát lại', () => {
     expect(run(e, sample(T0 + 6000)).candidate?.id).toBe('a');
   });
 });
+
+describe('UC04-E2 – chờ sau khi thử phát thất bại', () => {
+  it('sau recordFailure không là ứng viên cho đến hết thời gian chờ', () => {
+    const e = new AutoPlayEngine();
+    run(e, sample(T0));
+    expect(run(e, sample(T0 + 5000)).candidate?.id).toBe('a');
+    e.recordFailure('a', T0 + 5000);
+    // Khách vẫn đứng trong vùng, mẫu GPS mỗi giây.
+    for (let t = T0 + 6000; t < T0 + 5000 + RULES.RETRY_AFTER_FAILURE_MS; t += 1000) {
+      expect(run(e, sample(t)).candidate).toBeNull();
+    }
+    expect(run(e, sample(T0 + 5000 + RULES.RETRY_AFTER_FAILURE_MS)).candidate?.id).toBe('a');
+  });
+  it('POI đang chờ không chặn POI khác đủ điều kiện', () => {
+    const e = new AutoPlayEngine();
+    const B = POI('b', 10.7770, 106.6954, 100);
+    run(e, sample(T0), [A, B]);
+    expect(run(e, sample(T0 + 5000), [A, B]).candidate?.id).toBe('a');
+    e.recordFailure('a', T0 + 5000);
+    expect(run(e, sample(T0 + 6000), [A, B]).candidate?.id).toBe('b');
+  });
+  it('phát thành công xóa thời gian chờ', () => {
+    const e = new AutoPlayEngine();
+    e.recordFailure('a', T0);
+    e.recordPlaySuccess('a', T0 + 1000);
+    expect(e.states.get('a').retryAfter).toBeNull();
+  });
+});

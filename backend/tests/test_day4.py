@@ -209,7 +209,13 @@ class Day4Tests(unittest.TestCase):
     # --- Nối router analytics vào app ---
     def test_analytics_routes_mounted(self):
         sid = str(uuid.uuid4())
-        app.dependency_overrides[analytics_routes.get_connection] = lambda: connect(self.database)
+
+        def connection():
+            with closing(connect(self.database)) as db:
+                yield db
+
+        app.dependency_overrides[analytics_routes.get_connection] = connection
+        self.addCleanup(app.dependency_overrides.pop, analytics_routes.get_connection, None)
         for prefix in ("/api/analytics", "/api/v1/analytics"):
             with self.subTest(prefix=prefix):
                 self.assertEqual(self.client.post(prefix + "/heartbeat", json={"session_id": sid}).status_code, 204)

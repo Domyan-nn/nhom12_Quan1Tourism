@@ -10,6 +10,7 @@ export const RULES = Object.freeze({
   DWELL_MS: 5_000, // ở trong vùng liên tục >= 5 giây
   COOLDOWN_MS: 600_000, // vào lại sau >= 600 giây kể từ lần phát thành công
   MAX_GAP_MS: 15_000, // khe hở giữa hai mẫu hợp lệ làm mất tính "liên tục"
+  RETRY_AFTER_FAILURE_MS: 30_000, // UC04-E2 "chờ rồi quay lại": không thử lại mỗi mẫu GPS (~1 giây)
 });
 
 /** Mẫu hợp lệ cho một POI cụ thể (BR08). */
@@ -47,7 +48,7 @@ export class AutoPlayEngine {
   _state(id) {
     let st = this.states.get(id);
     if (!st) {
-      st = { insideSince: null, lastValidAt: null, lastPlayedAt: null, exitedSincePlay: false };
+      st = { insideSince: null, lastValidAt: null, lastPlayedAt: null, exitedSincePlay: false, retryAfter: null };
       this.states.set(id, st);
     }
     return st;
@@ -58,6 +59,15 @@ export class AutoPlayEngine {
     const st = this._state(poiId);
     st.lastPlayedAt = at;
     st.exitedSincePlay = false;
+    st.retryAfter = null;
+  }
+
+  /**
+   * Ghi nhận lần thử phát THẤT BẠI (tải bài lỗi, TTS lỗi, địa điểm không còn công khai).
+   * Không tính là đã phát; POI chỉ được xét lại sau RETRY_AFTER_FAILURE_MS.
+   */
+  recordFailure(poiId, at) {
+    this._state(poiId).retryAfter = at + RULES.RETRY_AFTER_FAILURE_MS;
   }
 
   /**
@@ -95,6 +105,7 @@ export class AutoPlayEngine {
       if (st.insideSince === null) continue;
       if (sample.timestamp - st.insideSince < RULES.DWELL_MS) continue;
       if (!poiHasNarration(poi, locale)) continue;
+      if (st.retryAfter !== null && now < st.retryAfter) continue;
       if (st.lastPlayedAt !== null) {
         const reentered = st.exitedSincePlay && st.insideSince - st.lastPlayedAt >= RULES.COOLDOWN_MS;
         if (!reentered) continue;

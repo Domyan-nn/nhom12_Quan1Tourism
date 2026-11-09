@@ -1,3 +1,4 @@
+import unicodedata
 import unittest
 from contextlib import closing
 
@@ -52,3 +53,8 @@ class PublicAPITests(unittest.TestCase):
         self.assertEqual([p['id'] for p in self.client.get('/api/v1/pois', params={'q': 'dinh', 'category_id': history}).json()['items']], [palace])
         self.assertEqual(self.client.get('/api/v1/pois', params={'q': 'dinh', 'category_id': culture}).json()['items'], [])
         self.assertEqual(self.client.get('/api/v1/pois', params={'q': '%'}).json()['items'], [])
+        # Visitors without a Vietnamese keyboard: diacritics and đ are ignored.
+        for query in ('cho ben thanh', 'BEN THANH', 'Chợ Bến', unicodedata.normalize('NFD', 'bến thành')):
+            self.assertEqual([p['id'] for p in self.client.get('/api/v1/pois', params={'q': query}).json()['items']], [market], query)
+        self.assertEqual([p['id'] for p in self.client.get('/api/v1/pois', params={'q': 'dinh doc lap'}).json()['items']], [palace])
+        self.assertEqual(self.client.get('/api/v1/pois', params={'q': 'ben thanh x'}).json()['items'], [])

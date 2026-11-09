@@ -1,7 +1,8 @@
 """Read published places without exposing draft or hidden records."""
 
 import sqlite3
-import unicodedata
+
+from app.core.text import search_key
 
 
 def list_pois(db: sqlite3.Connection, query: str = "", category_id: str | None = None):
@@ -11,10 +12,10 @@ def list_pois(db: sqlite3.Connection, query: str = "", category_id: str | None =
         sql += " AND category_id = ?"
         params.append(category_id)
     rows = db.execute(sql + " ORDER BY name, id", params).fetchall()
-    needle = unicodedata.normalize("NFC", query.strip()).casefold()
+    needle = search_key(query)
     items = []
     for row in rows:
-        if needle and needle not in unicodedata.normalize("NFC", row["name"]).casefold():
+        if needle and needle not in search_key(row["name"]):
             continue
         item = dict(row)
         item["narration_locales"] = [r[0] for r in db.execute(

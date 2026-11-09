@@ -50,3 +50,12 @@ test('mock mode makes no network calls; filters NFC, category and combination', 
   assert.equal((await api.getPoi(items[0].id)).narrations.length, 2);
   await assert.rejects(api.getPoi('missing'), { status: 404 });
 });
+
+test('mock search ignores Vietnamese diacritics like the backend (BR02)', async () => {
+  const api = createPublicApi({ useMock: true, apiGet: () => { throw new Error('unexpected network'); } });
+  const ids = async (q) => (await api.listPois({ q })).map((p) => p.id);
+  assert.equal((await ids('Đức Bà')).length, 1);
+  assert.deepEqual(await ids('duc ba'), await ids('Đức Bà'));
+  assert.deepEqual(await ids('DUC BA'), await ids('Đức Bà'));
+  assert.deepEqual(await ids('duc ba xyz'), []);
+});
