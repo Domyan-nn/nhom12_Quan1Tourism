@@ -41,7 +41,7 @@ Nguyên tắc: test không ghi vào DB chính `backend/data/saigon_stories.db`; 
 | --- | --- |
 | Hệ điều hành máy phát triển | Windows 11 |
 | Python / FastAPI / Uvicorn | 3.12 / 0.115.12 / 0.34.2 |
-| Node / Vite | 22 / 7.3.7 (Admin), 8.3.5 (Guest) |
+| Node / Vite | 26 (máy phát triển và CI) / 7.3.7 (Admin), 8.3.5 (Guest) |
 | Trình duyệt E2E | Microsoft Edge headless (Playwright 1.64.1) |
 | Mobile | Expo SDK 58, React Native 0.88.1, Expo Go trên điện thoại cùng mạng LAN |
 
@@ -69,6 +69,8 @@ Mỗi lỗi ghi: mã ca liên quan, commit, môi trường, bước tái hiện,
 
 ## 7. Lệnh chạy
 
+CI chạy cùng các lệnh này trên GitHub Actions mỗi lần push lên bất kỳ nhánh nào (backend, guest-web, admin-web, mobile trên Ubuntu; Playwright trên Windows với Edge).
+
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s backend/tests
 npm.cmd --prefix apps/guest-web test
@@ -85,5 +87,5 @@ Chi tiết cổng, biến môi trường và cách xử lý lỗi quyền ghi �
 | --- | --- | --- |
 | Tile bản đồ, ảnh, giọng đọc phụ thuộc mạng và thiết bị | Kết quả thủ công dao động | E2E thay tile bằng fixture; ca thủ công ghi rõ thiết bị, giọng, mạng |
 | Playwright cấu hình cho Windows + Edge | Máy khác khó chạy lại | Ghi môi trường; khi thêm CI cần cấu hình Chromium/Linux |
-| Chưa có CI | Commit có thể làm hỏng test mà không ai biết (đã xảy ra ngày 08/11) | Merge qua PR, chạy đủ mục 7 trước khi merge |
+| Commit làm hỏng test mà không ai biết (đã xảy ra ngày 08/11) | `main` hỏng | Từ 10/11: CI GitHub Actions (`.github/workflows/ci.yml`) chạy mọi bộ ở mục 3 mỗi lần push, kể cả Playwright trên Windows + Edge; `main` chỉ nhận PR có CI xanh và một người duyệt ([CONTRIBUTING](../../CONTRIBUTING.md)) |
 | GPS khó tái hiện | Ca biên BR08 khó thử bằng tay | Kiểm bằng engine thuần trong Jest; ca thiết bị chỉ xác nhận luồng chính |

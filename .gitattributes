@@ -1,0 +1,22 @@
+# Một kiểu xuống dòng trong repo cho mọi máy (Windows/macOS/Linux): LF, trừ script Windows.
+* text=auto eol=lf
+
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Nhị phân: không chuyển xuống dòng, không diff văn bản.
+*.docx binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.db binary
+*.sqlite binary
+*.zip binary

@@ -59,7 +59,7 @@ Người kiểm tra tiến độ: **Domyan-nn**, mỗi tối lúc 21:00 theo [b�
 | `apps/admin-web/src/features/admin/auth/Admin.jsx` | C (thêm tab) | Chỉ thêm một mục vào `TABS` và một nhánh render |
 | `ExploreScreen.js`, `ExplorePage.jsx` | B | Không ai khác sửa trong 3 ngày |
 
-Trước khi mở PR: chạy đủ các lệnh ở [test-plan.md mục 7](../testing/test-plan.md#7-lệnh-chạy), dán kết quả vào mô tả PR. Không commit thẳng lên `main`.
+Làm theo [CONTRIBUTING](../../CONTRIBUTING.md): mỗi phần một issue, nhánh riêng, PR theo mẫu, CI xanh và một người khác duyệt mới merge. Trước khi mở PR chạy đủ các lệnh ở [test-plan.md mục 7](../testing/test-plan.md#7-lệnh-chạy) và dán kết quả vào mô tả PR. Không commit thẳng lên `main`.
 
 ## 5. Bảng theo dõi hằng ngày
 

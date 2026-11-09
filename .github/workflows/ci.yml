@@ -1,0 +1,131 @@
+# Kiểm tra tự động mỗi lần push lên bất kỳ nhánh nào (nhánh feat/fix/docs có kết quả ngay, PR hiện
+# kết quả của commit mới nhất) và khi bấm chạy tay. Các job nhanh (backend, guest-web, admin-web, mobile) nên đặt là "required" trong bảo vệ nhánh main;
+# e2e chạy Playwright trên Windows + Edge giống máy phát triển, dùng SQLite tạm của tests/serve_api.py.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '26'
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install dependencies
+        run: python -m pip install -r backend/requirements-dev.txt
+      - name: Unit and API tests (temporary SQLite only)
+        run: python -m unittest discover -s backend/tests
+
+  guest-web:
+    name: guest-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/guest-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/guest-web/package-lock.json
+      - run: npm ci
+      - name: Node test + Vitest
+        run: npm test
+      - name: Build
+        run: npm run build
+
+  admin-web:
+    name: admin-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/admin-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/admin-web/package-lock.json
+      - run: npm ci
+      - name: Build
+        run: npm run build
+
+  mobile:
+    name: mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - run: npm ci
+      - name: Jest
+        run: npm test -- --runInBand
+
+  e2e:
+    name: e2e (Playwright, Edge)
+    needs: [backend, guest-web, admin-web]
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install backend dependencies
+        run: python -m pip install -r backend/requirements-dev.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            apps/guest-web/package-lock.json
+            apps/admin-web/package-lock.json
+      - name: Install web dependencies
+        run: |
+          npm ci --prefix apps/guest-web
+          npm ci --prefix apps/admin-web
+      - name: Playwright (system Microsoft Edge, four disposable services)
+        working-directory: apps/guest-web
+        env:
+          SAIGON_TEST_PYTHON: ${{ env.pythonLocation }}\python.exe
+        run: npm run test:browser -- --reporter=line
+      - name: Keep failure screenshots and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: apps/guest-web/test-results/
+          retention-days: 7
