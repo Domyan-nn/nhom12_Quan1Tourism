@@ -104,3 +104,9 @@ input[type='search'] { width: 100%; padding: .7rem .9rem; font: inherit; border:
 .poi-photo { margin: 16px 0; }
 .poi-photo img { display: block; width: 100%; max-height: 360px; object-fit: cover; border-radius: 12px; }
 .poi-photo figcaption { margin-top: 6px; font-size: 13px; color: var(--muted, #5f6b66); }
+
+/* Phần B – Gần tôi */
+.near-me { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+.near-me .chip:disabled { opacity: .6; cursor: wait; }
+.near-me-alert { margin: 0; color: var(--danger); font-weight: 600; }
+.tag.distance { background: #fdf1d0; color: var(--ink); font-weight: 600; }

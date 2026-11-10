@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageContext.jsx';
 
-export default function PoiCard({ poi, categoryName }) {
+export default function PoiCard({ poi, categoryName, distanceLabel = '' }) {
   const { t } = useLanguage();
   const locales = (poi.narration_locales || []).map((locale) => locale.toUpperCase()).join(' / ');
   return (
@@ -14,6 +14,9 @@ export default function PoiCard({ poi, categoryName }) {
         <p className="muted">{poi.address}</p>
         <p className="meta">
           {categoryName && <span className="tag">{categoryName}</span>}
+          {distanceLabel && (
+            <span className="tag distance" aria-label={t.distanceFromYou.replace('{distance}', distanceLabel)}>{distanceLabel}</span>
+          )}
           {locales && <span className="muted">{t.narration}: {locales}</span>}
         </p>
       </div>
