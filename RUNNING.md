@@ -52,6 +52,15 @@ if ($LASTEXITCODE -ne 0) { throw 'Sao lưu thất bại' }
 .\.venv\Scripts\python.exe backend/scripts/migrate_004_poi_image_credit.py --database backend/data/saigon_stories.db --backup backups/before-migration-004.db
 ```
 
+**DB ở schema 4 (sau migration 004, trước nhật ký thao tác Admin)** phải chạy migration 005 một lần, nếu không API từ chối khởi động. Dừng API trước, sao lưu rồi nâng cấp:
+
+```powershell
+.\.venv\Scripts\python.exe backend/scripts/migrate_005_admin_audit_log.py --database backend/data/saigon_stories.db --check
+.\.venv\Scripts\python.exe backend/scripts/migrate_005_admin_audit_log.py --database backend/data/saigon_stories.db --backup backups/before-migration-005.db
+```
+
+DB schema 2 phải chạy 004 rồi mới chạy 005. Máy demo nào có DB chính riêng (Git bỏ qua) cũng cần làm bước này.
+
 Ảnh tải lên lưu ở `storage/uploads/` (Git bỏ qua); khi chuyển DB sang máy khác, chép kèm thư mục này. API không tự init/seed/migrate. Retention dọn thống kê ngoài cửa sổ 30 ngày khi startup và mỗi 00:00 Việt Nam. Giữ bản sao lưu trước khi chạy. Health chỉ xác nhận tiến trình; kiểm tra thêm `/api/v1/categories` và `/api/v1/pois`.
 
 run admin

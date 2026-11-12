@@ -4,8 +4,9 @@ import { clearSession, loadSession, saveSession } from '../../../services/sessio
 import Categories from '../categories/Categories.jsx';
 import Places from '../places/Places.jsx';
 import Dashboard from '../analytics/Dashboard.jsx';
+import AuditLog from '../audit/AuditLog.jsx';
 
-const TABS = ['dashboard', 'categories', 'places'];
+const TABS = ['dashboard', 'categories', 'places', 'audit'];
 const tabFromHash = () => {
   const value = window.location.hash.replace('#', '');
   return TABS.includes(value) ? value : 'dashboard';
@@ -114,6 +115,7 @@ export default function Admin({ t, language }) {
         {tab === 'dashboard' && <Dashboard language={language} token={token} onExpired={expire} />}
         {tab === 'categories' && <><h2>{t.categories}</h2><Categories t={t} token={token} onExpired={expire} /></>}
         {tab === 'places' && <Places t={t} language={language} token={token} onExpired={expire} />}
+        {tab === 'audit' && <AuditLog language={language} token={token} onExpired={expire} />}
       </div>
     </section>
   </main>;

@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from app.api.dependencies import get_db, require_admin
 from app.core.locales import SUPPORTED_LOCALES
-from app.services import media
+from app.services import audit, media
 from app.services.auth import timestamp, utc_now
 
 router = APIRouter(prefix="/api/v1/admin/pois", tags=["admin places"], dependencies=[Depends(require_admin)])
@@ -96,7 +96,7 @@ def get_place(poi_id: str, db: sqlite3.Connection = Depends(get_db)):
     return place(db, poi_id)
 
 
-def save_place(db, body, poi_id=None):
+def save_place(db, body, admin_id, poi_id=None):
     now = timestamp(utc_now())
     old_image = None
     with db:
@@ -110,35 +110,39 @@ def save_place(db, body, poi_id=None):
         values = (body.category_id, body.name, body.address, body.latitude, body.longitude, body.radius_m, body.image_url, body.image_credit)
         if poi_id:
             db.execute("UPDATE pois SET category_id=?, name=?, address=?, latitude=?, longitude=?, radius_m=?, image_url=?, image_credit=?, updated_at=? WHERE id=?", (*values, now, poi_id))
+            audit.record(db, admin_id, "poi.update", "poi", poi_id, body.name)
         else:
             poi_id = str(uuid.uuid4())
             db.execute("INSERT INTO pois (category_id,name,address,latitude,longitude,radius_m,image_url,image_credit,id,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,'draft',?,?)", (*values, poi_id, now, now))
+            audit.record(db, admin_id, "poi.create", "poi", poi_id, body.name)
     if old_image and old_image != body.image_url:
         media.delete_media(old_image)  # replaced by a URL or removed: drop the uploaded file
     return place(db, poi_id)
 
 
 @router.post("", status_code=201)
-def create_place(body: PlaceInput, db: sqlite3.Connection = Depends(get_db)):
-    return save_place(db, body)
+def create_place(body: PlaceInput, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
+    return save_place(db, body, session["admin_id"])
 
 
 @router.put("/{poi_id}")
-def update_place(poi_id: str, body: PlaceInput, db: sqlite3.Connection = Depends(get_db)):
-    return save_place(db, body, poi_id)
+def update_place(poi_id: str, body: PlaceInput, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
+    return save_place(db, body, session["admin_id"], poi_id)
 
 
 @router.delete("/{poi_id}", status_code=204)
-def delete_place(poi_id: str, db: sqlite3.Connection = Depends(get_db)):
+def delete_place(poi_id: str, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
     with db:
-        image = place(db, poi_id)["image_url"]
+        row = place(db, poi_id)
+        image = row["image_url"]
         db.execute("DELETE FROM pois WHERE id=?", (poi_id,))
+        audit.record(db, session["admin_id"], "poi.delete", "poi", poi_id, row["name"])  # one entry; its narrations go with it
     media.delete_media(image)
     return Response(status_code=204)
 
 
 @router.put("/{poi_id}/image")
-async def upload_image(poi_id: str, request: Request, db: sqlite3.Connection = Depends(get_db)):
+async def upload_image(poi_id: str, request: Request, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
     """F07/UC07: body là nội dung tệp ảnh, Content-Type image/jpeg|png|webp, tối đa 2 MB."""
     place(db, poi_id)
     declared = request.headers.get("content-type")
@@ -159,8 +163,10 @@ async def upload_image(poi_id: str, request: Request, db: sqlite3.Connection = D
     url = media.save_poi_image(bytes(data), extension)
     try:
         with db:
-            old_image = place(db, poi_id)["image_url"]
+            row = place(db, poi_id)
+            old_image = row["image_url"]
             db.execute("UPDATE pois SET image_url=?, updated_at=? WHERE id=?", (url, timestamp(utc_now()), poi_id))
+            audit.record(db, session["admin_id"], "poi.image_upload", "poi", poi_id, row["name"])
     except Exception:
         media.delete_media(url)
         raise
@@ -170,11 +176,13 @@ async def upload_image(poi_id: str, request: Request, db: sqlite3.Connection = D
 
 
 @router.delete("/{poi_id}/image")
-def delete_image(poi_id: str, db: sqlite3.Connection = Depends(get_db)):
+def delete_image(poi_id: str, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
     """Bỏ ảnh và ghi công ảnh của địa điểm; tệp đã tải lên bị xóa."""
     with db:
-        old_image = place(db, poi_id)["image_url"]
+        row = place(db, poi_id)
+        old_image = row["image_url"]
         db.execute("UPDATE pois SET image_url=NULL, image_credit=NULL, updated_at=? WHERE id=?", (timestamp(utc_now()), poi_id))
+        audit.record(db, session["admin_id"], "poi.image_delete", "poi", poi_id, row["name"])
     media.delete_media(old_image)
     return place(db, poi_id)
 
@@ -186,16 +194,17 @@ def narrations(poi_id: str, db: sqlite3.Connection = Depends(get_db)):
 
 
 @router.post("/{poi_id}/narrations", status_code=201)
-def add_narration(poi_id: str, body: NarrationCreate, db: sqlite3.Connection = Depends(get_db)):
+def add_narration(poi_id: str, body: NarrationCreate, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
     now = timestamp(utc_now())
     try:
         with db:
-            place(db, poi_id)
+            row = place(db, poi_id)
             # Existing databases can contain locale spelling with different case.
             if db.execute("SELECT 1 FROM poi_narrations WHERE poi_id=? AND lower(locale)=?", (poi_id, body.locale)).fetchone():
                 raise HTTPException(409, "NARRATION_DUPLICATE")
             narration_id = str(uuid.uuid4())
             db.execute("INSERT INTO poi_narrations VALUES (?,?,?,?,?,?,?)", (narration_id, poi_id, body.locale, body.title, body.body, now, now))
+            audit.record(db, session["admin_id"], "narration.create", "narration", narration_id, f"{row['name']} / {body.locale}")
     except sqlite3.IntegrityError as exc:
         if getattr(exc, 'sqlite_errorcode', None) == sqlite3.SQLITE_CONSTRAINT_UNIQUE:
             raise HTTPException(409, "NARRATION_DUPLICATE") from exc
@@ -204,25 +213,29 @@ def add_narration(poi_id: str, body: NarrationCreate, db: sqlite3.Connection = D
 
 
 @router.put("/{poi_id}/narrations/{narration_id}")
-def update_narration(poi_id: str, narration_id: str, body: NarrationInput, db: sqlite3.Connection = Depends(get_db)):
+def update_narration(poi_id: str, narration_id: str, body: NarrationInput, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
     with db:
-        place(db, poi_id)
+        row = place(db, poi_id)
         if not db.execute("UPDATE poi_narrations SET title=?, body=?, updated_at=? WHERE id=? AND poi_id=?", (body.title, body.body, timestamp(utc_now()), narration_id, poi_id)).rowcount:
             raise HTTPException(404, "NARRATION_NOT_FOUND")
+        locale = db.execute("SELECT locale FROM poi_narrations WHERE id=?", (narration_id,)).fetchone()[0]
+        audit.record(db, session["admin_id"], "narration.update", "narration", narration_id, f"{row['name']} / {locale}")
     return dict(db.execute("SELECT * FROM poi_narrations WHERE id=?", (narration_id,)).fetchone())
 
 
 @router.delete("/{poi_id}/narrations/{narration_id}", status_code=204)
-def delete_narration(poi_id: str, narration_id: str, db: sqlite3.Connection = Depends(get_db)):
+def delete_narration(poi_id: str, narration_id: str, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
     """UC08: xóa bài nhập nhầm. Địa điểm Công khai phải còn ít nhất một bài hợp lệ (BR03)."""
     with db:
         # Same lock as publishing, so a publish cannot interleave with removing the last narration.
         db.execute("BEGIN IMMEDIATE")
         row = place(db, poi_id)
+        removed = db.execute("SELECT locale FROM poi_narrations WHERE id=? AND poi_id=?", (narration_id, poi_id)).fetchone()
         if not db.execute("DELETE FROM poi_narrations WHERE id=? AND poi_id=?", (narration_id, poi_id)).rowcount:
             raise HTTPException(404, "NARRATION_NOT_FOUND")
         if row["status"] == "published" and "narration" in publish_problems(db, row):
             raise HTTPException(409, "NARRATION_REQUIRED")
+        audit.record(db, session["admin_id"], "narration.delete", "narration", narration_id, f"{row['name']} / {removed[0]}")
     return Response(status_code=204)
 
 
@@ -257,7 +270,7 @@ def publish_problems(db, row):
     return problems
 
 
-def change_status(db, poi_id, allowed_from, new_status):
+def change_status(db, poi_id, allowed_from, new_status, admin_id):
     with db:
         # Serialize eligibility checks with publishing, hiding and content edits.
         db.execute("BEGIN IMMEDIATE")
@@ -269,16 +282,17 @@ def change_status(db, poi_id, allowed_from, new_status):
             if problems:
                 raise HTTPException(422, {"code": "POI_NOT_PUBLISHABLE", "details": problems})
         db.execute("UPDATE pois SET status=?, updated_at=? WHERE id=?", (new_status, timestamp(utc_now()), poi_id))
+        audit.record(db, admin_id, "poi.publish" if new_status == "published" else "poi.hide", "poi", poi_id, row["name"])
     return place(db, poi_id)
 
 
 @router.post("/{poi_id}/publish")
-def publish_place(poi_id: str, db: sqlite3.Connection = Depends(get_db)):
+def publish_place(poi_id: str, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
     """UC09: Nháp/Ẩn -> Công khai sau khi kiểm tra BR04 và có >= 1 bài hợp lệ."""
-    return change_status(db, poi_id, ("draft", "hidden"), "published")
+    return change_status(db, poi_id, ("draft", "hidden"), "published", session["admin_id"])
 
 
 @router.post("/{poi_id}/hide")
-def hide_place(poi_id: str, db: sqlite3.Connection = Depends(get_db)):
+def hide_place(poi_id: str, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
     """UC09-A1: Công khai -> Ẩn; địa điểm biến mất khỏi API khách."""
-    return change_status(db, poi_id, ("published",), "hidden")
+    return change_status(db, poi_id, ("published",), "hidden", session["admin_id"])

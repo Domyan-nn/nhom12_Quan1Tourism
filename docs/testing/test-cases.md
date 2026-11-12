@@ -169,3 +169,15 @@ Mã cũ (đợt 02/11) đổi tên: API-01 → TC-01-01, API-02 → TC-01-02, AP
 | TC-DB-08 | API khởi động với DB thiếu, schema cũ, analytics chưa nâng cấp | Từ chối, không tạo/sửa DB | `test_startup.py` (4 ca) | Đạt 09/11 |
 | TC-DB-10 | Migration 004 trên DB schema 2 | `--check` không đổi tệp; áp dụng giữ dữ liệu, `user_version = 4`, backup giữ schema cũ; từ chối chạy lặp, thiếu backup hoặc sai phiên bản; API từ chối DB schema 2 | `test_poi_images.py` nhóm `Migration004Tests` (3 ca) | Đạt 09/11 |
 | TC-DB-09 | Seed và nội dung demo chạy lặp | Không ghi đè dữ liệu/mật khẩu nhóm đã sửa; xung đột thì rollback toàn bộ | `test_database.py::test_seed_*`, `::test_collision_rolls_back_whole_seed`; `test_enrich_demo_content.py`; `test_add_demo_images.py` | Đạt 09/11 |
+| TC-DB-11 | Migration 005 trên DB schema 4 | `--check` không đổi tệp; áp dụng giữ dữ liệu, `user_version = 5`, backup giữ schema 4; từ chối chạy lặp, thiếu backup, sai phiên bản; CHECK và `RESTRICT` hoạt động; API từ chối DB schema 4 | `test_audit_log.py` nhóm `Migration005Tests` (4 ca) | Đạt 12/11 |
+
+## Phần mở rộng C: nhật ký thao tác Admin
+
+| Mã | Tình huống | Kết quả mong đợi | Quy tắc | Bằng chứng | Kết quả |
+| --- | --- | --- | --- | --- | --- |
+| TC-AUD-01 | Thực hiện đủ 15 loại thao tác (đăng nhập/xuất, danh mục, địa điểm, công bố/ẩn, ảnh, bài thuyết minh) | Mỗi thao tác đúng một dòng, đúng `admin_id`, `action`, `target_*`, `summary`; xóa địa điểm kèm bài chỉ một dòng; dòng còn sau khi đối tượng bị xóa | BR09 | `test_audit_log.py::EveryActionIsLoggedOnceTests` | Đạt 12/11 |
+| TC-AUD-02 | 26 yêu cầu bị từ chối (401, 404, 409, 413, 415, 422), đăng nhập sai, đăng xuất lần hai, các lệnh đọc | Không dòng nào được ghi | BR09 | `::RejectedActionsAreNotLoggedTests` | Đạt 12/11 |
+| TC-AUD-03 | Ghi log lỗi giữa chừng (tạo danh mục, địa điểm, công bố, xóa, đăng nhập) | Trả 500, thay đổi bị rollback, không có phiên mới; `record` không tự commit | NFR03 | `::AtomicityTests` | Đạt 12/11 |
+| TC-AUD-04 | Mật khẩu, token, tiêu đề và nội dung bài; tên nhiều dòng; summary quá dài; action lạ | Không lưu bí mật; summary một dòng ≤ 200; action lạ bị từ chối | BR10 | `::PrivacyAndSummaryTests` | Đạt 12/11 |
+| TC-AUD-05 | `GET /admin/audit-log`: không/sai/hết phiên, thứ tự, `limit` mặc định/1/200/0/201/abc, nhật ký rỗng, hai Admin | 401 khi thiếu phiên; mới nhất trước; 422 ngoài 1–200; đúng tên người thực hiện | BR09 | `::AuditLogApiTests`, `::EveryActionIsLoggedOnceTests::test_two_admins_are_told_apart` | Đạt 12/11 |
+| TC-AUD-06 | Tab Nhật ký trong Admin | Thấy thao tác vừa làm đầu bảng, thao tác trùng bị 409 không hiện, tải lại vẫn ở tab | UC05–UC09 | `admin.spec.js › "Activity log tab lists…"` | **Chưa chạy** (cần Edge/Playwright); `npm run build` admin-web đạt |

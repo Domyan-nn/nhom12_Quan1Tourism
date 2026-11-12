@@ -28,5 +28,5 @@ def me(session=Depends(require_admin)):
 
 @router.post("/logout", status_code=204)
 def logout(session=Depends(require_admin), db: sqlite3.Connection = Depends(get_db)):
-    auth.logout(db, session["id"])
+    auth.logout(db, session["id"], session["admin_id"])
     return Response(status_code=204)

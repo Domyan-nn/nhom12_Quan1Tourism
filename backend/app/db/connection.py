@@ -55,17 +55,24 @@ def validate_analytics_schema(database: Path) -> None:
 
 
 def validate_schema_version(database: Path) -> None:
-    """Schema 4 (migration 004) adds pois.image_credit; refuse older databases without changing them."""
+    """Schema 5 = 001-005 (004: pois.image_credit, 005: admin_audit_log); refuse older databases without changing them."""
     connection = sqlite3.connect(Path(database).resolve().as_uri() + "?mode=ro", uri=True)
     try:
         version = connection.execute("PRAGMA user_version").fetchone()[0]
         has_credit = "image_credit" in {row[1] for row in connection.execute("PRAGMA table_info(pois)")}
+        has_audit = {"id", "admin_id", "action", "target_type", "target_id", "summary", "created_at"} <= {
+            row[1] for row in connection.execute("PRAGMA table_info(admin_audit_log)")}
     finally:
         connection.close()
     if version < 4 or not has_credit:
         raise RuntimeError(
             f"Database {database} chưa có migration 004 (pois.image_credit, user_version 4). "
             "Sao lưu rồi chạy backend/scripts/migrate_004_poi_image_credit.py theo RUNNING.md; API không tự migration."
+        )
+    if version < 5 or not has_audit:
+        raise RuntimeError(
+            f"Database {database} chưa có migration 005 (bảng admin_audit_log, user_version 5). "
+            "Sao lưu rồi chạy backend/scripts/migrate_005_admin_audit_log.py theo RUNNING.md; API không tự migration."
         )
 
 

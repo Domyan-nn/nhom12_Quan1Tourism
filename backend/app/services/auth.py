@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from app.core import security
 from app.db import auth_repository as repository
+from app.services import audit
 from app.services.login_throttle import LoginThrottle
 
 SESSION_HOURS = 8
@@ -48,6 +49,7 @@ def login(db: sqlite3.Connection, username: str, password: str):
     with db:
         repository.create_session(db, str(uuid.uuid4()), account["id"], security.token_hash(token), timestamp(now), timestamp(expires))
         repository.delete_sessions_expired_before(db, timestamp(now - timedelta(days=STALE_SESSION_DAYS)))
+        audit.record(db, account["id"], "auth.login", "admin", account["id"])  # only a successful login is logged
     return {"access_token": token, "expires_at": timestamp(expires)}
 
 
@@ -65,6 +67,7 @@ def current_session(db: sqlite3.Connection, token: str):
     return session
 
 
-def logout(db: sqlite3.Connection, session_id: str) -> None:
+def logout(db: sqlite3.Connection, session_id: str, admin_id: str) -> None:
     with db:
         repository.revoke_session(db, session_id, timestamp(utc_now()))
+        audit.record(db, admin_id, "auth.logout", "admin", admin_id)

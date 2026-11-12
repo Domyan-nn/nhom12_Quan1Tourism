@@ -161,3 +161,26 @@ Visit response gồm `timezone`, `measured_at`, `today`, `last_7_days`, `range` 
 Admin đã có nút công bố/ẩn và xác nhận chỉ công bố nội dung đã kiểm duyệt. Client giữ `error.details` để hiện các trường thiếu. Publish kiểm tra lại dữ liệu cũ bằng validator của POI/bài và thực hiện kiểm tra/chuyển trạng thái trong giao dịch `BEGIN IMMEDIATE`; request đua không cùng công bố một trạng thái. Không thay endpoint, body, response hay schema/migration trong đợt 06/11.
 
 Giữ hàm `run_cleanup_once(database=None)` và cờ `SAIGON_DISABLE_CLEANUP=1` của An. Cờ này tắt cả dọn startup và lịch tự động; mặc định không đặt cờ. Lịch đã ghép thống nhất thành một tác vụ 00:00 Việt Nam, không chạy thêm vòng 6 giờ song song. Khi vận hành chính sách giữ 30 ngày, không bật cờ tắt dọn.
+
+## 10. Nhật ký thao tác Admin (phần mở rộng C, migration 005)
+
+`GET /api/v1/admin/audit-log?limit=50` — cần phiên Admin (thiếu hoặc sai phiên: 401 `AUTH_REQUIRED`). `limit` mặc định 50, từ 1 đến 200; ngoài khoảng hoặc không phải số: 422 `VALIDATION_ERROR`. Mới nhất trước; cùng một giây thì theo thứ tự ghi.
+
+```json
+{"items": [{"id": "…", "admin_id": "…", "admin_username": "demoadmin", "action": "poi.publish",
+            "target_type": "poi", "target_id": "…", "summary": "Dinh Độc Lập", "created_at": "2026-11-12T03:15:09+00:00"}],
+ "limit": 50}
+```
+
+Mỗi thao tác quản trị **thành công** ghi đúng một dòng, trong cùng transaction với thay đổi (ghi log lỗi thì thay đổi cũng bị rollback, trả 500 `DATABASE_ERROR`). Thao tác bị từ chối (401, 404, 409, 413, 415, 422, 429) và các lần đọc không ghi. Đăng nhập sai không ghi vì chưa biết tài khoản.
+
+| `action` | Khi nào | `target_type` / `summary` |
+| --- | --- | --- |
+| `auth.login`, `auth.logout` | Đăng nhập thành công, đăng xuất | `admin` / (trống) |
+| `category.create`, `.update`, `.delete` | Thêm, sửa, xóa danh mục | `category` / tên tiếng Việt |
+| `poi.create`, `.update`, `.delete` | Thêm, sửa, xóa địa điểm (xóa kéo theo bài thuyết minh nhưng chỉ ghi một dòng) | `poi` / tên địa điểm |
+| `poi.publish`, `poi.hide` | Công bố, ẩn | `poi` / tên địa điểm |
+| `poi.image_upload`, `poi.image_delete` | Tải ảnh lên, xóa ảnh | `poi` / tên địa điểm |
+| `narration.create`, `.update`, `.delete` | Thêm, sửa, xóa bài | `narration` / «tên địa điểm / mã ngôn ngữ» |
+
+`summary` chỉ là nhãn một dòng, tối đa 200 ký tự. Không lưu mật khẩu, token, tiêu đề hay nội dung bài. Không có phân trang và chưa có thời hạn lưu (xem `docs/project/c-audit-log.md`). Không đổi endpoint nào khác; các hàm service nhận thêm `admin_id` nhưng request/response không đổi.

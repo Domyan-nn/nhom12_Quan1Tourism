@@ -17,3 +17,4 @@
 .visits-chart-plot rect:focus-visible{outline:none;stroke:#c77b51;stroke-width:2}
 .visits-chart-tooltip{position:absolute;transform:translate(-50%,-100%);background:#203d36;color:#fff;font-size:12px;line-height:1.4;padding:6px 9px;border-radius:4px;pointer-events:none;white-space:nowrap}
 .visits-chart-tooltip span{color:#d7ddd4}
+.audit-toolbar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:12px 0}.audit-toolbar label{margin:0}.audit-toolbar select{width:auto;min-width:88px}.audit-wrap{overflow-x:auto}.audit-table{width:100%}.audit-table td{vertical-align:top}.audit-table time{white-space:nowrap}

@@ -258,3 +258,24 @@ test('Admin uploads an image with credit, guest sees both, and removing it clear
   await expect(guestPage.locator('.poi-photo')).toHaveCount(0);
   await guestPage.close();
 });
+
+test('Activity log tab lists the admin actions just performed, newest first, and skips rejected ones (extension C)', async ({ page, request }) => {
+  const token = await login(page); // writes an auth.login entry
+  const api = 'http://127.0.0.1:18082/api/v1/admin/categories';
+  const headers = { Authorization: `Bearer ${token}` };
+  const name = `Audit ${Date.now()}`;
+  expect((await request.post(api, { headers, data: { name, name_en: `${name} en` } })).status()).toBe(201);
+  expect((await request.post(api, { headers, data: { name, name_en: `${name} other` } })).status()).toBe(409); // duplicate: must not be logged
+  await openTab(page, 'Nhật ký');
+  const rows = page.locator('table.audit-table tbody tr');
+  await expect(rows.first()).toContainText('Thêm danh mục');
+  await expect(rows.first()).toContainText(name);
+  await expect(rows.first()).toContainText('browser-admin');
+  await expect(page.getByRole('cell', { name, exact: true })).toHaveCount(1);
+  await expect(page.getByRole('row', { name: /Đăng nhập/ }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
+  await expect(page.getByRole('cell', { name, exact: true })).toHaveCount(1);
+  // The tab is kept in the URL like the other tabs, so a reload stays on it.
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Nhật ký thao tác' })).toBeVisible();
+});

@@ -68,4 +68,5 @@ Cập nhật 09/11/2026, `main` `c0c01ad`. Nối yêu cầu trong PRD bản 1.1 
 | Ca thiết bị chưa có kết quả/minh chứng | F01, F02, F04, F12 | Chạy FT-1..6, 8..23 trên điện thoại với API thật; lưu ảnh/video vào `docs/testing/evidence/` và ghi vào phiếu |
 | HTTPS khi truy cập công khai | NFR01 | Ngoài phạm vi demo LAN; nêu là giới hạn trong báo cáo |
 | Upload ảnh và ghi công tác giả trên ảnh | F07 | Đã làm 09/11 (phần mở rộng A); còn thử hiển thị ghi công trên điện thoại thật |
+| Nhật ký thao tác Admin (phần mở rộng C) | UC05–UC09, BR09, BR10 | Backend + tab Nhật ký đã làm 12/11 (`TC-AUD-01..05`, `TC-DB-11`); còn chạy Playwright `TC-AUD-06`, review PR, migrate DB chính và thêm vào PRD (bảng thứ 8, mục 7.1) |
 | Cài mới toàn hệ thống trên máy khác | NFR06 | Thử theo RUNNING.md trên một máy chưa cài, ghi kết quả |

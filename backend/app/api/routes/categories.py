@@ -15,17 +15,17 @@ def list_categories(db: sqlite3.Connection = Depends(get_db)):
 
 
 @router.post("", status_code=201)
-def create_category(body: CategoryInput, db: sqlite3.Connection = Depends(get_db)):
+def create_category(body: CategoryInput, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
     try:
-        return categories.create_category(db, body.name, body.name_en)
+        return categories.create_category(db, session["admin_id"], body.name, body.name_en)
     except categories.CategoryDuplicate:
         raise HTTPException(status_code=409, detail="CATEGORY_DUPLICATE")
 
 
 @router.patch("/{category_id}")
-def update_category(category_id: str, body: CategoryInput, db: sqlite3.Connection = Depends(get_db)):
+def update_category(category_id: str, body: CategoryInput, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
     try:
-        return categories.update_category(db, category_id, body.name, body.name_en)
+        return categories.update_category(db, session["admin_id"], category_id, body.name, body.name_en)
     except categories.CategoryNotFound:
         raise HTTPException(status_code=404, detail="CATEGORY_NOT_FOUND")
     except categories.CategoryDuplicate:
@@ -33,9 +33,9 @@ def update_category(category_id: str, body: CategoryInput, db: sqlite3.Connectio
 
 
 @router.delete("/{category_id}", status_code=204)
-def delete_category(category_id: str, db: sqlite3.Connection = Depends(get_db)):
+def delete_category(category_id: str, db: sqlite3.Connection = Depends(get_db), session=Depends(require_admin)):
     try:
-        categories.delete_category(db, category_id)
+        categories.delete_category(db, session["admin_id"], category_id)
     except categories.CategoryNotFound:
         raise HTTPException(status_code=404, detail="CATEGORY_NOT_FOUND")
     except categories.CategoryInUse:

@@ -18,7 +18,7 @@ from scripts.seed_db import seed, stable_id
 from scripts import seed_db
 
 INIT = BACKEND / "scripts" / "init_db.py"
-TABLES = {"admin_accounts", "admin_sessions", "categories", "pois", "poi_narrations", "anonymous_sessions", "visit_events"}
+TABLES = {"admin_accounts", "admin_sessions", "categories", "pois", "poi_narrations", "anonymous_sessions", "visit_events", "admin_audit_log"}
 
 
 class DatabaseTests(unittest.TestCase):

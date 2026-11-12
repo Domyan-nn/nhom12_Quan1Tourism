@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.routes import auth, categories, public, admin_pois, admin_stats, analytics, media
+from app.api.routes import auth, categories, public, admin_pois, admin_stats, admin_audit, analytics, media
 from app.db.connection import configured_database, validate_analytics_schema, validate_category_schema, validate_schema_version
 from app.services.analytics_retention import cleanup_database, retention_loop
 
@@ -46,6 +46,7 @@ app.include_router(categories.router)
 app.include_router(public.router)
 app.include_router(admin_pois.router)
 app.include_router(admin_stats.router)
+app.include_router(admin_audit.router)
 app.include_router(media.router)
 # Giữ đường dẫn cũ /api/analytics (client hiện tại) và đường dẫn theo hợp đồng /api/v1/analytics.
 app.include_router(analytics.router)
