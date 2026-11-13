@@ -44,4 +44,15 @@ Việc thay database đang vận hành là bước riêng của người vận h
 
 Không tự migration nguồn. Sao lưu trước, thử `migrate_db.py --check` trên bản sao, chỉ nâng cấp bản sao khi đã xác định thiếu analytics v2. Danh mục song ngữ được nâng cấp riêng bằng `prepare_category_bilingual.py` nếu thiếu cột; script từ chối khi đã áp dụng. Hai script có `--backup` bắt buộc khi ghi; xem tài liệu script và [RUNNING](../../RUNNING.md). Kiểm tra lại ứng dụng trên bản sao trước khi người vận hành quyết định nâng cấp nguồn.
 
-Ngày 06/11: ba regression test kiểm tra WAL/transaction chưa commit, dữ liệu/version sau phục hồi, từ chối nguồn thiếu/đích có sẵn/đích trùng nguồn và phát hiện vi phạm khóa ngoại. [verify_handoff.py](../testing/tools/verify_handoff.py) đã init/seed mới, backup, phục hồi vào tên mới và đối chiếu toàn bộ bảy bảng cùng `user_version`, rồi đăng nhập qua HTTP thật. Đây là rehearsal trên database tạm, không chứng minh backup vận hành dài ngày hoặc backup ảnh. Ảnh hiện chỉ là URL tham chiếu; upload ảnh tạm gác.
+Ngày 06/11: ba regression test kiểm tra WAL/transaction chưa commit, dữ liệu/version sau phục hồi, từ chối nguồn thiếu/đích có sẵn/đích trùng nguồn và phát hiện vi phạm khóa ngoại. [verify_handoff.py](../testing/tools/verify_handoff.py) đã init/seed mới, backup, phục hồi vào tên mới và đối chiếu toàn bộ bảy bảng cùng `user_version`, rồi đăng nhập qua HTTP thật. Đây là rehearsal trên database tạm, không chứng minh backup vận hành dài ngày hoặc backup ảnh.
+
+## Ảnh tải lên
+
+Từ 09/11 (phần mở rộng A), ảnh Admin tải lên nằm ngoài database, ở `storage/uploads/pois/` (hoặc thư mục đặt bằng `SAIGON_UPLOADS`); database chỉ giữ đường dẫn `/api/media/pois/<tệp>`. `backup_db.py` và `start-system.ps1` **chỉ sao lưu database**, nên phục hồi một mình tệp `.db` sẽ làm các địa điểm có ảnh tải lên trỏ tới tệp không còn. Khi sao lưu, chép thư mục ảnh cùng lúc và đặt cùng mốc thời gian:
+
+```powershell
+$stamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
+Copy-Item -LiteralPath 'storage/uploads' -Destination "backups/uploads-$stamp" -Recurse
+```
+
+Khi phục hồi, dừng API rồi chép thư mục ảnh cùng mốc trở lại `storage/uploads/`. Ảnh URL HTTP(S) bên ngoài (như 5 ảnh Wikimedia demo) không cần sao lưu. Quy trình này chưa được diễn tập.
