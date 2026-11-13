@@ -3,13 +3,13 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { mediaUrl } from '../services';
 import { colors, radius, shadow, space } from '../theme';
 
-export default function PoiCard({ poi, categoryName, onPress }) {
+export default function PoiCard({ poi, categoryName, onPress, distanceLabel = '', distanceA11y = '' }) {
   const uri = mediaUrl(poi.image_url);
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${poi.name}. ${poi.address}`}
+      accessibilityLabel={`${poi.name}. ${poi.address}${distanceA11y ? `. ${distanceA11y}` : ''}`}
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
     >
       {uri ? (
@@ -20,7 +20,10 @@ export default function PoiCard({ poi, categoryName, onPress }) {
         </View>
       )}
       <View style={styles.body}>
-        {categoryName ? <Text style={styles.cat}>{categoryName}</Text> : null}
+        <View style={styles.metaRow}>
+          {categoryName ? <Text style={styles.cat}>{categoryName}</Text> : null}
+          {distanceLabel ? <Text style={styles.dist}>{distanceLabel}</Text> : null}
+        </View>
         <Text style={styles.name}>{poi.name}</Text>
         <Text style={styles.addr} numberOfLines={2}>{poi.address}</Text>
       </View>
@@ -34,6 +37,8 @@ const styles = StyleSheet.create({
   ph: { backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   phText: { color: '#fff', fontSize: 32, fontWeight: '800' },
   body: { flex: 1, padding: space.md, gap: 2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  dist: { color: colors.text, fontSize: 12, fontWeight: '700', backgroundColor: '#fdf1d0', borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 1, overflow: 'hidden' },
   cat: { color: colors.accent, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
   name: { color: colors.text, fontSize: 17, fontWeight: '700' },
   addr: { color: colors.muted, fontSize: 13 },
