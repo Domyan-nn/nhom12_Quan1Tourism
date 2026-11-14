@@ -101,6 +101,12 @@ Nếu clone mới, tạo `.venv` bằng `python -m venv .venv` trước. DB chí
 
 ## Kiểm thử và build (tùy chọn, không cần để mở demo)
 
+Trước khi thử thủ công, thử trên điện thoại hoặc sau khi cài mới, kiểm tra máy bằng script chỉ đọc (không tạo, không migrate DB). Script báo schema DB, dữ liệu demo, tệp ảnh tải lên, API qua địa chỉ LAN và cấu hình `apps/mobile/.env`; thoát mã 1 nếu còn lỗi chặn:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-test-readiness.ps1
+```
+
 Từ gốc repo, chạy các lệnh sau trong môi trường đã cài dependency. Browser test tự tạo SQLite tạm và chạy backend cùng hai ứng dụng trên cổng 18082, 18173, 18174, 18175. Cần Microsoft Edge; cả bốn cổng phải trống.
 
 ```powershell

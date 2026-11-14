@@ -16,6 +16,26 @@ Bản clone sạch của `main` (commit `99e3d88`, 12/11, gồm phần mở rộ
 
 Phần mở rộng C: chi tiết thiết kế, giới hạn và việc còn lại ở [c-audit-log.md](../project/c-audit-log.md). DB chính `backend/data/saigon_stories.db` trên từng máy demo phải được migrate lên schema 5 (RUNNING.md) trước khi bật API mới.
 
+## Chuẩn bị kiểm thử phần còn lại — 14/11/2026
+
+Nền `main` `608bac1` (gồm A, B web, C và bảng phân công hoàn thiện). Windows, Python 3.12, Node 26. Kế hoạch các ca còn lại: [ke-hoach-kiem-thu-con-lai-2026-11-14.md](ke-hoach-kiem-thu-con-lai-2026-11-14.md).
+
+| Việc | Kết quả |
+| --- | --- |
+| Migration 005 trên DB chính `backend/data/saigon_stories.db` | `--check` đạt rồi áp dụng; `user_version = 5`; `integrity_check` ok, `foreign_key_check` rỗng; dữ liệu giữ nguyên (5 địa điểm, 10 bài). Bản trước: `backups/before-migration-005-20261114T071912Z.db` |
+| API khởi động trên DB chính (TestClient, tắt dọn thống kê) | `/api/v1/health` 200; `/api/v1/pois` 5 địa điểm; `/api/v1/admin/audit-log` không token 401 |
+| Backend `unittest discover -s backend/tests` | **132/132** đạt |
+| Guest Node + Vitest | **40/40** + **20/20** |
+| Build Admin và guest | Đạt |
+| Mobile Jest | **134** đạt + 4 HTTP bỏ qua |
+| CI GitHub trên `608bac1` | Xanh 5/5 job, gồm e2e Playwright/Edge |
+| PR #7 `feat/b-near-me-mobile` (chạy tại máy, worktree tạm) | Mobile **150** đạt + 4 bỏ qua (thêm 16 ca), guest 40 + 20; CI của PR xanh 5/5 (gồm 5 ca `nearMe.spec.js`). Chờ duyệt và merge |
+| `scripts/check-test-readiness.ps1` trên DB chính | Mọi mục DB đạt; trên bản sao lưu schema 4 báo đúng lỗi "run migration 005 first" |
+
+TC-AUD-06 (tab Nhật ký, Playwright) đã đạt trong job e2e của CI trên `99e3d88` ngày 12/11; ghi bổ sung vào test-cases. Chưa có kết quả: toàn bộ ca thực địa trên điện thoại (FT-1..6, 8..27), cài mới trên máy khác (NFR06), Chrome (NFR10).
+
+Phát hiện khi kiểm tra máy: biến môi trường người dùng `SAIGON_DATABASE` vẫn trỏ tới `backend/data/local-dev.db` (đã xóa ngày 07/11). `start-system.ps1` tự đặt đường dẫn nên không bị ảnh hưởng; chạy uvicorn tay thì phải đặt lại biến hoặc xóa biến này.
+
 ## Phần mở rộng A: upload ảnh và ghi công ảnh — 09/11/2026
 
 Nhánh `feat/a-image-upload` tách từ `main` `bfe907c`, thay đổi chưa commit. Phân công ở [phan-cong-ABCG-2026-11-10.md](../project/phan-cong-ABCG-2026-11-10.md).

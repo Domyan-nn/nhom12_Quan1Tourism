@@ -65,8 +65,18 @@ Cập nhật 14/11/2026, `main` `99e3d88` (bản gốc 09/11, `c0c01ad`). Nối 
 
 | Hạng mục | Liên quan | Việc cần làm |
 | --- | --- | --- |
-| Ca thiết bị chưa có kết quả/minh chứng | F01, F02, F04, F12 | Chạy FT-1..6, 8..23 trên điện thoại với API thật; lưu ảnh/video vào `docs/testing/evidence/` và ghi vào phiếu |
+| Ca thiết bị chưa có kết quả/minh chứng | F01, F02, F04, F12, B, F07 | Chạy FT-1..6, 8..27 trên điện thoại với API thật theo [kế hoạch 14/11](ke-hoach-kiem-thu-con-lai-2026-11-14.md); lưu ảnh/video vào `docs/testing/evidence/` theo [quy ước đặt tên](evidence/README.md) và ghi vào phiếu |
 | HTTPS khi truy cập công khai | NFR01 | Ngoài phạm vi demo LAN; nêu là giới hạn trong báo cáo |
-| Upload ảnh và ghi công tác giả trên ảnh | F07 | Đã làm 09/11 (phần mở rộng A); còn thử hiển thị ghi công trên điện thoại thật |
-| Nhật ký thao tác Admin (phần mở rộng C) | UC05–UC09, BR09, BR10 | Backend + tab Nhật ký đã làm 12/11 (`TC-AUD-01..05`, `TC-DB-11`); còn chạy Playwright `TC-AUD-06`, review PR, migrate DB chính và thêm vào PRD (bảng thứ 8, mục 7.1) |
-| Cài mới toàn hệ thống trên máy khác | NFR06 | Thử theo RUNNING.md trên một máy chưa cài, ghi kết quả |
+| Upload ảnh và ghi công tác giả trên ảnh | F07 | Đã làm 09/11 (phần mở rộng A); còn thử hiển thị ghi công trên điện thoại thật (TC-07-09, FT-27) |
+| Nhật ký thao tác Admin (phần mở rộng C) | UC05–UC09, BR09, BR10 | Đã làm 12/11; `TC-AUD-01..06`, `TC-DB-11` đạt (TC-AUD-06 qua job e2e của CI). DB chính đã migrate lên schema 5 ngày 14/11 (bản trước: `backups/before-migration-005-20261114T071912Z.db`); máy demo khác tự migrate. Còn thêm vào PRD (bảng thứ 8, mục 7.1) |
+| Gần tôi (phần mở rộng B) | BR07 | Web đã merge (PR #4); mobile và Playwright ở PR #7 (CI xanh, chờ duyệt). Còn merge PR #7 và thử trên điện thoại (TC-NEAR-07) |
+| Cài mới toàn hệ thống trên máy khác | NFR06 | Thử theo RUNNING.md trên một máy chưa cài, chạy `scripts/check-test-readiness.ps1`, ghi kết quả |
+
+## 5. Phần mở rộng ngoài F01–F12
+
+| Phần | Yêu cầu | Quy tắc | API / mã nguồn chính | Ca kiểm thử | Trạng thái 14/11 |
+| --- | --- | --- | --- | --- | --- |
+| A. Upload ảnh và ghi công ảnh | Admin tải JPG/PNG/WebP ≤ 2 MB, ghi công ≤ 300 ký tự hiện dưới ảnh ở web và mobile | BR04, NFR01 | `PUT/DELETE /admin/pois/{id}/image`, `GET /api/media/pois/{file}`; `be/services/media.py`, migration 004 | TC-07-06 → TC-07-09, TC-DB-10 | Tự động đạt; điện thoại (TC-07-09) chưa thử |
+| B. Gần tôi | Sắp danh sách Khám phá theo khoảng cách trên máy khách, không gửi tọa độ | BR07, NFR11 | Không có API mới; `guest/features/nearMe/`, `mobile/features/places/nearMe*.js`, `useNearMe.js` | TC-NEAR-01 → TC-NEAR-07 | Web đạt; mobile đạt CI PR #7 (chưa merge); điện thoại chưa thử |
+| C. Nhật ký thao tác Admin | Mỗi thao tác quản trị thành công ghi một dòng; tab Nhật ký | BR09, BR10 | `GET /admin/audit-log`; `be/services/audit.py`, migration 005 | TC-AUD-01 → TC-AUD-06, TC-DB-11 | Đạt |
+| G. Chạy bản build bằng một lệnh | — | — | Chưa làm | — | Chưa làm; theo quy tắc cắt phạm vi 13/11, ghi là hướng phát triển nếu nhóm chốt cắt |
