@@ -61,14 +61,14 @@ if ($LASTEXITCODE -ne 0) { throw 'Sao lưu thất bại' }
 
 DB schema 2 phải chạy 004 rồi mới chạy 005. Máy demo nào có DB chính riêng (Git bỏ qua) cũng cần làm bước này.
 
-Ảnh tải lên lưu ở `storage/uploads/` (Git bỏ qua); khi chuyển DB sang máy khác, chép kèm thư mục này. API không tự init/seed/migrate. Retention dọn thống kê ngoài cửa sổ 30 ngày khi startup và mỗi 00:00 Việt Nam. Giữ bản sao lưu trước khi chạy. Health chỉ xác nhận tiến trình; kiểm tra thêm `/api/v1/categories` và `/api/v1/pois`.
+Ảnh tải lên lưu ở `storage/uploads/pois/` (Git bỏ qua; đổi thư mục gốc bằng biến `SAIGON_UPLOADS`); khi chuyển DB sang máy khác, chép kèm thư mục này. API không tự init/seed/migrate. Retention dọn thống kê ngoài cửa sổ 30 ngày khi startup và mỗi 00:00 Việt Nam. Giữ bản sao lưu trước khi chạy. Health chỉ xác nhận tiến trình; kiểm tra thêm `/api/v1/categories` và `/api/v1/pois`.
 
-run admin
+Chạy Admin web:
 ```powershell
 $env:Path = "C:\Program Files\nodejs;$env:Path"
 npm.cmd --prefix apps/admin-web run dev -- --strictPort --configLoader runner
 ```
-run quest web
+Chạy Guest web:
 ```powershell
 $env:Path = "C:\Program Files\nodejs;$env:Path"
 $env:VITE_USE_MOCK = 'false'

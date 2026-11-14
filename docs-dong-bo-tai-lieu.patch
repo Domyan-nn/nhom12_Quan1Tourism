@@ -1,0 +1,771 @@
+diff --git a/CAU_TRUC_DU_AN.md b/CAU_TRUC_DU_AN.md
+index 272bc03..8f30672 100644
+--- a/CAU_TRUC_DU_AN.md
++++ b/CAU_TRUC_DU_AN.md
+@@ -1,6 +1,6 @@
+ # Cấu trúc hệ thống Saigon Stories
+ 
+-Cập nhật 07/11/2026: mã ứng dụng, dữ liệu vận hành, bản sao lưu và tài liệu được đặt riêng. Cả ba ứng dụng dùng chung API FastAPI và một DB chính.
++Cập nhật 07/11/2026, bổ sung 14/11/2026 (schema 5, ảnh tải lên, nhật ký Admin, thư mục `docs/project/`): mã ứng dụng, dữ liệu vận hành, bản sao lưu và tài liệu được đặt riêng. Cả ba ứng dụng dùng chung API FastAPI và một DB chính.
+ 
+ ```text
+ nhom12_Quan1Tourism/
+@@ -26,13 +26,14 @@ nhom12_Quan1Tourism/
+ │   └── stop-system.ps1            # Dừng các dịch vụ đã khởi chạy
+ ├── storage/                       # Dữ liệu runtime, Git bỏ qua
+ │   ├── runtime/                   # Log, PID, biên bản chuyển DB cục bộ
+-│   └── uploads/                   # Vị trí dành cho ảnh; upload còn tạm gác
++│   └── uploads/                   # Ảnh Admin tải lên (pois/); sao lưu cùng DB
+ ├── backups/                       # Snapshot và ZIP dự phòng, Git bỏ qua
+ ├── docs/
+ │   ├── analysis-design/           # Thiết kế và SQL tham khảo
+ │   ├── deployment/                # Cài đặt, vận hành, sao lưu
+ │   ├── diagrams/                  # Nguồn sơ đồ
+ │   ├── mobile/                    # Sơ đồ, checklist và kết quả thiết bị
++│   ├── project/                   # Phân công, tiến độ phần mở rộng A/B/C/G, hướng dẫn nắm backend
+ │   ├── requirements/              # Tài liệu yêu cầu
+ │   ├── testing/                   # Test plan, kết quả, công cụ fixture
+ │   └── final-report/              # Tài liệu bàn giao
+@@ -44,7 +45,7 @@ nhom12_Quan1Tourism/
+ 
+ ## DB chính và kết nối
+ 
+-`backend/data/saigon_stories.db` đã được thay bằng snapshot kiểm tra hợp lệ của `local-dev.db`, giữ nguyên schema, ID, tài khoản/mật khẩu, trạng thái nội dung và dữ liệu bảy bảng. DB chính dùng `user_version=2`. Trước khi khởi động lại API, đã đối chiếu toàn bộ schema và từng dòng dữ liệu với nguồn; không seed hoặc tự công bố thêm địa điểm.
++`backend/data/saigon_stories.db` đã được thay bằng snapshot kiểm tra hợp lệ của `local-dev.db`, giữ nguyên schema, ID, tài khoản/mật khẩu, trạng thái nội dung và dữ liệu bảy bảng. Tại thời điểm chuyển (07/11) DB chính ở `user_version=2`; sau đó đã nâng lên `user_version=5` (migration 004 ghi công ảnh, 005 nhật ký Admin, thêm bảng `admin_audit_log` thành bảng thứ tám) và API từ chối DB thấp hơn, xem [RUNNING](RUNNING.md). Trước khi khởi động lại API, đã đối chiếu toàn bộ schema và từng dòng dữ liệu với nguồn; không seed hoặc tự công bố thêm địa điểm.
+ 
+ Các DB local-dev/demo/preview và bản backup rời cũ đã được xóa sau khi lưu ZIP dự phòng ở `backups/`. Trong `backend/data/` chỉ giữ DB chính và `.gitkeep`. SQL tham khảo thống kê chuyển từ `backend/data/schema_analytics.sql` sang `docs/analysis-design/analytics-schema-reference.sql`; migration thực tế vẫn nằm tại `backend/migrations/`.
+ 
+diff --git a/README.md b/README.md
+index 8297560..2766249 100644
+--- a/README.md
++++ b/README.md
+@@ -6,7 +6,9 @@
+ 
+ Dự án đã có các luồng UC01–UC12 trên FastAPI/SQLite và các ứng dụng: xác thực Admin, danh mục, địa điểm, thuyết minh, công bố/ẩn và thống kê theo đồng ý. Admin React có Dashboard và điều khiển công bố/ẩn. Guest React có tìm/lọc, Leaflet/OpenStreetMap, Web Speech và quyền riêng tư. Mobile Expo đã nối UC12 với API thật từ commit `48a0908`; GPS chỉ theo dõi foreground phía mobile. Giao diện VI/EN độc lập với các ngôn ngữ bài đã lưu, không tự dịch nội dung.
+ 
+-Đợt bàn giao 06/11/2026 bổ sung kiểm thử chéo, sửa công bố/ẩn, Dashboard, vòng đời TTS và rút đồng ý mobile; xem [báo cáo cùng bảng F01–F12/NFR01–NFR08](docs/testing/integration-2026-11-06.md). [Kiểm tra nghiệm thu kỹ thuật trên commit `4723a49`](docs/testing/acceptance-readiness-2026-11-06.md) xác nhận các bộ tự động backend/web đạt và bản đồ web tải được ảnh nền thật qua nguồn dự phòng; dự án sẵn sàng cho bước demo và kiểm thử hiện trường. Ngày 07/11, người dùng xác nhận Admin/Guest web đạt và mobile map, quyền vị trí, GPS, TTS VI/EN hoạt động ổn; UC12 mobile còn chờ xác nhận trên điện thoại với API thật. Xem [kết quả hiện tại](docs/testing/test-results.md). Nội dung demo được duyệt và cài mới trên máy khác vẫn cần nhóm xác minh. Seed chỉ tạo bản nháp với nội dung placeholder, chưa có ảnh; ngày 09/11 năm địa điểm demo được gắn ảnh Wikimedia Commons có giấy phép mở (xem [nguồn và ghi công](docs/deployment/demo-images.md)). Upload ảnh **tạm gác**, Admin nhập đường dẫn ảnh HTTP(S).
++Phần mở rộng ngoài F01–F12 (kế hoạch ở [phân công A/B/C/G](docs/project/phan-cong-ABCG-2026-11-10.md)): **A** upload ảnh và ghi công ảnh (migration 004) đã vào `main`; **B** "Gần tôi" ([ghi chú](docs/project/b-near-me.md)) có hàm sắp xếp và nút trên web khách, nút trên mobile đang chờ PR; **C** nhật ký thao tác Admin (migration 005, tab Nhật ký) đã vào `main`, chờ chạy Playwright và migrate các DB demo; **G** chạy bản build bằng một lệnh chưa làm. Schema hiện tại là `user_version = 5`.
++
++Đợt bàn giao 06/11/2026 bổ sung kiểm thử chéo, sửa công bố/ẩn, Dashboard, vòng đời TTS và rút đồng ý mobile; xem [báo cáo cùng bảng F01–F12/NFR01–NFR08](docs/testing/integration-2026-11-06.md). [Kiểm tra nghiệm thu kỹ thuật trên commit `4723a49`](docs/testing/acceptance-readiness-2026-11-06.md) xác nhận các bộ tự động backend/web đạt và bản đồ web tải được ảnh nền thật qua nguồn dự phòng; dự án sẵn sàng cho bước demo và kiểm thử hiện trường. Ngày 07/11, người dùng xác nhận Admin/Guest web đạt và mobile map, quyền vị trí, GPS, TTS VI/EN hoạt động ổn; UC12 mobile còn chờ xác nhận trên điện thoại với API thật. Xem [kết quả hiện tại](docs/testing/test-results.md). Nội dung demo được duyệt và cài mới trên máy khác vẫn cần nhóm xác minh. Seed chỉ tạo bản nháp với nội dung placeholder, chưa có ảnh; ngày 09/11 năm địa điểm demo được gắn ảnh Wikimedia Commons có giấy phép mở (xem [nguồn và ghi công](docs/deployment/demo-images.md)). Từ 09/11 (phần mở rộng A), Admin tải được ảnh JPG/PNG/WebP ≤ 2 MB hoặc nhập đường dẫn ảnh HTTP(S), kèm **ghi công ảnh** hiển thị dưới ảnh ở trang chi tiết web khách và mobile. Kết quả chạy lại các bộ test tự động ngày 14/11 trên `99e3d88` ở [test-results.md](docs/testing/test-results.md).
+ 
+ Mục lục toàn bộ tài liệu nộp môn (yêu cầu, sơ đồ, kế hoạch/ca kiểm thử, ma trận truy vết): [docs/README.md](docs/README.md). Quy ước làm việc với Git, PR và CI: [CONTRIBUTING.md](CONTRIBUTING.md). Xem [hướng dẫn chạy](RUNNING.md), [dữ liệu mẫu](backend/scripts/README.md), [hợp đồng API](docs/API_CONTRACT.md), [sao lưu/phục hồi](docs/deployment/backup-restore.md) và [checklist demo 07/11](docs/deployment/demo-guide.md). API dọn thống kê quá cửa sổ 30 ngày lúc khởi động và mỗi 00:00 Việt Nam; chọn đúng database và sao lưu trước khi chạy.
+ 
+@@ -25,11 +27,11 @@ Bật tất cả: `powershell -ExecutionPolicy Bypass -File scripts/start-system
+ | `backend/data/` | Chỉ DB chính `saigon_stories.db`; không đưa dữ liệu vận hành lên Git |
+ | `scripts/` | Bật/tắt toàn hệ thống bằng PowerShell |
+ | `backups/`, `storage/runtime/` | Snapshot dự phòng, log và trạng thái dịch vụ cục bộ; Git bỏ qua |
+-| `storage/uploads/` | Vị trí dự kiến cho ảnh tải lên; không đưa dữ liệu vận hành lên Git |
++| `storage/uploads/` | Ảnh địa điểm do Admin tải lên, ở `storage/uploads/pois/` (đổi thư mục bằng `SAIGON_UPLOADS`); Git bỏ qua, cần sao lưu cùng DB |
+ 
+ Theo thiết kế dự kiến, các ứng dụng dùng chung FastAPI; backend truy cập SQLite cục bộ. GPS tự phát được xử lý trên mobile trong khi ứng dụng hiển thị. Bản đồ và TTS phụ thuộc dịch vụ hoặc thiết bị.
+ 
+-DB chính duy nhất là `backend/data/saigon_stories.db`, đã nhận nguyên cấu trúc và dữ liệu từ `local-dev.db` ngày 07/11/2026. Admin, Guest web và mobile mặc định dùng API thật chung DB này. `SAIGON_DATABASE` có thể chọn DB riêng khi kiểm thử/phục hồi; không tự init hoặc seed DB chính. Kết nối và repository nằm trong `backend/app/db/`, request schema trong `backend/app/schemas/` và một số route, migration trong `backend/migrations/`, script trong `backend/scripts/`. Không có lớp ORM trong `app/models/`.
++DB chính duy nhất là `backend/data/saigon_stories.db`, đã nhận nguyên cấu trúc và dữ liệu từ `local-dev.db` ngày 07/11/2026. Admin, Guest web và mobile mặc định dùng API thật chung DB này. `SAIGON_DATABASE` có thể chọn DB riêng khi kiểm thử/phục hồi; không tự init hoặc seed DB chính. Kết nối và repository nằm trong `backend/app/db/`, request schema trong `backend/app/schemas/` và một số route, migration 001–005 trong `backend/migrations/` ([thứ tự và cách nhận diện](backend/migrations/README.md)), script trong `backend/scripts/`. DB chính phải ở `user_version = 5`: DB cũ cần chạy migration 004 rồi 005 (lệnh trong [RUNNING.md](RUNNING.md)), nếu không API từ chối khởi động. Không có lớp ORM trong `app/models/`.
+ 
+ ## Ánh xạ khi chuyển sang apps
+ 
+diff --git a/RUNNING.md b/RUNNING.md
+index cf9a937..36cbeff 100644
+--- a/RUNNING.md
++++ b/RUNNING.md
+@@ -61,14 +61,14 @@ if ($LASTEXITCODE -ne 0) { throw 'Sao lưu thất bại' }
+ 
+ DB schema 2 phải chạy 004 rồi mới chạy 005. Máy demo nào có DB chính riêng (Git bỏ qua) cũng cần làm bước này.
+ 
+-Ảnh tải lên lưu ở `storage/uploads/` (Git bỏ qua); khi chuyển DB sang máy khác, chép kèm thư mục này. API không tự init/seed/migrate. Retention dọn thống kê ngoài cửa sổ 30 ngày khi startup và mỗi 00:00 Việt Nam. Giữ bản sao lưu trước khi chạy. Health chỉ xác nhận tiến trình; kiểm tra thêm `/api/v1/categories` và `/api/v1/pois`.
++Ảnh tải lên lưu ở `storage/uploads/pois/` (Git bỏ qua; đổi thư mục gốc bằng biến `SAIGON_UPLOADS`); khi chuyển DB sang máy khác, chép kèm thư mục này. API không tự init/seed/migrate. Retention dọn thống kê ngoài cửa sổ 30 ngày khi startup và mỗi 00:00 Việt Nam. Giữ bản sao lưu trước khi chạy. Health chỉ xác nhận tiến trình; kiểm tra thêm `/api/v1/categories` và `/api/v1/pois`.
+ 
+-run admin
++Chạy Admin web:
+ ```powershell
+ $env:Path = "C:\Program Files\nodejs;$env:Path"
+ npm.cmd --prefix apps/admin-web run dev -- --strictPort --configLoader runner
+ ```
+-run quest web
++Chạy Guest web:
+ ```powershell
+ $env:Path = "C:\Program Files\nodejs;$env:Path"
+ $env:VITE_USE_MOCK = 'false'
+diff --git a/apps/admin-web/README.md b/apps/admin-web/README.md
+index 8b5e4c7..622bbee 100644
+--- a/apps/admin-web/README.md
++++ b/apps/admin-web/README.md
+@@ -5,10 +5,10 @@
+ Web khách là ứng dụng riêng tại [apps/guest-web](../guest-web/README.md).
+ # Quản lý địa điểm và thuyết minh
+ 
+-Sau khi đăng nhập, chọn địa điểm để xem/sửa hoặc dùng nút thêm. Nhập tên, địa chỉ, danh mục, tọa độ, bán kính và URL ảnh HTTP(S) tùy chọn; địa điểm mới luôn là draft. Xóa yêu cầu xác nhận và xóa các bài liên quan. Chọn địa điểm để thêm bài bằng mã ngôn ngữ (ví dụ `vi`, `en`, `fr`) hoặc sửa tiêu đề và nội dung. Ngôn ngữ giao diện VI/EN độc lập với ngôn ngữ bài. Dữ liệu nhập được giữ khi lưu thất bại trong phiên trang.
++Sau khi đăng nhập, chọn địa điểm để xem/sửa hoặc dùng nút thêm. Nhập tên, địa chỉ, danh mục, tọa độ, bán kính và ảnh tùy chọn (URL HTTP(S), hoặc tải tệp JPG/PNG/WebP ≤ 2 MB sau khi đã lưu địa điểm, kèm **ghi công ảnh**; có nút **Xóa ảnh**); địa điểm mới luôn là draft. Xóa yêu cầu xác nhận và xóa các bài liên quan. Chọn địa điểm để thêm bài bằng mã ngôn ngữ (ví dụ `vi`, `en`, `fr`) hoặc sửa tiêu đề và nội dung. Ngôn ngữ giao diện VI/EN độc lập với ngôn ngữ bài. Dữ liệu nhập được giữ khi lưu thất bại trong phiên trang.
+ 
+ Sau khi lưu dữ liệu và bài thuyết minh đã được nhóm kiểm duyệt, dùng **Công bố** để chuyển draft/hidden thành published. Backend kiểm tra lại địa điểm và ít nhất một bài hợp lệ; giao diện hiển thị các mục thiếu khi chưa thể công bố. **Ẩn địa điểm** chuyển published thành hidden và loại địa điểm khỏi API khách. Cả hai thao tác đều yêu cầu xác nhận. Không công bố seed/placeholder chưa được duyệt.
+ 
+ Dashboard tích hợp số lượt hôm nay, 7 ngày và bộ lọc tối đa 30 ngày theo giờ Việt Nam. Phiên hoạt động lấy cửa sổ 90 giây và tự làm mới mỗi 30 giây khi trang hiển thị; lỗi hiển thị Không khả dụng, không thay số liệu bằng 0. Khi đổi khoảng ngày hoặc làm mới, yêu cầu cũ bị hủy để tránh ghi đè số liệu mới.
+ 
+-Upload tệp ảnh đang tạm gác; chưa có xóa riêng bài thuyết minh. Giữ URL ảnh HTTP(S) hiện có, không dùng URL tệp cục bộ. Xem bằng chứng và giới hạn nghiệm thu trong [báo cáo bàn giao](../../docs/testing/integration-2026-11-06.md).
++Có thể xóa riêng từng bài thuyết minh; địa điểm đang Công khai phải còn ít nhất một bài. Tab **Nhật ký** (phần mở rộng C) liệt kê các thao tác quản trị đã thành công, mới nhất trước, giờ Việt Nam. Không dùng URL tệp cục bộ cho ảnh. Xem bằng chứng và giới hạn nghiệm thu trong [báo cáo bàn giao](../../docs/testing/integration-2026-11-06.md).
+diff --git a/docs/README.md b/docs/README.md
+index c46d0af..dc0f0b8 100644
+--- a/docs/README.md
++++ b/docs/README.md
+@@ -1,10 +1,10 @@
+ # Tài liệu dự án
+ 
+-Mục lục cho bộ tài liệu nộp môn Công nghệ phần mềm. Cập nhật 09/11/2026.
++Mục lục cho bộ tài liệu nộp môn Công nghệ phần mềm. Cập nhật 14/11/2026.
+ 
+ | Nhóm | Tài liệu | Nội dung |
+ | --- | --- | --- |
+-| Yêu cầu | [PRD](../PRD_Saigon_Stories_Quan1_SQLite.docx) (bản 1.1) | Lịch sử phiên bản, thuật ngữ, vấn đề, người dùng, chỉ số đánh giá, phạm vi, F01–F12, BR01–BR19, NFR01–NFR11, đặc tả UC01–UC12 |
++| Yêu cầu | [PRD](../PRD_Saigon_Stories_Quan1_SQLite.docx) (bản 1.1; bản 1.2 đang chờ cập nhật, xem [requirements/](requirements/README.md)) | Lịch sử phiên bản, thuật ngữ, vấn đề, người dùng, chỉ số đánh giá, phạm vi, F01–F12, BR01–BR19, NFR01–NFR11, đặc tả UC01–UC12 |
+ | | [requirements/](requirements/README.md) | Quy ước quản lý phiên bản PRD |
+ | Phân tích – thiết kế | [use-cases.md](analysis-design/use-cases.md) | Danh sách use case |
+ | | [architecture.md](analysis-design/architecture.md) | Kiến trúc đối chiếu mã nguồn |
+@@ -25,6 +25,9 @@ Mục lục cho bộ tài liệu nộp môn Công nghệ phần mềm. Cập nh
+ | Quản lý dự án | [CONTRIBUTING.md](../CONTRIBUTING.md) | Quy ước nhánh, commit, PR, review, CI, migration, phiên bản |
+ | | [.github/](../.github/) | CI GitHub Actions, mẫu PR, mẫu issue |
+ | | [phan-cong-ABCG-2026-11-10.md](project/phan-cong-ABCG-2026-11-10.md) | Phân công 3 người cho phần mở rộng A, B, C, G và bảng theo dõi hằng ngày |
++| | [phan-cong-hoan-thien-2026-11-13.md](project/phan-cong-hoan-thien-2026-11-13.md) | Kế hoạch hoàn thiện, việc còn lại đến khi nộp |
++| | [b-near-me.md](project/b-near-me.md), [c-audit-log.md](project/c-audit-log.md) | Yêu cầu, thiết kế, tiến độ và giới hạn của phần mở rộng B và C |
++| | [huong-dan-nam-backend-api-ci.md](project/huong-dan-nam-backend-api-ci.md) | Tài liệu để thành viên nắm backend, API, CI khi bảo vệ |
+ | Báo cáo | `final-report/` | Báo cáo cuối kỳ (chưa có) |
+ 
+ Các tệp `testing/*-2026-11-0x.md` và `mobile/testing/day*.md` là nhật ký từng đợt tích hợp, giữ làm lịch sử.
+diff --git a/docs/analysis-design/api-design.md b/docs/analysis-design/api-design.md
+index 3e88cda..01ef8f3 100644
+--- a/docs/analysis-design/api-design.md
++++ b/docs/analysis-design/api-design.md
+@@ -11,11 +11,12 @@
+ - Commit `aa0d2d7` của An bổ sung UC09 publish/hide và UC10–UC11 `/api/v1/admin/stats/visits`, `/active`, cùng Dashboard Admin; giữ nguyên khi ghép phần tích hợp này. Query lọc ngày là `date_from`, `date_to`; xem mục 9 trong hợp đồng.
+ - UC12 heartbeat/revoke dưới `/api/v1/analytics/**`, cùng alias `/api/analytics/**`; router chính dùng kết nối SQLite theo request. Retention chạy lúc khởi động và mỗi 00:00 Việt Nam khi API đang chạy.
+ - Quyền Admin được kiểm tra ở backend. Khách chỉ đọc POI published; draft/hidden không xuất hiện và chi tiết trả 404 như ID không tồn tại.
++- Upload ảnh (09/11, phần mở rộng A): `PUT/DELETE /api/v1/admin/pois/{id}/image` nhận JPG/PNG/WebP ≤ 2 MB, kiểm tra cả `Content-Type` và chữ ký tệp; ảnh phục vụ công khai ở `GET /api/media/pois/{file}`. Trường `image_credit` đi kèm ảnh trong API Admin và Public.
+ - Guest web và Admin là hai ứng dụng React riêng dùng proxy Vite khi phát triển; mobile Expo dùng adapter riêng.
+ 
+ ## Chưa triển khai
+ 
+-Upload ảnh chưa có router và được loại khỏi tác vụ này. Các đường dẫn cũ `/api/public`, `/api/admin/auth`, `analytics/withdraw` không dùng cho tích hợp mới.
++Các đường dẫn cũ `/api/public`, `/api/admin/auth`, `analytics/withdraw` không dùng cho tích hợp mới.
+ 
+ Migration thống kê hiện có đáp ứng UC12, không thêm schema mới. UC12 mobile đã nối HTTP từ commit `48a0908`, gồm foreground/NetInfo và lưu yêu cầu rút để gửi lại. Xem schema, thời hạn dấu thu hồi và nâng cấp an toàn trong hợp đồng và [RUNNING](../../RUNNING.md).
+ 
+diff --git a/docs/analysis-design/architecture.md b/docs/analysis-design/architecture.md
+index 1689724..93d842a 100644
+--- a/docs/analysis-design/architecture.md
++++ b/docs/analysis-design/architecture.md
+@@ -8,6 +8,6 @@
+ 
+ FastAPI chính đã đăng ký Public, Auth, Categories, Admin POI/Narration/Status, Admin Stats và Analytics; UC12 mobile cũng gọi chung backend. Repository SQL và services dùng SQLite nhúng, không có máy chủ DB riêng hay ORM. Admin/guest là hai Vite app độc lập, không có npm workspace chung. Public base `/api/v1`, mobile cấu hình host kết thúc `/api` và style `v1`.
+ 
+-Web map dùng Leaflet/OSM; native map dùng react-native-maps. TTS dùng Web Speech/Expo Speech và nội dung database. GPS foreground chạy phía mobile; không lưu/gửi tọa độ cho analytics. Ảnh hiện là URL tham chiếu, chưa có IImageStore/upload thực thi. Retention là tác vụ trong FastAPI lifespan chạy startup và 00:00 Việt Nam, không phải service riêng. Dev web dùng proxy Vite; điện thoại gọi HTTP LAN trên mạng phát triển tin cậy. HTTPS/reverse proxy là cấu hình triển khai cần xác minh riêng.
++Web map dùng Leaflet/OSM; native map dùng react-native-maps. TTS dùng Web Speech/Expo Speech và nội dung database. GPS foreground chạy phía mobile; không lưu/gửi tọa độ cho analytics. Ảnh là URL HTTP(S) hoặc tệp Admin tải lên: `backend/app/services/media.py` lưu tệp ở `storage/uploads/pois/` (đổi bằng `SAIGON_UPLOADS`), route `/api/media/pois/{file}` phục vụ ảnh qua proxy `/api` sẵn có; cột `pois.image_credit` (migration 004) lưu ghi công ảnh. Retention là tác vụ trong FastAPI lifespan chạy startup và 00:00 Việt Nam, không phải service riêng. Dev web dùng proxy Vite; điện thoại gọi HTTP LAN trên mạng phát triển tin cậy. HTTPS/reverse proxy là cấu hình triển khai cần xác minh riêng.
+ 
+-Sơ đồ DOT/SVG/PNG trong docs/mobile/diagrams còn là thiết kế đề xuất. Thuận cần thêm kết nối Admin→API vào deployment, ghi rõ đường dẫn thực tế apps/, phân biệt HTTP dev với HTTPS mục tiêu và đánh dấu poi-media/IImageStore tạm gác. Chưa render hoặc sửa hình/Word trong đợt này; [báo cáo](../testing/integration-2026-11-06.md) ghi phần chờ xác minh.
++Sơ đồ DOT/SVG/PNG trong docs/mobile/diagrams còn là thiết kế đề xuất. Thuận cần thêm kết nối Admin→API vào deployment, ghi rõ đường dẫn thực tế apps/, phân biệt HTTP dev với HTTPS mục tiêu và thay khối poi-media/IImageStore bằng thư mục `storage/uploads/` cùng route `/api/media` đã triển khai. Chưa render hoặc sửa hình/Word trong đợt này; [báo cáo](../testing/integration-2026-11-06.md) ghi phần chờ xác minh.
+diff --git a/docs/analysis-design/data-dictionary.md b/docs/analysis-design/data-dictionary.md
+index a577081..bace9df 100644
+--- a/docs/analysis-design/data-dictionary.md
++++ b/docs/analysis-design/data-dictionary.md
+@@ -1,6 +1,6 @@
+ # Từ điển dữ liệu theo mã nguồn 06/11/2026
+ 
+-Đối chiếu PRD §7.1–7.2 và schema thực tế; không thay schema/migration trong đợt này. Nguồn: `001_initial.sql`, `002_analytics_constraints.sql`, `prepare_category_bilingual.py`, validators/routes và services. Database mới đi qua init (001 → analytics 002 → danh mục song ngữ). `user_version=2` chỉ xác nhận phiên bản analytics; vẫn phải kiểm tra cột danh mục song ngữ.
++Đối chiếu PRD §7.1–7.2 và schema thực tế; cập nhật 14/11/2026 theo migration 001–005. Nguồn: `001_initial.sql`, `002_analytics_constraints.sql`, `003_category_bilingual.sql`, `004_poi_image_credit.sql`, `005_admin_audit_log.sql`, validators/routes và services. Database mới đi qua init (001 → 005) và có `user_version=5`; từ migration 004, `user_version` là phiên bản schema chung (xem migrations/README).
+ 
+ | Bảng | Trường và kiểu | Khóa/ràng buộc và nghiệp vụ |
+ | --- | --- | --- |
+diff --git a/docs/analysis-design/database-design.md b/docs/analysis-design/database-design.md
+index 7eced88..05e0ee1 100644
+--- a/docs/analysis-design/database-design.md
++++ b/docs/analysis-design/database-design.md
+@@ -8,7 +8,7 @@ Theo PRD, SQLite có các bảng `admin_accounts`, `admin_sessions`, `categories
+ - Theo PRD, UUID và thời gian UTC ISO 8601 lưu dạng `TEXT`, giá trị logic dùng `INTEGER` 0/1. Tổng hợp ngày thống kê theo `Asia/Ho_Chi_Minh`.
+ - Bật kiểm tra khóa ngoại cho mỗi kết nối SQLite. Điều kiện công bố và xử lý heartbeat đồng thời cần được kiểm tra trong giao dịch nghiệp vụ.
+ 
+-Schema lịch sử nằm tại `backend/migrations/001_initial.sql`; `init_db.py` chạy thêm `002_analytics_constraints.sql` để database mới có schema thống kê chuẩn (user_version=2). Script từ chối database đã có bảng hoặc view. Database cũ cần dùng `scripts/migrate_db.py --check` rồi áp dụng với backup mới, xem [backend README](../../backend/README.md#nâng-cấp-schema-thống-kê). `backend/data/schema_analytics.sql` chỉ là truy vấn tham chiếu; CREATE TABLE IF NOT EXISTS không nâng cấp ràng buộc bảng cũ. Tệp database cục bộ không được lưu vào Git.
++Schema lịch sử nằm tại `backend/migrations/001_initial.sql`; `init_db.py` chạy lần lượt `001` → `005` (thống kê 002, danh mục song ngữ 003, ghi công ảnh 004, nhật ký Admin 005) nên database mới có `user_version=5`; xem [migrations/README.md](../../backend/migrations/README.md). Script từ chối database đã có bảng hoặc view. Database cũ cần dùng `scripts/migrate_db.py --check` rồi áp dụng với backup mới, xem [backend README](../../backend/README.md#nâng-cấp-schema-thống-kê). `backend/data/schema_analytics.sql` chỉ là truy vấn tham chiếu; CREATE TABLE IF NOT EXISTS không nâng cấp ràng buộc bảng cũ. Tệp database cục bộ không được lưu vào Git.
+ 
+ Hai bảng analytics kiểm tra UUID v4 chữ thường, thời gian UTC đủ 24 ký tự với ngày/giờ hợp lệ, consent INTEGER 0/1 và thứ tự created/last_seen. visit_events.session_id cho phép NULL hoặc tham chiếu phiên tồn tại, ON DELETE SET NULL; ba chỉ mục chuẩn được tạo trong 002. Migration không tự chuẩn hóa hoặc xóa dữ liệu sai; lỗi gây rollback. API analytics, dọn dữ liệu và Dashboard đã tích hợp; xem [hợp đồng](../API_CONTRACT.md).
+ 
+diff --git a/docs/analysis-design/use-cases.md b/docs/analysis-design/use-cases.md
+index 316e636..8ec7e35 100644
+--- a/docs/analysis-design/use-cases.md
++++ b/docs/analysis-design/use-cases.md
+@@ -15,4 +15,4 @@
+ | UC11 | Xem số phiên khách đang hoạt động |
+ | UC12 | Đồng ý hoặc rút đồng ý thống kê |
+ 
+-Đặc tả chi tiết, luồng ngoại lệ và quy tắc nghiệp vụ nằm trong PRD. Sơ đồ use case và hoạt động của từng UC ở [diagrams/](../diagrams/README.md); ca kiểm thử theo UC ở [test-cases.md](../testing/test-cases.md). Ngày 06/11/2026, UC01–UC12 đã có code tích hợp trong FastAPI và các ứng dụng tương ứng. [Báo cáo bàn giao](../testing/integration-2026-11-06.md) ghi riêng bằng chứng API, browser, engine giả lập và phần chưa xác minh trên thiết bị; không suy từ sự hiện diện code sang nghiệm thu toàn bộ. Upload ảnh tạm gác.
++Đặc tả chi tiết, luồng ngoại lệ và quy tắc nghiệp vụ nằm trong PRD. Sơ đồ use case và hoạt động của từng UC ở [diagrams/](../diagrams/README.md); ca kiểm thử theo UC ở [test-cases.md](../testing/test-cases.md). Ngày 06/11/2026, UC01–UC12 đã có code tích hợp trong FastAPI và các ứng dụng tương ứng. [Báo cáo bàn giao](../testing/integration-2026-11-06.md) ghi riêng bằng chứng API, browser, engine giả lập và phần chưa xác minh trên thiết bị; không suy từ sự hiện diện code sang nghiệm thu toàn bộ. Ngày 09/11 UC07 có thêm tải ảnh và ghi công ảnh (phần mở rộng A); ca kiểm thử TC-07-06.
+diff --git a/docs/deployment/backup-restore.md b/docs/deployment/backup-restore.md
+index 6be185f..7dd816e 100644
+--- a/docs/deployment/backup-restore.md
++++ b/docs/deployment/backup-restore.md
+@@ -44,4 +44,15 @@ Việc thay database đang vận hành là bước riêng của người vận h
+ 
+ Không tự migration nguồn. Sao lưu trước, thử `migrate_db.py --check` trên bản sao, chỉ nâng cấp bản sao khi đã xác định thiếu analytics v2. Danh mục song ngữ được nâng cấp riêng bằng `prepare_category_bilingual.py` nếu thiếu cột; script từ chối khi đã áp dụng. Hai script có `--backup` bắt buộc khi ghi; xem tài liệu script và [RUNNING](../../RUNNING.md). Kiểm tra lại ứng dụng trên bản sao trước khi người vận hành quyết định nâng cấp nguồn.
+ 
+-Ngày 06/11: ba regression test kiểm tra WAL/transaction chưa commit, dữ liệu/version sau phục hồi, từ chối nguồn thiếu/đích có sẵn/đích trùng nguồn và phát hiện vi phạm khóa ngoại. [verify_handoff.py](../testing/tools/verify_handoff.py) đã init/seed mới, backup, phục hồi vào tên mới và đối chiếu toàn bộ bảy bảng cùng `user_version`, rồi đăng nhập qua HTTP thật. Đây là rehearsal trên database tạm, không chứng minh backup vận hành dài ngày hoặc backup ảnh. Ảnh hiện chỉ là URL tham chiếu; upload ảnh tạm gác.
++Ngày 06/11: ba regression test kiểm tra WAL/transaction chưa commit, dữ liệu/version sau phục hồi, từ chối nguồn thiếu/đích có sẵn/đích trùng nguồn và phát hiện vi phạm khóa ngoại. [verify_handoff.py](../testing/tools/verify_handoff.py) đã init/seed mới, backup, phục hồi vào tên mới và đối chiếu toàn bộ bảy bảng cùng `user_version`, rồi đăng nhập qua HTTP thật. Đây là rehearsal trên database tạm, không chứng minh backup vận hành dài ngày hoặc backup ảnh.
++
++## Ảnh tải lên
++
++Từ 09/11 (phần mở rộng A), ảnh Admin tải lên nằm ngoài database, ở `storage/uploads/pois/` (hoặc thư mục đặt bằng `SAIGON_UPLOADS`); database chỉ giữ đường dẫn `/api/media/pois/<tệp>`. `backup_db.py` và `start-system.ps1` **chỉ sao lưu database**, nên phục hồi một mình tệp `.db` sẽ làm các địa điểm có ảnh tải lên trỏ tới tệp không còn. Khi sao lưu, chép thư mục ảnh cùng lúc và đặt cùng mốc thời gian:
++
++```powershell
++$stamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
++Copy-Item -LiteralPath 'storage/uploads' -Destination "backups/uploads-$stamp" -Recurse
++```
++
++Khi phục hồi, dừng API rồi chép thư mục ảnh cùng mốc trở lại `storage/uploads/`. Ảnh URL HTTP(S) bên ngoài (như 5 ảnh Wikimedia demo) không cần sao lưu. Quy trình này chưa được diễn tập.
+diff --git a/docs/deployment/demo-guide.md b/docs/deployment/demo-guide.md
+index 33996f7..f81e348 100644
+--- a/docs/deployment/demo-guide.md
++++ b/docs/deployment/demo-guide.md
+@@ -8,7 +8,7 @@ Các ô dưới để nhóm ghi sau khi thực hiện, không phải xác nhận
+ 
+ - [ ] Ghi `git branch --show-current`, `git rev-parse HEAD`, `git status --short`; nếu còn thay đổi, ghi rõ working tree. Không tự commit/push/merge.
+ - [ ] Ghi máy/OS, phiên bản Python/Node, browser, điện thoại/OS/Expo, người thử và mạng đang dùng. Kiểm tra giọng VI/EN thực sự có và nghe được; iPhone cần kiểm tra chế độ im lặng/âm lượng.
+-- [ ] Chọn đường dẫn tuyệt đối database demo được duyệt. Kiểm tra 2 danh mục, ≥5 POI, bài VI/EN, nguồn nội dung/tọa độ/ảnh. Seed hiện có 5 nháp/placeholder/không ảnh, **chưa đáp ứng dữ liệu demo chuẩn**. Upload ảnh tạm gác; chỉ giữ URL ảnh được duyệt hiện có.
++- [ ] Chọn đường dẫn tuyệt đối database demo được duyệt. Kiểm tra 2 danh mục, ≥5 POI, bài VI/EN, nguồn nội dung/tọa độ/ảnh. Seed chỉ tạo 5 nháp/placeholder/không ảnh, **không dùng làm dữ liệu demo**. DB chính ngày 10/11 có 2 danh mục, 5 POI công khai đều có ảnh Wikimedia kèm ghi công, 10 bài thuyết minh; nhóm vẫn cần duyệt nội dung. Ảnh mới có thể tải lên trong Admin (JPG/PNG/WebP ≤ 2 MB) và phải điền Ghi công ảnh; sao lưu cả `storage/uploads/` theo [backup-restore](backup-restore.md#ảnh-tải-lên).
+ - [ ] Dừng writer, [backup và phục hồi thử vào tệp mới](backup-restore.md). Không thử nghiệm trên database cá nhân. Không công bố placeholder để làm đầy danh sách.
+ - [ ] Chuẩn bị tài khoản Admin riêng, nhập mật khẩu ẩn khi seed database mới; không quay/chụp token, mật khẩu hoặc file `.env`.
+ - [ ] Kiểm tra `/api/v1/health`, Public list/detail, cổng 8000/5173/5174 và LAN điện thoại. Health chỉ là tiến trình. Nếu schema thiếu, dừng và xử lý trên bản sao; không chạy init/migration tùy tiện.
+diff --git a/docs/project/huong-dan-nam-backend-api-ci.md b/docs/project/huong-dan-nam-backend-api-ci.md
+new file mode 100644
+index 0000000..2cb4398
+--- /dev/null
++++ b/docs/project/huong-dan-nam-backend-api-ci.md
+@@ -0,0 +1,339 @@
++# Hướng dẫn nắm backend, API và CI để báo cáo và vấn đáp
++
++Viết ngày 11/11/2026 theo mã `main` `1c03f06`. Dành cho người điều phối dự án cần **tự giải thích và tự sửa được** backend, API và CI trước buổi bảo vệ.
++
++Nguyên tắc xuyên suốt: **không trình bày điều gì bạn chưa tự chạy, tự đọc và tự nói lại được bằng lời của mình.** Giảng viên hỏi "tại sao", không hỏi "ở đâu".
++
++## 0. Lộ trình 4 buổi
++
++| Buổi | Thời lượng | Mục tiêu | Xong khi bạn làm được |
++| --- | --- | --- | --- |
++| 1 | 1,5 giờ | Chạy và quan sát | Tự bật API trên bản sao DB, gọi 5 endpoint trong Swagger, đọc mã lỗi |
++| 2 | 3 giờ | Lần theo 4 luồng request | Vẽ tay luồng từ client đến SQLite cho 4 luồng ở mục 3, không nhìn tài liệu |
++| 3 | 1,5 giờ | Database và migration | Giải thích 8 bảng, ràng buộc, `user_version`, vì sao API không tự migration |
++| 4 | 2 giờ | Test và CI | Tự viết 1 test, cố ý làm hỏng code để thấy test và CI đỏ, rồi sửa lại |
++
++Sau đó: tự trả lời bộ câu hỏi ở mục 7 thành tiếng, mỗi câu dưới 1 phút.
++
++---
++
++## 1. Bức tranh tổng thể
++
++```
++ Guest web (5173)   Admin web (5174)   Mobile (Expo)
++        │  Vite proxy /api  │               │ HTTP LAN :8000
++        └─────────┬─────────┘───────────────┘
++                  ▼
++      FastAPI  backend/app/main.py  (uvicorn :8000)
++        │ 1. Router chọn hàm theo URL         api/routes/*.py
++        │ 2. Dependency: mở kết nối DB        api/dependencies.py  get_db
++        │    và kiểm phiên Admin nếu cần                            require_admin
++        │ 3. Kiểm dữ liệu vào (Pydantic)      schemas/*.py, class trong route
++        │ 4. Quy tắc nghiệp vụ                services/*.py
++        │ 5. Câu SQL                          db/*_repository.py
++        ▼
++      SQLite  backend/data/saigon_stories.db  (1 tệp, schema bản 5)
++      Ảnh tải lên  storage/uploads/pois/
++```
++
++Ba ý cần nói được ngay:
++
++1. **Một backend chung cho ba client.** Web khách, Admin và mobile đều gọi cùng một API. Hai web gọi `/api/...` qua proxy của Vite ([guest-web/vite.config.js](../../apps/guest-web/vite.config.js), [admin-web/vite.config.js](../../apps/admin-web/vite.config.js)), nên trình duyệt không gặp lỗi CORS.
++2. **Kiến trúc phân lớp:** route (nhận HTTP) → service (quy tắc) → repository (SQL). Không dùng ORM, viết SQL tay với `sqlite3`.
++3. **Mỗi request một kết nối SQLite riêng**, mở trong `get_db` và đóng khi trả lời xong.
++
++### Bản đồ thư mục backend
++
++| Thư mục | Vai trò | Tệp nên đọc trước |
++| --- | --- | --- |
++| `app/main.py` | Tạo app, gắn router, xử lý lỗi chung, kiểm schema khi khởi động | [main.py](../../backend/app/main.py) |
++| `app/api/routes/` | Mỗi tệp một nhóm endpoint | [public.py](../../backend/app/api/routes/public.py), [auth.py](../../backend/app/api/routes/auth.py) |
++| `app/api/dependencies.py` | Kết nối DB theo request, kiểm token Admin | [dependencies.py](../../backend/app/api/dependencies.py) |
++| `app/services/` | Quy tắc nghiệp vụ: đăng nhập, thống kê, ảnh | [auth.py](../../backend/app/services/auth.py), [analytics_service.py](../../backend/app/services/analytics_service.py) |
++| `app/db/` | Kết nối và câu SQL | [connection.py](../../backend/app/db/connection.py), [poi_repository.py](../../backend/app/db/poi_repository.py) |
++| `app/core/` | Tiện ích: băm mật khẩu, bỏ dấu, ngôn ngữ | [security.py](../../backend/app/core/security.py), [text.py](../../backend/app/core/text.py) |
++| `migrations/` | Tệp SQL tạo và nâng cấp schema, đánh số 001–004 | [001_initial.sql](../../backend/migrations/001_initial.sql) |
++| `scripts/` | Lệnh vận hành: tạo DB, seed, sao lưu, migration | [backup_db.py](../../backend/scripts/backup_db.py) |
++| `tests/` | 15 tệp test, chạy bằng `unittest` | [test_public_api.py](../../backend/tests/test_public_api.py) |
++
++Thư viện: chỉ `fastapi`, `uvicorn`, `tzdata` ([requirements.txt](../../backend/requirements.txt)); test thêm `httpx`, `pytest`.
++
++---
++
++## 2. Buổi 1 — Chạy và quan sát
++
++Luôn chạy trên **bản sao** DB, không đụng DB chính. Mở PowerShell ở gốc repo:
++
++```powershell
++$db = "$env:TEMP\saigon-hoc.db"
++.\.venv\Scripts\python.exe backend/scripts/backup_db.py --database backend/data/saigon_stories.db --destination $db
++$env:SAIGON_DATABASE = $db
++$env:SAIGON_DISABLE_CLEANUP = "1"
++.\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --port 8001
++```
++
++Lệnh sao lưu từ chối ghi đè; chạy lại thì xóa `$db` cũ trước. Biến `SAIGON_DISABLE_CLEANUP=1` tắt việc dọn thống kê cũ để dữ liệu không đổi khi bạn đang học.
++
++Từ commit `99e3d88` (phần mở rộng C), API đòi DB **schema 5**. Nếu uvicorn dừng ngay với lỗi "chưa có migration 005" (DB chính chưa migrate, hoặc bản sao tạo trước ngày 13/11), nâng cấp **bản sao** rồi bật lại:
++
++```powershell
++.\.venv\Scripts\python.exe backend/scripts/migrate_005_admin_audit_log.py --database $db --backup "$env:TEMP\saigon-hoc-truoc-005.db"
++```
++
++Mở **http://127.0.0.1:8001/docs**. Đây là Swagger UI do FastAPI tự sinh từ code. Làm lần lượt và ghi kết quả:
++
++| # | Thao tác | Kết quả mong đợi | Hỏi chính mình |
++| --- | --- | --- | --- |
++| 1 | `GET /api/v1/health` | `{"status":"ok"}` | Vì sao health không kiểm DB? (đọc docstring ở [main.py:101](../../backend/app/main.py#L101)) |
++| 2 | `GET /api/v1/pois`, rồi thêm `q=ben thanh` | 5 địa điểm; tìm không dấu vẫn ra Chợ Bến Thành | Bỏ dấu ở đâu? ([text.py](../../backend/app/core/text.py)) |
++| 3 | `GET /api/v1/pois/khong-co` | 404, `POI_NOT_FOUND` | Vì sao nháp/ẩn cũng trả 404 thay vì 403? |
++| 4 | `GET /api/v1/admin/me` không có token | 401, `AUTH_REQUIRED` | Ai chặn? (`require_admin`) |
++| 5 | `POST /api/v1/admin/login` bằng tài khoản Admin, bấm **Authorize** dán `access_token`, gọi lại `/admin/me` | 200 | Token lưu ở DB dưới dạng gì? |
++| 6 | Đăng nhập sai 5 lần liên tiếp | Lần 6 trả 429 kèm `Retry-After` | Đếm theo gì, lưu ở đâu? |
++
++Dừng API bằng `Ctrl+C`. Bài về nhà: mở [API_CONTRACT.md](../API_CONTRACT.md) và so 6 kết quả trên với hợp đồng.
++
++---
++
++## 3. Buổi 2 — Lần theo 4 luồng request
++
++Với mỗi luồng: mở các tệp theo đúng thứ tự, đọc, rồi **gập máy lại và nói lại** bằng lời.
++
++### Luồng A — Khách xem danh sách địa điểm (UC01, BR01, BR02)
++
++1. [public.py](../../backend/app/api/routes/public.py): `GET /api/v1/pois` nhận `q` và `category_id`, xin kết nối qua `Depends(get_db)`.
++2. [dependencies.py:15](../../backend/app/api/dependencies.py#L15) `get_db`: mở kết nối, `yield` cho route dùng, `finally` đóng lại.
++3. [connection.py:79](../../backend/app/db/connection.py#L79) `connect`: mở tệp có sẵn (`mode=rw`, không tự tạo), **bật `foreign_keys`** vì SQLite mặc định tắt, chờ khóa tối đa 10 giây.
++4. [poi_repository.py:8](../../backend/app/db/poi_repository.py#L8) `list_pois`: SQL luôn có `WHERE status = 'published'` → **BR01: khách không bao giờ thấy nháp/ẩn**. Tham số truyền bằng `?`, không ghép chuỗi → chống SQL injection. Tìm theo tên làm bằng Python sau khi bỏ dấu.
++
++Câu nên nói: *"Quy tắc chỉ hiện địa điểm công khai nằm ngay trong câu SQL của repository công khai, nên không route nào của khách có thể lỡ trả về bản nháp."*
++
++### Luồng B — Admin đăng nhập và dùng phiên (UC05, BR09, BR10, NFR01)
++
++1. [routes/auth.py](../../backend/app/api/routes/auth.py) `POST /login` gọi `auth.login`; sai trả 401, bị khóa tạm trả 429.
++2. [services/auth.py:32](../../backend/app/services/auth.py#L32) `login`:
++   - chuẩn hóa tên đăng nhập, hỏi bộ đếm [login_throttle.py](../../backend/app/services/login_throttle.py) (5 lần sai trong 15 phút);
++   - tên không tồn tại vẫn chạy băm mật khẩu "giả" (`consume_password_work`) để thời gian trả lời giống nhau → kẻ tấn công không đoán được tài khoản nào có thật;
++   - đúng thì sinh token ngẫu nhiên, **chỉ lưu bản băm SHA-256 của token** vào `admin_sessions`, hạn 8 giờ.
++3. [security.py:17](../../backend/app/core/security.py#L17): mật khẩu băm **PBKDF2-SHA256, 600.000 vòng, salt 16 byte**, so sánh bằng `hmac.compare_digest` (chống đo thời gian).
++4. Mọi request Admin sau đó: [dependencies.py:23](../../backend/app/api/dependencies.py#L23) `require_admin` đọc header `Authorization: Bearer <token>`, băm lại, tìm phiên còn hạn, chưa thu hồi. Không có thì 401.
++5. Các router Admin gắn `dependencies=[Depends(require_admin)]` ngay khi khai báo (ví dụ đầu [admin_pois.py](../../backend/app/api/routes/admin_pois.py)) → không thể quên kiểm quyền ở từng endpoint.
++
++Câu nên nói: *"Lộ database thì kẻ tấn công cũng không dùng được token, vì DB chỉ giữ bản băm."*
++
++### Luồng C — Admin công bố địa điểm (UC09, BR03, BR04)
++
++1. `POST /api/v1/admin/pois/{id}/publish` → [admin_pois.py:273](../../backend/app/api/routes/admin_pois.py#L273) `change_status(db, id, ("draft","hidden"), "published")`.
++2. `BEGIN IMMEDIATE`: khóa ghi ngay từ đầu, để hai Admin bấm cùng lúc không chen nhau.
++3. Kiểm **máy trạng thái**: chỉ nháp/ẩn → công khai; công khai → ẩn. Sai thì 409 `INVALID_STATUS_TRANSITION`.
++4. [admin_pois.py:242](../../backend/app/api/routes/admin_pois.py#L242) `publish_problems`: kiểm lại tên, địa chỉ, danh mục, tọa độ, bán kính và **ít nhất một bài thuyết minh hợp lệ**. Thiếu thì 422 `POI_NOT_PUBLISHABLE` kèm danh sách mục thiếu.
++
++Vẽ được sơ đồ: `draft ──publish──▶ published ──hide──▶ hidden ──publish──▶ published`.
++
++### Luồng D — Thống kê ẩn danh theo đồng ý (UC10–UC12, BR13–BR18)
++
++1. Khách bấm Đồng ý → client tự sinh UUID ngẫu nhiên, gửi `POST /api/v1/analytics/heartbeat` mỗi 30 giây khi trang đang hiển thị. **Không có tên, số điện thoại, tọa độ.**
++2. [analytics_service.py:73](../../backend/app/services/analytics_service.py#L73) `record_heartbeat`:
++   - phiên mới → tạo phiên và 1 lượt truy cập;
++   - cách lần trước ≥ 30 phút → thêm lượt mới (BR14);
++   - phiên đã rút → trả 409, không kích hoạt lại.
++3. [analytics_service.py:117](../../backend/app/services/analytics_service.py#L117) `revoke_session` (BR18): tách UUID khỏi các lượt cũ (số lượt theo ngày vẫn đúng), đặt `consent_granted = 0`. Gọi lặp lại vẫn thành công (idempotent). Nếu UUID chưa từng có thì tạo "bia mộ" để heartbeat đến muộn không tạo lại phiên.
++4. [analytics_service.py:145](../../backend/app/services/analytics_service.py#L145): "đang hoạt động" = phiên chưa rút, có tín hiệu trong 90 giây (BR17).
++5. [analytics_service.py:164](../../backend/app/services/analytics_service.py#L164) + [analytics_retention.py](../../backend/app/services/analytics_retention.py): xóa dữ liệu quá 30 ngày lúc khởi động và mỗi 00:00 giờ Việt Nam.
++
++Câu nên nói: *"Số đang hoạt động là ước lượng: khách đóng tab thì phải đợi tối đa 90 giây mới hết được tính."*
++
++### Luồng phụ — Upload ảnh (phần mở rộng A)
++
++[admin_pois.py:145](../../backend/app/api/routes/admin_pois.py#L145) và [services/media.py](../../backend/app/services/media.py): kiểm `Content-Type`, đọc từng khúc và dừng ngay khi vượt 2 MB, **kiểm chữ ký tệp** (byte đầu của JPG/PNG/WebP) để chống đổi đuôi. Tên tệp là UUID mới, ghi kiểu "tạo mới, cấm ghi đè". `path_for` từ chối mọi đường dẫn có `../`. Ảnh cũ bị xóa khi thay ảnh.
++
++### Xử lý lỗi chung
++
++[main.py:77](../../backend/app/main.py#L77): mọi lỗi trả cùng một dạng `{"error": {"code", "message", "details"}}`. Client dựa vào `code`, không dựa vào câu chữ. Lỗi dữ liệu vào (422) cố ý **không lặp lại body**, để mật khẩu không bao giờ xuất hiện trong phản hồi lỗi.
++
++---
++
++## 4. Buổi 3 — Database và migration
++
++### 8 bảng
++
++| Bảng | Lưu gì | Ràng buộc đáng nói |
++| --- | --- | --- |
++| `admin_accounts` | Tài khoản Admin | `username` UNIQUE, chỉ lưu băm mật khẩu |
++| `admin_sessions` | Phiên đăng nhập | `token_hash` UNIQUE, `expires_at > issued_at`, xóa Admin thì xóa phiên (`CASCADE`) |
++| `categories` | Danh mục VI/EN | `normalized_name` UNIQUE → chặn trùng tên khác hoa/thường |
++| `pois` | Địa điểm | Tọa độ trong miền hợp lệ, bán kính 20–1000, `status` chỉ 3 giá trị, xóa danh mục đang dùng bị chặn (`RESTRICT`) |
++| `poi_narrations` | Bài thuyết minh | `UNIQUE (poi_id, locale)` → mỗi ngôn ngữ một bài |
++| `anonymous_sessions` | Phiên thống kê ẩn danh | UUID v4 kiểm bằng CHECK, thời gian định dạng cố định |
++| `visit_events` | Lượt truy cập | Rút đồng ý thì `session_id` thành NULL (`SET NULL`) |
++| `admin_audit_log` | Nhật ký thao tác Admin (migration 005) | `admin_id` `RESTRICT`: tài khoản đã có nhật ký không xóa được, chỉ khóa |
++
++Xem [001_initial.sql](../../backend/migrations/001_initial.sql) và [data-dictionary.md](../analysis-design/data-dictionary.md).
++
++**Vì sao ràng buộc đặt ở cả DB lẫn API?** API (Pydantic) báo lỗi thân thiện cho người dùng; DB là lớp bảo vệ cuối, kể cả khi ai đó sửa dữ liệu bằng script.
++
++### Migration và `user_version`
++
++- `PRAGMA user_version` là số phiên bản schema ghi ngay trong tệp SQLite. Hiện là **5**.
++- 001 tạo bảng → 002 siết ràng buộc thống kê → 003 thêm tên danh mục tiếng Anh → 004 thêm `pois.image_credit` → 005 thêm bảng `admin_audit_log`. Xem [migrations/README.md](../../backend/migrations/README.md).
++- Khi khởi động, [connection.py:57](../../backend/app/db/connection.py#L57) **từ chối chạy** nếu DB cũ hơn bản 5 (thiếu `pois.image_credit` hoặc bảng `admin_audit_log`), và **không bao giờ tự migration**. Lý do: tự nâng cấp DB đang chứa dữ liệu thật mà không sao lưu là rủi ro mất dữ liệu. Nâng cấp phải chạy script có `--check` (chỉ xem) và `--backup` (bắt buộc sao lưu).
++
++Bài tập: chạy `--check` của migration 005 trên bản sao ở buổi 1. Script dừng với thông báo `Migration 005 already applied (user_version = 5)` và mã thoát 1, không ghi gì. Giải thích vì sao từ chối chạy lại lại là hành vi đúng:
++
++```powershell
++.\.venv\Scripts\python.exe backend/scripts/migrate_004_poi_image_credit.py --database "$env:TEMP\saigon-hoc.db" --check
++```
++
++### Sao lưu
++
++[backup_db.py](../../backend/scripts/backup_db.py) dùng **SQLite Backup API**, không copy tệp thô, nên bản sao luôn nhất quán kể cả khi đang có ghi. Sau khi chép thì kiểm `integrity_check` và `foreign_key_check`. Ảnh tải lên nằm ngoài DB nên phải chép thêm `storage/uploads/`.
++
++---
++
++## 5. Buổi 4 — Test và CI
++
++### Cách một test backend hoạt động
++
++Mở [test_admin_api.py](../../backend/tests/test_admin_api.py), hàm `setUp`:
++
++1. Tạo **DB tạm** trong thư mục tạm, chạy `init_db.py` và `seed`.
++2. `app.dependency_overrides[get_db] = test_db`: thay kết nối thật bằng kết nối tới DB tạm. **Test không bao giờ chạm DB chính.**
++3. `TestClient(app)` gọi API như một client thật nhưng không cần bật server.
++4. `addCleanup`: dọn DB tạm và bộ đếm đăng nhập sai sau mỗi test.
++
++Chạy một tệp test:
++
++```powershell
++.\.venv\Scripts\python.exe -m unittest discover -s backend/tests -p "test_public_api.py" -v
++```
++
++Chạy tất cả (113 test, khoảng 1 phút):
++
++```powershell
++.\.venv\Scripts\python.exe -m unittest discover -s backend/tests
++```
++
++### Bài tập "làm hỏng có chủ đích" (quan trọng nhất)
++
++Làm trên nhánh nháp, **không commit**:
++
++1. Trong [poi_repository.py:9](../../backend/app/db/poi_repository.py#L9) (`list_pois`), đổi `WHERE status = 'published'` thành `WHERE 1 = 1`, tức là bỏ lọc trạng thái.
++2. Chạy lại `test_public_api.py` → cả 2 test đỏ (`FAILED (failures=2)`, đã thử 11/11). Đọc thông báo lỗi: dòng `assert` nào bắt được, vì sao.
++3. Hoàn tác bằng `git checkout -- backend/app/db/poi_repository.py`, chạy lại → xanh.
++
++Làm tương tự với: đổi `MAX_FAILURES = 5` thành `50` trong [login_throttle.py](../../backend/app/services/login_throttle.py); bỏ dòng `PRAGMA foreign_keys = ON` trong [connection.py](../../backend/app/db/connection.py). Mỗi lần, ghi lại test nào đỏ. Đây chính là câu trả lời cho câu hỏi "Làm sao biết test của em có ý nghĩa?".
++
++### Bài tập tự viết
++
++Tự viết một test mới trong `test_public_api.py`: gọi `GET /api/v1/locales` và kiểm có `vi` và `en`. Tự viết, chạy cho xanh, rồi mới nhờ AI nhận xét. Đừng nhờ AI viết.
++
++### CI — GitHub Actions
++
++Tệp [.github/workflows/ci.yml](../../.github/workflows/ci.yml). Chạy mỗi lần push lên bất kỳ nhánh nào, hoặc khi bấm chạy tay.
++
++| Job | Máy | Làm gì |
++| --- | --- | --- |
++| `backend` | Ubuntu | Cài Python 3.12, chạy toàn bộ `unittest` |
++| `guest-web` | Ubuntu | `npm ci`, Node test + Vitest, build |
++| `admin-web` | Ubuntu | `npm ci`, build |
++| `mobile` | Ubuntu | `npm ci`, Jest |
++| `e2e` | Windows | Chỉ chạy khi 3 job đầu xanh (`needs`); Playwright trên Edge với 4 dịch vụ và DB tạm; lỗi thì lưu ảnh chụp 7 ngày |
++
++Từ khóa cần giải thích được:
++
++- `npm ci` (không phải `npm install`): cài **đúng** phiên bản trong `package-lock.json` → CI tái lập được.
++- `cache`: lưu gói pip/npm giữa các lần chạy cho nhanh.
++- `concurrency ... cancel-in-progress`: push liên tiếp thì hủy lượt cũ, chỉ chạy commit mới nhất.
++- `permissions: contents: read`: CI chỉ được đọc repo, nguyên tắc quyền tối thiểu.
++
++Xem lịch sử chạy ở tab **Actions** trên GitHub. Bài tập: đẩy nhánh có test hỏng ở trên lên GitHub, xem job `backend` đỏ, mở log tìm dòng lỗi, rồi xóa nhánh.
++
++### "CD" — nói thật
++
++Dự án **có CI, chưa có CD** (triển khai tự động). Không có server công khai; demo chạy trên LAN bằng `scripts/start-system.ps1`. Phần mở rộng G (chạy bản build bằng một lệnh) là bước gần nhất tới triển khai. Nếu được hỏi, trả lời: *"Nhóm dừng ở CI vì phạm vi là demo trên mạng nội bộ; bước tiếp theo sẽ là build Docker image và triển khai lên một VPS có HTTPS khi CI xanh trên main."* Đừng nói là đã có CD.
++
++---
++
++## 6. Quy trình Git nhóm đang dùng
++
++Theo [CONTRIBUTING.md](../../CONTRIBUTING.md): mỗi việc một nhánh (`feat/`, `fix/`, `docs/`), mở PR vào `main`, CI xanh và một người khác duyệt mới merge.
++
++Nói trung thực về thực tế: phần A commit thẳng lên `main`; PR #4 merge khi chưa có review. Branch protection chưa bật. Nên bật trước buổi bảo vệ (Settings → Branches → Add rule cho `main`: Require a pull request, Require status checks `backend`, `guest-web`, `admin-web`, `mobile`) để nói được *"từ ngày X, main được bảo vệ"*.
++
++---
++
++## 7. Câu hỏi vấn đáp thường gặp và ý trả lời
++
++Đọc ý, rồi **tự nói bằng lời của mình**. Đừng học thuộc.
++
++**Kiến trúc**
++
++1. *Vì sao chọn FastAPI và SQLite?* FastAPI: nhẹ, tự sinh tài liệu `/docs`, kiểm dữ liệu bằng Pydantic. SQLite: một tệp, không cần cài máy chủ DB, đủ cho một Admin và lượng khách demo, dễ sao lưu. Giới hạn: một tiến trình ghi tại một thời điểm, không hợp tải lớn.
++2. *Vì sao không dùng ORM?* Schema nhỏ (8 bảng). SQL tay giúp thấy rõ câu lệnh, kiểm soát giao dịch `BEGIN IMMEDIATE`. Đánh đổi: phải tự viết câu SQL lặp lại.
++3. *Các lớp trong backend?* Route → service → repository → SQLite (mục 1). Điểm yếu tự nhận: phần địa điểm còn viết SQL ngay trong route `admin_pois.py`, chưa tách sang service như danh mục.
++4. *Ba client dùng chung API thế nào?* Cùng tiền tố `/api/v1`; web qua proxy Vite, mobile gọi thẳng IP LAN.
++
++**Bảo mật**
++
++5. *Lưu mật khẩu thế nào?* PBKDF2-SHA256, 600.000 vòng, salt ngẫu nhiên 16 byte. Không lưu mật khẩu gốc.
++6. *Phiên đăng nhập?* Token ngẫu nhiên 32 byte, DB chỉ lưu SHA-256 của token, hạn 8 giờ, đăng xuất thì thu hồi.
++7. *Chống dò mật khẩu?* 5 lần sai trong 15 phút thì khóa tạm, trả 429 kèm `Retry-After`. Đếm theo tên đăng nhập vì mọi request qua proxy đều đến từ 127.0.0.1. Giới hạn: bộ đếm nằm trong bộ nhớ, khởi động lại API thì về 0.
++8. *Chống SQL injection?* Mọi câu SQL dùng tham số `?`.
++9. *Làm sao khách không thấy bản nháp?* SQL công khai luôn lọc `status = 'published'`; chi tiết nháp/ẩn trả 404 giống như không tồn tại, để không lộ là có bản nháp.
++10. *HTTPS?* Chưa có, vì demo trên LAN. Đây là giới hạn đã ghi ở NFR01.
++
++**Dữ liệu và nghiệp vụ**
++
++11. *Quyền riêng tư của thống kê?* Chỉ thu khi khách đồng ý; chỉ UUID ngẫu nhiên và thời điểm; không tên, không tọa độ; rút đồng ý thì tách UUID khỏi các lượt; tự xóa sau 30 ngày.
++12. *"Đang hoạt động" tính sao, chính xác không?* Phiên chưa rút có tín hiệu trong 90 giây; là ước lượng, có độ trễ tối đa 90 giây.
++13. *Hai Admin công bố cùng lúc?* `BEGIN IMMEDIATE` khóa ghi, thao tác thứ hai chờ rồi kiểm lại trạng thái.
++14. *Vì sao API không tự migration?* Tránh nâng cấp DB thật mà chưa sao lưu; API chỉ kiểm `user_version` và dừng với hướng dẫn rõ.
++15. *Upload ảnh an toàn thế nào?* Giới hạn 2 MB, chỉ JPG/PNG/WebP, kiểm cả header lẫn chữ ký tệp, tên tệp UUID, chặn `../`.
++
++**Kiểm thử và CI**
++
++16. *Test bao nhiêu, loại gì?* Backend 113 (unittest + TestClient, DB tạm); guest 40 Node + 20 Vitest; mobile 134 Jest; Playwright khoảng 41 ca đầu-cuối. Lấy số mới nhất từ lượt chạy cuối trước khi bảo vệ.
++17. *Test có đụng DB thật không?* Không: mỗi test tạo DB tạm và thay dependency `get_db`.
++18. *Làm sao biết test có ý nghĩa?* Kể lại bài tập "làm hỏng có chủ đích" ở mục 5.
++19. *CI chạy gì, khi nào? Có CD không?* Mục 5: 5 job mỗi lần push; chưa có CD.
++20. *Truy vết yêu cầu → test?* [traceability-matrix.md](../testing/traceability-matrix.md): F/BR/NFR → UC → API → mã → ca kiểm thử.
++
++**Câu hỏi về bản thân**
++
++21. *Em làm phần nào?* Nói đúng vai: tích hợp, điều phối, phần A và G, CI. Nếu có dùng AI, nói thẳng: *"Em dùng AI hỗ trợ viết code, nhưng em đã đọc, chạy test và tự sửa từng phần"*, rồi chứng minh bằng cách mở code và giải thích ngay. Che giấu rủi ro hơn nói thật.
++22. *Nếu thêm tính năng X thì sửa ở đâu?* Luyện với "thêm trường số điện thoại liên hệ cho địa điểm": migration 005 → cột mới → `PlaceInput` → SQL ở repository và route → API_CONTRACT → test → form Admin.
++
++---
++
++## 8. Điểm yếu nên chủ động nêu
++
++Tự nêu trước thì được đánh giá là hiểu hệ thống. Bị hỏi ra thì bị đánh giá là không biết.
++
++| Điểm yếu | Vì sao chấp nhận trong đồ án | Hướng cải thiện |
++| --- | --- | --- |
++| Chưa HTTPS, chưa triển khai công khai | Phạm vi demo LAN | Reverse proxy (Caddy/Nginx) + chứng chỉ |
++| SQLite một người ghi | Đủ cho 1 Admin và khách demo | PostgreSQL nếu nhiều Admin hoặc tải lớn |
++| Tìm kiếm lọc bằng Python, chưa phân trang | Chỉ vài chục địa điểm | Cột tên đã bỏ dấu + chỉ mục, thêm `limit/offset` |
++| Bộ đếm đăng nhập sai trong bộ nhớ | Chỉ một tiến trình uvicorn | Lưu vào DB hoặc Redis |
++| Logic địa điểm nằm trong route | Làm nhanh theo tiến độ | Tách `services/pois.py` như danh mục |
++| Có CI, chưa có CD | Không có server đích | Docker + triển khai khi main xanh |
++| Ca kiểm thử trên điện thoại thiếu minh chứng | Đang bổ sung | Phiếu FT-1..23 kèm video |
++
++---
++
++## 9. Dùng AI để học, không để thay
++
++- Hỏi AI **giải thích**, đừng nhờ **viết**: *"Giải thích từng dòng hàm `require_admin`, chuyện gì xảy ra nếu bỏ `Depends(get_db)`?"*
++- Nhờ AI **hỏi vặn bạn**: *"Đóng vai giảng viên Công nghệ phần mềm, hỏi tôi 10 câu về `analytics_service.py`, chấm điểm câu trả lời."*
++- Mỗi lần AI sửa code cho dự án: đọc diff, chạy test, và **tự giải thích lại thay đổi trong 3 câu** trước khi commit. Không giải thích được thì chưa commit.
++
++## Tự kiểm trước buổi bảo vệ
++
++- [ ] Tự bật API trên bản sao DB, không nhìn hướng dẫn
++- [ ] Vẽ tay luồng A–D, mỗi luồng chỉ ra đúng tệp và hàm
++- [ ] Giải thích 8 bảng và 3 ràng buộc quan trọng nhất
++- [ ] Làm 3 bài "làm hỏng có chủ đích" và kể được test nào bắt lỗi
++- [ ] Tự viết và chạy xanh 1 test mới
++- [ ] Mở tab Actions, giải thích 5 job và vì sao e2e chạy sau
++- [ ] Trả lời thành tiếng 22 câu ở mục 7, mỗi câu dưới 1 phút
++- [ ] Nêu được 3 điểm yếu ở mục 8 kèm hướng cải thiện
+diff --git a/docs/project/phan-cong-ABCG-2026-11-10.md b/docs/project/phan-cong-ABCG-2026-11-10.md
+index 523ee81..71b1e29 100644
+--- a/docs/project/phan-cong-ABCG-2026-11-10.md
++++ b/docs/project/phan-cong-ABCG-2026-11-10.md
+@@ -6,7 +6,7 @@ Người kiểm tra tiến độ: **Domyan-nn**, mỗi tối lúc 21:00 theo [b
+ 
+ | Người | Phần chính | Lý do chọn | Ngày 3 làm thêm |
+ | --- | --- | --- | --- |
+-| **Domyan-nn** | **A. Upload ảnh và ghi công ảnh** (backend, migration 004, Admin, hiển thị ở web/mobile) — làm cùng Claude | Phụ trách tích hợp; phần A đụng nhiều nơi nhất | **G. Chạy bản build bằng một lệnh** (cùng sửa `backend/app/main.py` như A nên để một người làm, tránh xung đột); merge cuối |
++| **Domyan-nn** | **A. Upload ảnh và ghi công ảnh** (backend, migration 004, Admin, hiển thị ở web/mobile) | Phụ trách tích hợp; phần A đụng nhiều nơi nhất | **G. Chạy bản build bằng một lệnh** (cùng sửa `backend/app/main.py` như A nên để một người làm, tránh xung đột); merge cuối |
+ | **LeeNaimThwuan** | **B. "Gần tôi"**: sắp xếp danh sách theo khoảng cách trên web khách và mobile | Đã làm mobile (UC03, UC12 mobile, marker bản đồ) và guest web | Thử B và phần hiển thị ghi công ảnh của A trên điện thoại thật, quay video làm minh chứng |
+ | **qannee** | **C. Nhật ký thao tác Admin** (migration 005, ghi log ở các route quản trị, tab Nhật ký) | Đã làm backend thống kê UC12 và hợp đồng API | Review PR của B; bổ sung ca kiểm thử và truy vết cho C |
+ 
+@@ -67,9 +67,9 @@ Mỗi tối người phụ trách ghi link PR/commit và tình trạng; Domyan-n
+ 
+ | Ngày | Người | Mục tiêu cuối ngày | Bằng chứng (PR, commit, ảnh) | Tự đánh giá | Kiểm tra |
+ | --- | --- | --- | --- | --- | --- |
+-| 10/11 | Domyan-nn | Migration 004 + API upload có test đạt | Xong sớm 09/11 trên nhánh `feat/a-image-upload` (cả phần Admin, web, mobile); xem test-results 09/11 | Đạt | ☐ |
+-| 10/11 | LeeNaimThwuan | Hàm sắp xếp + test; nút Gần tôi trên web | | | ☐ |
+-| 10/11 | qannee | Bảng log + ghi log danh mục/auth + test | | | ☐ |
++| 10/11 | Domyan-nn | Migration 004 + API upload có test đạt | Xong sớm 09/11 trên nhánh `feat/a-image-upload` (cả phần Admin, web, mobile); xem test-results 09/11 | Đạt | ☑ Đạt (kiểm 11/11): đã có trên `main`, CI xanh |
++| 10/11 | LeeNaimThwuan | Hàm sắp xếp + test; nút Gần tôi trên web | Nhánh `feat/b-near-me`, 4 commit 10/11 22:54–22:58 (`49fab59`, `65f2fc9`, `c6f0d0d`, `b30e5ac`); [PR #4](https://github.com/Domyan-nn/nhom12_Quan1Tourism/pull/4), CI xanh | | ☑ Đạt (kiểm 11/11): chạy lại trên PR — guest 40 Node + 20 Vitest, build đạt; mobile Jest 134 + 4 bỏ qua. Còn thiếu: mô tả PR (đang để mẫu trống), issue, người review |
++| 10/11 | qannee | Bảng log + ghi log danh mục/auth + test | Chưa có nhánh `feat/c-audit-log`, commit hay PR trên GitHub (kiểm 11/11 07:10) | | ☒ Chưa đạt: trễ một ngày, cần báo nhóm và cắt phạm vi theo mục 5 |
+ | 11/11 | Domyan-nn | PR A mở, Playwright đạt, đã merge | | | ☐ |
+ | 11/11 | LeeNaimThwuan | PR B mở, mobile + Playwright đạt | | | ☐ |
+ | 11/11 | qannee | Log đủ các route, API + tab Nhật ký | | | ☐ |
+diff --git a/docs/project/phan-cong-hoan-thien-2026-11-13.md b/docs/project/phan-cong-hoan-thien-2026-11-13.md
+new file mode 100644
+index 0000000..95e2467
+--- /dev/null
++++ b/docs/project/phan-cong-hoan-thien-2026-11-13.md
+@@ -0,0 +1,99 @@
++# Phân công hoàn thiện — 13/11 → bảo vệ (dự kiến thứ Hai 16/11/2026)
++
++Thay cho [bảng phân công A, B, C, G](phan-cong-ABCG-2026-11-10.md), đã hết hạn ngày 12/11. Lập ngày 13/11 theo trạng thái `main` `99e3d88`. Ngày bảo vệ chưa chốt; nếu khác 16/11 thì dời các mốc theo đúng số ngày.
++
++Tên trong tài liệu cũ: **Nguyên = Domyan-nn**, **An = qannee**, **Thuận = LeeNaimThwuan**. Người kiểm tra tiến độ: Domyan-nn, mỗi tối 21:00, theo [bảng theo dõi](#6-bảng-theo-dõi-hằng-ngày).
++
++## Trạng thái đầu vào (13/11, 09:35)
++
++| Hạng mục | Trạng thái |
++| --- | --- |
++| A. Upload ảnh và ghi công ảnh | Xong trên `main`; còn thiếu video thử trên điện thoại |
++| B. Gần tôi | Web và hàm sắp xếp đã merge (PR #4); **thiếu** nút trên mobile, Playwright, ca kiểm thử và truy vết, video |
++| C. Nhật ký Admin | Xong trên `main` (CI xanh 5/5 job, backend 132/132); **push thẳng, không qua PR**; DB chính chưa migrate 005 |
++| G. Chạy bản build bằng một lệnh | Chưa bắt đầu; nhóm quyết định vẫn làm, trong ngày 13/11 |
++| Minh chứng thiết bị FT-1..23 | Chưa có; `docs/testing/evidence/` trống |
++| PRD 1.2, báo cáo cuối kỳ, slide | Chưa bắt đầu |
++| Branch protection, issue | Chưa bật, chưa có issue |
++
++## 0. Việc chặn — xong trước 12:00 ngày 13/11
++
++| # | Việc | Người | Xong khi |
++| --- | --- | --- | --- |
++| 0.1 | Migrate DB chính lên schema 5: dừng API → `migrate_005_admin_audit_log.py --check` → chạy với `--backup` (lệnh ở [RUNNING.md](../../RUNNING.md)) | Domyan-nn | `start-system.ps1` bật được; `/api/v1/admin/audit-log` trả 200 |
++| 0.2 | Mỗi máy dùng để demo hoặc thử điện thoại tự migrate DB của máy mình | An, Thuận | Như 0.1, trên máy mình |
++| 0.3 | Bật branch protection cho `main`: bắt buộc PR, 1 người duyệt, CI `backend`, `guest-web`, `admin-web`, `mobile` xanh | Domyan-nn | Push thẳng lên `main` bị GitHub từ chối |
++| 0.4 | Sửa email commit: `git config user.email` bằng email noreply **thật** của mình (GitHub → Settings → Emails), không chép nguyên chuỗi mẫu trong CONTRIBUTING | An | Commit mới hiện ảnh đại diện và tên tài khoản trên GitHub |
++| 0.5 | Đồng bộ `main` local: `git fetch`, rồi `git switch main` và `git reset --hard origin/main` (đã commit hết việc dở trước) | Cả ba | `git status` báo `up to date with 'origin/main'` |
++
++Từ nay **không push thẳng lên `main`**: mọi thay đổi đi qua nhánh, PR và một người khác duyệt (theo [CONTRIBUTING](../../CONTRIBUTING.md)).
++
++## 1. Ai làm gì
++
++| | Domyan-nn (Nguyên) | qannee (An) | LeeNaimThwuan (Thuận) |
++| --- | --- | --- | --- |
++| **Mã nguồn** (hết 13/11) | **G**: FastAPI phục vụ bản build guest `/` và admin `/admin/`, bật bằng `SAIGON_SERVE_WEB=1`; `scripts/start-build.ps1`; test `TestClient`; mục mới trong RUNNING | Không viết tính năng mới. Chuyển nội dung C cho PRD 1.2 (bảng thứ 8, endpoint, quyết định thiết kế) | **B mobile**: nút Gần tôi ở `ExploreScreen` (expo-location), từ chối quyền thì giữ thứ tự cũ; Jest; **Playwright B** (vị trí giả, kiểm thứ tự, kiểm không request nào chứa tọa độ) |
++| **Tài liệu kỹ thuật** | Merge PR #3 (sửa "tạm gác"); cập nhật [test-results.md](../testing/test-results.md) cho B, C, G sau lượt chạy cuối | Thêm C vào [test-results.md](../testing/test-results.md) (số liệu 132/132, đột biến đã thử) | Thêm ca kiểm thử B vào [test-cases.md](../testing/test-cases.md) và dòng B vào [traceability-matrix.md](../testing/traceability-matrix.md) |
++| **Minh chứng** (14/11) | Chạy lại toàn bộ bộ test và ghi số; gắn tag `v1.0` sau khi chốt | **Cài mới toàn hệ thống trên máy của An** theo RUNNING (NFR06), thử cả `start-build.ps1` của G; đo lại NFR08 | **FT-1..23 trên điện thoại với API thật**; quay video: B, ghi công ảnh (A), GPS tự phát (UC04), đồng ý/rút thống kê (UC12); lưu vào `docs/testing/evidence/` |
++| **PRD và báo cáo** (14–15/11) | **PRD 1.2** (bỏ "chưa có tải ảnh lên", thêm A/B/C/G và bảng `admin_audit_log`); khung báo cáo; chương tổng quan, kiến trúc, quản lý dự án và CI; ghép bản cuối | Chương thống kê UC10–UC12 và C; chương kiểm thử (kế hoạch, ca, truy vết, số liệu) | Chương mobile (UC01–UC04, GPS, TTS, B) và kiểm thử thực địa; cập nhật sơ đồ `docs/mobile/diagrams` |
++| **Slide** (15/11) | Mở đầu, kiến trúc, quy trình, kết luận | Thống kê, C, kiểm thử | Mobile, demo thực địa |
++| **Review** | PR B (mobile + Playwright) | PR G; đọc chéo chương mobile | PR tài liệu của An; đọc chéo chương kiến trúc |
++
++## 2. Lịch theo ngày
++
++| Ngày | Domyan-nn | qannee | LeeNaimThwuan |
++| --- | --- | --- | --- |
++| **Thứ Sáu 13/11** | Sáng: việc chặn 0.1, 0.3, 0.5; merge PR #3. Chiều–tối: G, mở PR G | Sáng: 0.2, 0.4, 0.5. Chiều: test-results cho C; chuyển nội dung C cho PRD; review PR G khi mở | Sáng: 0.2, 0.5. Cả ngày: B mobile + Playwright + ca kiểm thử và truy vết B, mở PR B |
++| **Thứ Bảy 14/11** | Sáng: merge B, G; chạy lại toàn bộ test; cập nhật test-results. Chiều: PRD 1.2; khung báo cáo gửi nhóm | Sáng: cài mới trên máy An, thử G; NFR08. Chiều: viết chương thống kê, C, kiểm thử | Sáng: FT-1..23 và quay video. Chiều: điền phiếu thực địa, viết chương mobile |
++| **Chủ Nhật 15/11** | Sáng: ghép báo cáo, bảng đóng góp; tag `v1.0`. Chiều: slide | Sáng: sửa chương theo góp ý; slide phần mình | Sáng: sửa chương theo góp ý; slide phần mình; sơ đồ mobile |
++| **Tối 15/11** | **Cả nhóm**: tổng duyệt demo từ máy sạch (1 giờ) + "giải thích ngược", mỗi người trình bày phần của người khác 5 phút (1 giờ) | | |
++| **Thứ Hai 16/11** | Bảo vệ (dự kiến) | | |
++
++## 3. Quy tắc cắt phạm vi
++
++Đến 21:00 ngày 13/11, phần nào chưa có PR với CI xanh thì cắt, ghi vào báo cáo là "hướng phát triển", không kéo sang ngày minh chứng:
++
++- **G** chưa xong: bỏ G, giữ cách chạy hiện tại (`start-system.ps1`).
++- **B mobile** chưa xong: giữ B trên web, phần mobile thành hướng phát triển. Playwright cho B trên web vẫn phải có.
++- Minh chứng thiết bị không kịp đủ 23 ca: ưu tiên theo thứ tự UC04 tự phát → UC12 rút đồng ý → B → ghi công ảnh → UC01–UC03. Ca chưa thử ghi "chưa thử", không ghi "đạt".
++
++## 4. Sản phẩm nộp
++
++| Sản phẩm | Người chịu trách nhiệm | Hạn | Nơi lưu |
++| --- | --- | --- | --- |
++| Mã nguồn, tag `v1.0`, CI xanh | Domyan-nn | 15/11 sáng | GitHub |
++| PRD 1.2 (.docx) | Domyan-nn | 14/11 tối | Gốc repo, ghi phiên bản ở [requirements/](../requirements/README.md) |
++| Báo cáo cuối kỳ (.docx và .pdf) | Domyan-nn ghép, mỗi người viết chương mình | 15/11 sáng | `docs/final-report/` |
++| Slide | Cả nhóm, Domyan-nn ghép | 15/11 chiều | `docs/final-report/` |
++| Video và ảnh minh chứng | LeeNaimThwuan | 14/11 tối | `docs/testing/evidence/` (video lớn để Drive, ghi link) |
++| Kết quả kiểm thử cuối | Domyan-nn | 14/11 | [test-results.md](../testing/test-results.md) |
++| Bảng đóng góp thành viên | Domyan-nn soạn, từng người xác nhận | 15/11 | Trong báo cáo |
++
++## 5. Bảng đóng góp (nháp, mỗi người tự sửa và xác nhận)
++
++Soạn từ lịch sử Git và các báo cáo tích hợp; chỉ là điểm xuất phát.
++
++| Thành viên | Phần chính | Nguồn đối chiếu |
++| --- | --- | --- |
++| Domyan-nn (Nguyên) | Điều phối, tích hợp; backend xác thực, danh mục, địa điểm, thuyết minh, công bố/ẩn (WBS 01–06); Admin web; phần mở rộng A, G; CI; tài liệu kiểm thử P2, PRD | Commit trên `main`, PR #2 |
++| qannee (An) | Khung guest-web, hợp đồng API ban đầu; thống kê UC10–UC12 (backend, Dashboard, đồng ý/rút trên web); phần mở rộng C | Commit 01/11, 03/11, 04/11, 12/11 (commit 12/11 chưa gắn tài khoản GitHub do sai email) |
++| LeeNaimThwuan (Thuận) | Ứng dụng mobile: tra cứu, bản đồ, TTS, GPS tự phát, UC12 mobile; nội dung database; phần mở rộng B; kiểm thử thực địa | Commit 01/11–10/11, PR #1, #4 |
++
++Ghi trung thực việc dùng công cụ AI hỗ trợ viết mã và tài liệu, kèm cách nhóm kiểm soát: review, chạy test, tự giải thích được từng phần.
++
++## 6. Bảng theo dõi hằng ngày
++
++Mỗi tối người phụ trách điền bằng chứng (link PR, commit, ảnh); Domyan-nn điền cột cuối.
++
++| Ngày | Người | Mục tiêu cuối ngày | Bằng chứng | Tự đánh giá | Kiểm tra |
++| --- | --- | --- | --- | --- | --- |
++| 13/11 | Domyan-nn | Việc chặn 0.1, 0.3, 0.5 xong; PR #3 merge; PR G mở, CI xanh | | | ☐ |
++| 13/11 | qannee | 0.2, 0.4, 0.5 xong; C có trong test-results; đã review PR G | | | ☐ |
++| 13/11 | LeeNaimThwuan | 0.2, 0.5 xong; PR B mobile + Playwright mở, CI xanh | | | ☐ |
++| 14/11 | Domyan-nn | B, G đã merge; toàn bộ test chạy lại đạt; PRD 1.2 xong; khung báo cáo đã gửi | | | ☐ |
++| 14/11 | qannee | Cài mới trên máy khác đạt (hoặc ghi rõ lỗi); chương thống kê, C, kiểm thử có bản nháp | | | ☐ |
++| 14/11 | LeeNaimThwuan | FT-1..23 có kết quả; video trong evidence; chương mobile có bản nháp | | | ☐ |
++| 15/11 | Domyan-nn | Báo cáo ghép xong; tag `v1.0`; slide xong | | | ☐ |
++| 15/11 | qannee | Chương và slide phần mình đã sửa theo góp ý | | | ☐ |
++| 15/11 | LeeNaimThwuan | Chương, slide, sơ đồ mobile đã sửa theo góp ý | | | ☐ |
++| 15/11 | Cả nhóm | Tổng duyệt demo đạt; buổi giải thích ngược xong | | | ☐ |
+diff --git a/docs/testing/test-cases.md b/docs/testing/test-cases.md
+index 291815b..32ccffd 100644
+--- a/docs/testing/test-cases.md
++++ b/docs/testing/test-cases.md
+@@ -159,7 +159,7 @@ Mã cũ (đợt 02/11) đổi tên: API-01 → TC-01-01, API-02 → TC-01-02, AP
+ 
+ | Mã | Tình huống | Kết quả mong đợi | Kiểm chứng | Kết quả |
+ | --- | --- | --- | --- | --- |
+-| TC-DB-01 | Khởi tạo DB mới qua 001 + 002 + 003 | `user_version = 2`, bảng analytics có CHECK/FK/chỉ mục; API khởi động và phục vụ danh mục song ngữ | `test_analytics_migration.py::test_new_database_has_version_and_constraints`; `test_database.py::test_init_tables_and_refusal_preserves_existing_data`; `test_startup.py::test_current_database_starts_and_serves_categories` | Đạt 09/11 |
++| TC-DB-01 | Khởi tạo DB mới qua 001 → 005 | `user_version = 5`, bảng analytics có CHECK/FK/chỉ mục; API khởi động và phục vụ danh mục song ngữ | `test_analytics_migration.py::test_new_database_has_version_and_constraints`; `test_database.py::test_init_tables_and_refusal_preserves_existing_data`; `test_startup.py::test_current_database_starts_and_serves_categories` | Đạt (chạy lại 14/11) |
+ | TC-DB-02 | DB theo 001 có dữ liệu: kiểm tra rồi nâng cấp kèm backup | `--check` không đổi tệp; nâng cấp giữ dữ liệu; backup giữ schema cũ | `test_analytics_migration.py::test_upgrade_preserves_rows_backup_and_foreign_keys`, `::test_check_and_repeated_upgrade_preserve_data` | Đạt 09/11 |
+ | TC-DB-03 | Schema analytics riêng cũ, tên chỉ mục cũ | Giữ phiên đã rút và session_id NULL; tạo tên chỉ mục chuẩn | `test_analytics_migration.py::test_upgrade_legacy_standalone_schema_and_index_names` | Đạt 09/11 |
+ | TC-DB-04 | UUID/thời gian/consent sai hoặc FK mồ côi | Dừng, rollback schema và dữ liệu, bật lại FK | `test_analytics_migration.py::test_invalid_old_data_rolls_back_schema_and_rows` | Đạt 09/11 |
+diff --git a/docs/testing/test-plan.md b/docs/testing/test-plan.md
+index fbbb6d4..0a88d8a 100644
+--- a/docs/testing/test-plan.md
++++ b/docs/testing/test-plan.md
+@@ -1,6 +1,6 @@
+ # Kế hoạch kiểm thử — Saigon Stories Quận 1
+ 
+-Phiên bản 09/11/2026, áp dụng cho nhánh `main` từ commit `c0c01ad`. Nguồn yêu cầu: PRD (F01–F12, BR01–BR19, NFR01–NFR08). Danh sách ca ở [test-cases.md](test-cases.md), ma trận truy vết ở [traceability-matrix.md](traceability-matrix.md), kết quả theo đợt ở [test-results.md](test-results.md).
++Phiên bản 09/11/2026, cập nhật 14/11/2026 (thêm ca phần mở rộng A, B, C); áp dụng cho nhánh `main` từ commit `c0c01ad`, đã chạy lại trên `99e3d88`. Nguồn yêu cầu: PRD (F01–F12, BR01–BR19, NFR01–NFR08). Danh sách ca ở [test-cases.md](test-cases.md), ma trận truy vết ở [traceability-matrix.md](traceability-matrix.md), kết quả theo đợt ở [test-results.md](test-results.md).
+ 
+ ## 1. Mục tiêu
+ 
+diff --git a/docs/testing/test-results.md b/docs/testing/test-results.md
+index 52a7eb5..9f25954 100644
+--- a/docs/testing/test-results.md
++++ b/docs/testing/test-results.md
+@@ -1,5 +1,21 @@
+ # Kết quả kiểm thử
+ 
++## Chạy lại các bộ tự động trên `main` `99e3d88` — 14/11/2026
++
++Bản clone sạch của `main` (commit `99e3d88`, 12/11, gồm phần mở rộng A và C), chạy bằng Python 3.12.3 và Node v22.23.4 trên Linux (CI dùng Node 26 và thêm job Windows/Edge). Mọi bộ dùng SQLite tạm; không đụng DB chính.
++
++| Bộ kiểm thử | Kết quả |
++| --- | --- |
++| Backend `unittest discover -s backend/tests` | **132/132 đạt** (gồm `test_audit_log.py` 19 ca) |
++| Guest web `npm test` | Node **40/40**, Vitest **20/20** (gồm `nearMe.test.js`) |
++| Build guest-web, admin-web | Thành công |
++| Mobile `npm test -- --runInBand` | 17 bộ đạt, 1 bộ bỏ qua; **134 đạt**, 4 bỏ qua (ca HTTP cần fixture API) |
++| Playwright e2e (Edge) | **Chưa chạy lại**, gồm ca tab Nhật ký (`TC-AUD-06`) và ca Gần tôi |
++| Điện thoại thật (GPS, TTS, UC12, Gần tôi, ghi công ảnh) | **Chưa kiểm thử**; phiếu thực địa vẫn để trống |
++| Kết quả CI trên GitHub | Chưa kiểm tra |
++
++Phần mở rộng C: chi tiết thiết kế, giới hạn và việc còn lại ở [c-audit-log.md](../project/c-audit-log.md). DB chính `backend/data/saigon_stories.db` trên từng máy demo phải được migrate lên schema 5 (RUNNING.md) trước khi bật API mới.
++
+ ## Phần mở rộng A: upload ảnh và ghi công ảnh — 09/11/2026
+ 
+ Nhánh `feat/a-image-upload` tách từ `main` `bfe907c`, thay đổi chưa commit. Phân công ở [phan-cong-ABCG-2026-11-10.md](../project/phan-cong-ABCG-2026-11-10.md).
+diff --git a/docs/testing/traceability-matrix.md b/docs/testing/traceability-matrix.md
+index 2af2069..34f5a9e 100644
+--- a/docs/testing/traceability-matrix.md
++++ b/docs/testing/traceability-matrix.md
+@@ -1,6 +1,6 @@
+ # Ma trận truy vết yêu cầu
+ 
+-Cập nhật 09/11/2026, `main` `c0c01ad`. Nối yêu cầu trong PRD bản 1.1 (F, BR, NFR) với use case, API, mã nguồn và [ca kiểm thử](test-cases.md). Trạng thái lấy từ lượt chạy tự động 09/11 (mọi bộ exit 0) và [phiếu thực địa mobile](../mobile/testing/mobile-field-test.md).
++Cập nhật 14/11/2026, `main` `99e3d88` (bản gốc 09/11, `c0c01ad`). Nối yêu cầu trong PRD bản 1.1 (F, BR, NFR) với use case, API, mã nguồn và [ca kiểm thử](test-cases.md). Trạng thái lấy từ lượt chạy tự động 09/11 (mọi bộ exit 0), riêng backend, guest Node/Vitest, build web và mobile Jest chạy lại 14/11 (Playwright và thiết bị chưa chạy lại; xem [test-results.md](test-results.md)) và [phiếu thực địa mobile](../mobile/testing/mobile-field-test.md).
+ 
+ Đường dẫn mã: `be/` = `backend/app/`, `admin/` = `apps/admin-web/src/`, `guest/` = `apps/guest-web/src/`, `mobile/` = `apps/mobile/src/`. API đều có tiền tố `/api/v1`.
+ 

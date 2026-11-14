@@ -159,7 +159,7 @@ Mã cũ (đợt 02/11) đổi tên: API-01 → TC-01-01, API-02 → TC-01-02, AP
 
 | Mã | Tình huống | Kết quả mong đợi | Kiểm chứng | Kết quả |
 | --- | --- | --- | --- | --- |
-| TC-DB-01 | Khởi tạo DB mới qua 001 + 002 + 003 | `user_version = 2`, bảng analytics có CHECK/FK/chỉ mục; API khởi động và phục vụ danh mục song ngữ | `test_analytics_migration.py::test_new_database_has_version_and_constraints`; `test_database.py::test_init_tables_and_refusal_preserves_existing_data`; `test_startup.py::test_current_database_starts_and_serves_categories` | Đạt 09/11 |
+| TC-DB-01 | Khởi tạo DB mới qua 001 → 005 | `user_version = 5`, bảng analytics có CHECK/FK/chỉ mục; API khởi động và phục vụ danh mục song ngữ | `test_analytics_migration.py::test_new_database_has_version_and_constraints`; `test_database.py::test_init_tables_and_refusal_preserves_existing_data`; `test_startup.py::test_current_database_starts_and_serves_categories` | Đạt (chạy lại 14/11) |
 | TC-DB-02 | DB theo 001 có dữ liệu: kiểm tra rồi nâng cấp kèm backup | `--check` không đổi tệp; nâng cấp giữ dữ liệu; backup giữ schema cũ | `test_analytics_migration.py::test_upgrade_preserves_rows_backup_and_foreign_keys`, `::test_check_and_repeated_upgrade_preserve_data` | Đạt 09/11 |
 | TC-DB-03 | Schema analytics riêng cũ, tên chỉ mục cũ | Giữ phiên đã rút và session_id NULL; tạo tên chỉ mục chuẩn | `test_analytics_migration.py::test_upgrade_legacy_standalone_schema_and_index_names` | Đạt 09/11 |
 | TC-DB-04 | UUID/thời gian/consent sai hoặc FK mồ côi | Dừng, rollback schema và dữ liệu, bật lại FK | `test_analytics_migration.py::test_invalid_old_data_rolls_back_schema_and_rows` | Đạt 09/11 |
