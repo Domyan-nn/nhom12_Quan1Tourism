@@ -2,6 +2,18 @@
 
 Phụ trách theo kế hoạch: Lê Nam Thuận. **Đã có kết quả kiểm thử mobile do người dùng báo ngày 07/11/2026**; thông tin người trực tiếp thử, thiết bị/OS và minh chứng chưa được cung cấp.
 
+## Lượt thử 14–15/11/2026 (API thật, DB schema 5)
+
+Thứ tự công việc và tiêu chí xong ở [kế hoạch kiểm thử còn lại](../../testing/ke-hoach-kiem-thu-con-lai-2026-11-14.md). Trước khi cầm điện thoại ra thử:
+
+1. Máy chạy backend đã có `main` mới nhất. Nếu PR #7 chưa merge, checkout nhánh `feat/b-near-me-mobile` để thử được FT-24..26.
+2. DB trên máy đó đã ở schema 5 (migration 005, lệnh ở [RUNNING.md](../../../RUNNING.md)).
+3. Bật hệ thống bằng `scripts/start-system.ps1`, rồi chạy `powershell -ExecutionPolicy Bypass -File scripts/check-test-readiness.ps1`. Phải ra `READY`, không còn cảnh báo "API not reachable" ở địa chỉ LAN.
+4. `apps/mobile/.env`: `EXPO_PUBLIC_USE_MOCK=false`, `EXPO_PUBLIC_API_STYLE=v1`, `EXPO_PUBLIC_API_BASE_URL=http://<IP-LAN>:8000/api`. Khởi động lại Expo sau khi sửa. Màn Khám phá **không** được hiện nhãn dữ liệu giả lập.
+5. Điền bảng thiết bị bên dưới trước ca đầu tiên. Đặt tên ảnh/video theo [quy ước minh chứng](../../testing/evidence/README.md).
+
+Ưu tiên khi không đủ thời gian: FT-11, 13, 14, 23 (tự phát) → FT-17, 18, 19 (đồng ý/rút thống kê) → FT-24, 25 (Gần tôi) → FT-27 (ghi công ảnh) → FT-1..10 → các ca còn lại. Ca chưa thử để trống hoặc ghi "chưa thử", không ghi "đạt".
+
 ## Kết quả cập nhật ngày 07/11/2026
 
 Sau lượt thử được báo bên dưới, hệ thống đã [chuyển sang DB chính](../../deployment/database-consolidation-2026-11-07.md) và cấu hình mobile dùng API thật (`EXPO_PUBLIC_USE_MOCK=false`). Luồng đồng ý/rút thống kê trên điện thoại đang chờ thử lại với cấu hình mới; kết quả mock dưới đây được giữ làm lịch sử.
@@ -63,3 +75,7 @@ Commit/working tree: __________. Backend/database tạm và bộ dữ liệu: __
 | 21 | UC12 / BR15 | Đồng ý rồi đưa app xuống nền/mất mạng | Không gửi heartbeat khi nền/mất mạng; mở lại/online mới gửi | | | |
 | 22 | UC04 / BR08 | Hai điểm chồng vùng, lỗi mẫu GPS/cùng khoảng cách | Lọc ứng viên trước, chọn gần nhất/tie ID; bỏ mẫu quá 15s, tương lai >1s, thiếu/sai độ chính xác | | | |
 | 23 | UC04 / BR01 | Bật Tự phát, Admin ẩn một địa điểm rồi đi vào vùng địa điểm đó (không mở lại app) | Không phát; nhật ký Tự phát ghi "không còn công khai"; marker biến mất khỏi bản đồ | | | |
+| 24 | B / BR07 | Khám phá: bấm Gần tôi lần đầu, cho phép vị trí; đi bộ khoảng 200 m rồi tắt và bấm lại | Hỏi quyền một lần; danh sách sắp theo khoảng cách, hiện "~350 m" / "1,2 km"; sau khi di chuyển thứ tự và khoảng cách đổi hợp lý; bấm lần nữa thì về thứ tự cũ | | | |
+| 25 | B-A1 | Từ chối quyền vị trí khi bấm Gần tôi | Báo lý do; giữ thứ tự cũ; không hiện khoảng cách; các chức năng khác vẫn dùng được | | | |
+| 26 | B-E1 | Tắt định vị (GPS) của máy rồi bấm Gần tôi | Báo không xác định được vị trí; giữ thứ tự cũ | | | |
+| 27 | A / BR04 | Mở chi tiết một địa điểm có ảnh Wikimedia và một địa điểm có ảnh vừa tải lên qua Admin | Cả hai ảnh hiện; dòng "Ảnh: …" (tác giả, giấy phép, nguồn) nằm ngay dưới ảnh | | | |
