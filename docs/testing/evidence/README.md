@@ -31,4 +31,6 @@ Một tệp chứng minh nhiều ca thì nối mã bằng dấu cộng: `FT-13+F
 
 | Tệp hoặc link | Mã ca | Ngày | Người thử | Ghi chú |
 | --- | --- | --- | --- | --- |
-| | | | | |
+| Tệp hoặc link | Mã ca | Ngày | Người thử | Ghi chú |
+| --- | --- | --- | --- | --- |
+| `NFR06_cai-moi-may-an_20261114.png` | TC-NFR06 | 14/11/2026 | [ĐIỀN: tên] | Màn hình `check-test-readiness.ps1` lần cuối ra `READY` [ĐIỀN: sửa nếu khác]; đã che mật khẩu/token |

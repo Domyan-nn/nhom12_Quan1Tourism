@@ -54,7 +54,7 @@ Cập nhật 14/11/2026, `main` `99e3d88` (bản gốc 09/11, `c0c01ad`). Nối 
 | NFR03 | Kiểm tra dữ liệu ở client và backend; UNIQUE (poi_id, locale); không xóa danh mục đang dùng | TC-NFR03, TC-DB-01 → TC-DB-07 | Đạt |
 | NFR04 | Dùng được trên điện thoại và máy tính; có loading, rỗng, lỗi | TC-NFR04 | Đạt (web 375/768/1440 px); mobile theo phản hồi người dùng |
 | NFR05 | ≥ 5 địa điểm, 2 danh mục, mỗi địa điểm ≥ 1 bài, ≥ 1 địa điểm hai ngôn ngữ | TC-NFR05 | Đạt |
-| NFR06 | Hướng dẫn cài đặt, cấu hình SQLite, tài khoản demo, dữ liệu mẫu, sao lưu, chạy web/mobile | TC-NFR06 | Đạt; cài mới trên máy khác chưa thử |
+| NFR06 | Hướng dẫn cài đặt, cấu hình SQLite, tài khoản demo, dữ liệu mẫu, sao lưu, chạy web/mobile | TC-NFR06 | Đạt; cài mới trên máy khác thử 14/11 (DB tạo mới, `check-test-readiness.ps1` ra `READY` [ĐIỀN: xóa nếu chưa đạt]); phục hồi snapshot trên máy khác chưa thử |
 | NFR07 | Ghi kết quả luồng chính, ngoại lệ, phân quyền, thống kê; thử GPS/TTS thật | TC-NFR07 | Một phần: còn thiếu minh chứng thiết bị |
 | NFR08 | 95% của 20 request danh sách dưới 3 giây | TC-NFR08 | Đạt 06/11 (20/20) |
 | NFR09 | Tiếp cận: bàn phím, nhãn ô nhập, không chỉ dựa vào màu, biểu đồ có bảng số liệu (thêm ở PRD 1.1) | TC-10-05 (đọc biểu đồ bằng Tab), TC-02-01 (marker chọn được bằng Enter) | Một phần: chưa có ca riêng cho toàn bộ yêu cầu |
@@ -70,7 +70,7 @@ Cập nhật 14/11/2026, `main` `99e3d88` (bản gốc 09/11, `c0c01ad`). Nối 
 | Upload ảnh và ghi công tác giả trên ảnh | F07 | Đã làm 09/11 (phần mở rộng A); còn thử hiển thị ghi công trên điện thoại thật (TC-07-09, FT-27) |
 | Nhật ký thao tác Admin (phần mở rộng C) | UC05–UC09, BR09, BR10 | Đã làm 12/11; `TC-AUD-01..06`, `TC-DB-11` đạt (TC-AUD-06 qua job e2e của CI). DB chính đã migrate lên schema 5 ngày 14/11 (bản trước: `backups/before-migration-005-20261114T071912Z.db`); máy demo khác tự migrate. Còn thêm vào PRD (bảng thứ 8, mục 7.1) |
 | Gần tôi (phần mở rộng B) | BR07 | Web đã merge (PR #4); mobile và Playwright ở PR #7 (CI xanh, chờ duyệt). Còn merge PR #7 và thử trên điện thoại (TC-NEAR-07) |
-| Cài mới toàn hệ thống trên máy khác | NFR06 | Thử theo RUNNING.md trên một máy chưa cài, chạy `scripts/check-test-readiness.ps1`, ghi kết quả |
+| Cài mới toàn hệ thống trên máy khác | NFR06 | Đã thử 14/11 theo RUNNING.md, kết quả ở [test-results.md](test-results.md). Còn lại: thử phục hồi snapshot của nhóm trên máy khác |
 
 ## 5. Phần mở rộng ngoài F01–F12
 
