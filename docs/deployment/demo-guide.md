@@ -8,7 +8,7 @@ Các ô dưới để nhóm ghi sau khi thực hiện, không phải xác nhận
 
 - [ ] Ghi `git branch --show-current`, `git rev-parse HEAD`, `git status --short`; nếu còn thay đổi, ghi rõ working tree. Không tự commit/push/merge.
 - [ ] Ghi máy/OS, phiên bản Python/Node, browser, điện thoại/OS/Expo, người thử và mạng đang dùng. Kiểm tra giọng VI/EN thực sự có và nghe được; iPhone cần kiểm tra chế độ im lặng/âm lượng.
-- [ ] Chọn đường dẫn tuyệt đối database demo được duyệt. Kiểm tra 2 danh mục, ≥5 POI, bài VI/EN, nguồn nội dung/tọa độ/ảnh. Seed hiện có 5 nháp/placeholder/không ảnh, **chưa đáp ứng dữ liệu demo chuẩn**. Upload ảnh tạm gác; chỉ giữ URL ảnh được duyệt hiện có.
+- [ ] Chọn đường dẫn tuyệt đối database demo được duyệt. Kiểm tra 2 danh mục, ≥5 POI, bài VI/EN, nguồn nội dung/tọa độ/ảnh. Seed chỉ tạo 5 nháp/placeholder/không ảnh, **không dùng làm dữ liệu demo**. DB chính ngày 10/11 có 2 danh mục, 5 POI công khai đều có ảnh Wikimedia kèm ghi công, 10 bài thuyết minh; nhóm vẫn cần duyệt nội dung. Ảnh mới có thể tải lên trong Admin (JPG/PNG/WebP ≤ 2 MB) và phải điền Ghi công ảnh; sao lưu cả `storage/uploads/` theo [backup-restore](backup-restore.md#ảnh-tải-lên).
 - [ ] Dừng writer, [backup và phục hồi thử vào tệp mới](backup-restore.md). Không thử nghiệm trên database cá nhân. Không công bố placeholder để làm đầy danh sách.
 - [ ] Chuẩn bị tài khoản Admin riêng, nhập mật khẩu ẩn khi seed database mới; không quay/chụp token, mật khẩu hoặc file `.env`.
 - [ ] Kiểm tra `/api/v1/health`, Public list/detail, cổng 8000/5173/5174 và LAN điện thoại. Health chỉ là tiến trình. Nếu schema thiếu, dừng và xử lý trên bản sao; không chạy init/migration tùy tiện.

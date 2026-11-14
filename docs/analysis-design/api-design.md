@@ -11,11 +11,12 @@
 - Commit `aa0d2d7` của An bổ sung UC09 publish/hide và UC10–UC11 `/api/v1/admin/stats/visits`, `/active`, cùng Dashboard Admin; giữ nguyên khi ghép phần tích hợp này. Query lọc ngày là `date_from`, `date_to`; xem mục 9 trong hợp đồng.
 - UC12 heartbeat/revoke dưới `/api/v1/analytics/**`, cùng alias `/api/analytics/**`; router chính dùng kết nối SQLite theo request. Retention chạy lúc khởi động và mỗi 00:00 Việt Nam khi API đang chạy.
 - Quyền Admin được kiểm tra ở backend. Khách chỉ đọc POI published; draft/hidden không xuất hiện và chi tiết trả 404 như ID không tồn tại.
+- Upload ảnh (09/11, phần mở rộng A): `PUT/DELETE /api/v1/admin/pois/{id}/image` nhận JPG/PNG/WebP ≤ 2 MB, kiểm tra cả `Content-Type` và chữ ký tệp; ảnh phục vụ công khai ở `GET /api/media/pois/{file}`. Trường `image_credit` đi kèm ảnh trong API Admin và Public.
 - Guest web và Admin là hai ứng dụng React riêng dùng proxy Vite khi phát triển; mobile Expo dùng adapter riêng.
 
 ## Chưa triển khai
 
-Upload ảnh chưa có router và được loại khỏi tác vụ này. Các đường dẫn cũ `/api/public`, `/api/admin/auth`, `analytics/withdraw` không dùng cho tích hợp mới.
+Các đường dẫn cũ `/api/public`, `/api/admin/auth`, `analytics/withdraw` không dùng cho tích hợp mới.
 
 Migration thống kê hiện có đáp ứng UC12, không thêm schema mới. UC12 mobile đã nối HTTP từ commit `48a0908`, gồm foreground/NetInfo và lưu yêu cầu rút để gửi lại. Xem schema, thời hạn dấu thu hồi và nâng cấp an toàn trong hợp đồng và [RUNNING](../../RUNNING.md).
 
