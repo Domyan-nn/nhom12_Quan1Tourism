@@ -26,7 +26,7 @@ nhom12_Quan1Tourism/
 │   └── stop-system.ps1            # Dừng các dịch vụ đã khởi chạy
 ├── storage/                       # Dữ liệu runtime, Git bỏ qua
 │   ├── runtime/                   # Log, PID, biên bản chuyển DB cục bộ
-│   └── uploads/                   # Vị trí dành cho ảnh; upload còn tạm gác
+│   └── uploads/                   # Ảnh Admin tải lên (pois/); sao lưu cùng DB
 ├── backups/                       # Snapshot và ZIP dự phòng, Git bỏ qua
 ├── docs/
 │   ├── analysis-design/           # Thiết kế và SQL tham khảo
