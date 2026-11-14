@@ -16,7 +16,8 @@ Mục lục cho bộ tài liệu nộp môn Công nghệ phần mềm. Cập nh�
 | | [traceability-matrix.md](testing/traceability-matrix.md) | Truy vết F/BR/NFR → UC → API → mã → ca kiểm thử |
 | | [test-results.md](testing/test-results.md) | Kết quả theo từng đợt |
 | | [mobile-field-test.md](mobile/testing/mobile-field-test.md) | Phiếu kiểm thử trên điện thoại (GPS, TTS, thống kê) |
-| | `testing/evidence/` | Minh chứng ảnh/video (chưa có) |
+| | [ke-hoach-kiem-thu-con-lai-2026-11-14.md](testing/ke-hoach-kiem-thu-con-lai-2026-11-14.md) | Các ca chưa có kết quả, người chạy, tiêu chí xong (14–15/11) |
+| | [testing/evidence/](testing/evidence/README.md) | Minh chứng ảnh/video: quy ước đặt tên và danh sách |
 | Triển khai – vận hành | [RUNNING.md](../RUNNING.md) | Cài đặt, chạy, kiểm thử |
 | | [backup-restore.md](deployment/backup-restore.md) | Sao lưu và phục hồi SQLite |
 | | [demo-guide.md](deployment/demo-guide.md) | Kịch bản demo |

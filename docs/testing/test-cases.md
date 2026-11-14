@@ -1,12 +1,14 @@
 # Danh sách ca kiểm thử
 
-Cập nhật 09/11/2026 theo PRD và mã nguồn `main` (`c0c01ad`). Chiến lược ở [test-plan.md](test-plan.md); truy vết F/BR/NFR → ca ở [traceability-matrix.md](traceability-matrix.md).
+Cập nhật 09/11/2026 theo PRD và mã nguồn `main` (`c0c01ad`); bổ sung 14/11 phần mở rộng B và các ca thực địa FT-24..27. Chiến lược ở [test-plan.md](test-plan.md); truy vết F/BR/NFR → ca ở [traceability-matrix.md](traceability-matrix.md).
 
 **Cách đọc**
 
 - Mã ca: `TC-<UC>-<số>`. Ca phi chức năng là `TC-NFRxx`, ca dữ liệu/hạ tầng là `TC-DB-xx`.
 - Cột *Kiểm chứng* chỉ tới test tự động: tên test Python (`tệp.py::hàm`) hoặc tên test JavaScript (`tệp.js › "tiêu đề"`), đường dẫn tương đối từ `backend/tests/`, `apps/guest-web/tests/` hoặc `apps/mobile/tests/`.
 - `FT-n` là ca số n trong [phiếu thực địa mobile](../mobile/testing/mobile-field-test.md).
+- "Đạt 14/11" là lượt chạy lại trên `main` `608bac1` ngày 14/11: backend 132/132, guest 40 + 20, mobile 134 (+4 HTTP bỏ qua), build Admin/guest đạt; CI cùng commit xanh 5/5 job. "Đạt CI PR #7" là kết quả CI của nhánh `feat/b-near-me-mobile` (chưa merge); chạy tại máy 14/11: mobile 150 (+4 bỏ qua), guest 40 + 20.
+- Kế hoạch chạy các ca còn lại: [ke-hoach-kiem-thu-con-lai-2026-11-14.md](ke-hoach-kiem-thu-con-lai-2026-11-14.md).
 - *Kết quả*: "Đạt 09/11" là lượt chạy tự động ngày 09/11/2026 (lượt cuối, sau phần upload ảnh): backend 113/113, guest 26 + 20, mobile 124 (+4 HTTP bỏ qua), Playwright 41 (+1 OSM bỏ qua). Ca thủ công chưa có kết quả ghi "Chưa thử".
 
 Mã cũ (đợt 02/11) đổi tên: API-01 → TC-01-01, API-02 → TC-01-02, API-03 → TC-01-04, WEB-01 → TC-01-05, WEB-02 → TC-01-07, WEB-03 → TC-01-04, WEB-04 → TC-01-05, WEB-05 → TC-12-01, DB-01..06 → TC-DB-01..06.
@@ -90,6 +92,7 @@ Mã cũ (đợt 02/11) đổi tên: API-01 → TC-01-01, API-02 → TC-01-02, AP
 | TC-07-06 | Tải ảnh lên: JPG/PNG/WebP hợp lệ; GIF/SVG; nội dung giả mạo; > 2 MB; địa điểm không tồn tại; không đăng nhập (E2) | Ảnh hợp lệ được lưu, phục vụ đúng loại, ảnh cũ bị xóa; còn lại 415/422/413/404/401, không lưu tệp nào | BR04, BR09 | `test_poi_images.py::test_upload_each_allowed_type…`, `::test_rejects_wrong_type_spoofed_content_oversize_and_missing_place`, `::test_upload_and_delete_require_admin`; `admin.spec.js › "Admin uploads an image with credit…"` | Đạt 09/11 |
 | TC-07-07 | Ghi công ảnh; xóa ảnh; đổi sang URL; xóa địa điểm | Ghi công ≤ 300 ký tự, hiện ở API khách và dưới ảnh trang chi tiết; xóa ảnh/đổi URL/xóa địa điểm thì tệp cũ bị xóa | BR04 | `test_poi_images.py::test_credit_is_saved_trimmed_public_and_cleared_with_the_image`, `::test_switching_to_url_or_deleting_place_removes_uploaded_file`; `admin.spec.js` (cùng ca) | Đạt 09/11 |
 | TC-07-08 | Gán đường dẫn ảnh của địa điểm khác; đường dẫn giả mạo `../`; tải tệp không tồn tại | 422; 404; không đọc được tệp ngoài thư mục ảnh | NFR01 | `test_poi_images.py::test_uploaded_url_cannot_be_reused_by_another_place_or_forged` | Đạt 09/11 |
+| TC-07-09 | Điện thoại thật với API thật: mở chi tiết địa điểm có ảnh Wikimedia và địa điểm có ảnh tải lên qua Admin | Ảnh hiện; dòng "Ảnh: …" (ghi công) nằm ngay dưới ảnh; ảnh tải lên đi qua `/api/media` vẫn hiện trên điện thoại | BR04 | FT-27 | Chưa thử |
 
 ## UC08 — Quản lý thuyết minh đa ngôn ngữ
 
@@ -180,4 +183,18 @@ Mã cũ (đợt 02/11) đổi tên: API-01 → TC-01-01, API-02 → TC-01-02, AP
 | TC-AUD-03 | Ghi log lỗi giữa chừng (tạo danh mục, địa điểm, công bố, xóa, đăng nhập) | Trả 500, thay đổi bị rollback, không có phiên mới; `record` không tự commit | NFR03 | `::AtomicityTests` | Đạt 12/11 |
 | TC-AUD-04 | Mật khẩu, token, tiêu đề và nội dung bài; tên nhiều dòng; summary quá dài; action lạ | Không lưu bí mật; summary một dòng ≤ 200; action lạ bị từ chối | BR10 | `::PrivacyAndSummaryTests` | Đạt 12/11 |
 | TC-AUD-05 | `GET /admin/audit-log`: không/sai/hết phiên, thứ tự, `limit` mặc định/1/200/0/201/abc, nhật ký rỗng, hai Admin | 401 khi thiếu phiên; mới nhất trước; 422 ngoài 1–200; đúng tên người thực hiện | BR09 | `::AuditLogApiTests`, `::EveryActionIsLoggedOnceTests::test_two_admins_are_told_apart` | Đạt 12/11 |
-| TC-AUD-06 | Tab Nhật ký trong Admin | Thấy thao tác vừa làm đầu bảng, thao tác trùng bị 409 không hiện, tải lại vẫn ở tab | UC05–UC09 | `admin.spec.js › "Activity log tab lists…"` | **Chưa chạy** (cần Edge/Playwright); `npm run build` admin-web đạt |
+| TC-AUD-06 | Tab Nhật ký trong Admin | Thấy thao tác vừa làm đầu bảng, thao tác trùng bị 409 không hiện, tải lại vẫn ở tab | UC05–UC09 | `admin.spec.js › "Activity log tab lists…"` | Đạt 12/11 (job e2e Playwright/Edge của CI trên `99e3d88`, chạy toàn bộ thư mục `tests`) |
+
+## Phần mở rộng B: Gần tôi
+
+Đặc tả ở [b-near-me.md](../project/b-near-me.md). Các tệp ghi "(PR #7)" nằm trên nhánh `feat/b-near-me-mobile`, chỉ có trên `main` sau khi PR #7 được merge.
+
+| Mã | Tình huống | Kết quả mong đợi | Quy tắc | Kiểm chứng | Kết quả |
+| --- | --- | --- | --- | --- | --- |
+| TC-NEAR-01 | Sắp danh sách theo khoảng cách: nhiều địa điểm, bằng khoảng cách, thiếu hoặc hỏng tọa độ, vị trí khách không hợp lệ, danh sách rỗng | Tăng dần theo haversine; bằng nhau giữ thứ tự cũ; thiếu tọa độ xếp cuối, không có khoảng cách; vị trí sai thì giữ nguyên thứ tự; không sửa mảng gốc | — | `nearMe.test.js` (guest) và `places/nearMe.test.js` (mobile): các ca "sắp xếp…", "bằng khoảng cách…", "thiếu hoặc hỏng tọa độ…", "vị trí khách không hợp lệ…" | Đạt 14/11 |
+| TC-NEAR-02 | Định dạng khoảng cách: < 10 m, 349 m, 1.234 m, 12 km; giao diện VI và EN; giá trị âm hoặc không phải số | "< 10 m", "~350 m", "1,2 km" (VI) / "1.2 km" (EN), "12 km"; giá trị sai cho chuỗi rỗng | — | `nearMe.test.js › "formatDistance: …"` (guest, mobile) | Đạt 14/11 |
+| TC-NEAR-03 | Web: cho phép vị trí, bấm Gần tôi; bấm lại để tắt; kết hợp với tìm kiếm; giao diện tiếng Anh | Sắp theo khoảng cách và hiện khoảng cách; tắt thì về thứ tự cũ; chỉ còn kết quả khớp tìm kiếm và vẫn sắp; nhãn và câu đọc tiếng Anh | BR02 | `nearMe.spec.js` nhóm "đã cho phép vị trí" (PR #7) | Đạt CI PR #7 |
+| TC-NEAR-04 | Từ chối quyền vị trí; trình duyệt không hỗ trợ; trang không an toàn (HTTP qua IP LAN); hết giờ; mobile tắt dịch vụ vị trí | Báo đúng lý do; giữ thứ tự cũ; không hiện khoảng cách | — | `nearMe.test.js › "requestPosition: …"` (guest); `nearMe.spec.js` nhóm "chưa cho phép vị trí", `nearMePosition.test.js`, `ExploreScreen.nearMe.test.js › "từ chối quyền…"`, `"dịch vụ vị trí tắt…"` (PR #7) | Đạt 14/11 (guest); Đạt CI PR #7 (mobile, Playwright) |
+| TC-NEAR-05 | Quyền riêng tư: bật Gần tôi rồi theo dõi mọi request và bộ nhớ trình duyệt/máy | Không request nào chứa tọa độ; không ghi tọa độ vào localStorage/AsyncStorage; tọa độ chỉ nằm trong bộ nhớ của màn hình | BR07, NFR11 | `nearMe.test.js › "BR07: …"` (guest), `places/nearMe.test.js › "mã "Gần tôi" không gọi mạng…"` (mobile); `nearMe.spec.js` ca đầu, `ExploreScreen.nearMe.test.js › "BR07: …"` (PR #7) | Đạt 14/11; Đạt CI PR #7 |
+| TC-NEAR-06 | Mobile: mở Khám phá chưa bấm Gần tôi; bấm Gần tôi; bấm lại | Chưa bấm thì không hỏi quyền, giữ thứ tự API; bấm thì sắp và hiện khoảng cách; bấm lại thì về thứ tự cũ | BR07 | `ExploreScreen.nearMe.test.js` (PR #7) | Đạt CI PR #7 |
+| TC-NEAR-07 | Điện thoại thật với API thật: cho phép, từ chối, tắt GPS, đi bộ đổi vị trí | Như TC-NEAR-03/04/06 trên thiết bị; thứ tự đổi theo vị trí thật | BR07 | FT-24, FT-25, FT-26 | Chưa thử |
