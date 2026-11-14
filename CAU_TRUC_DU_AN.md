@@ -1,6 +1,6 @@
 # Cấu trúc hệ thống Saigon Stories
 
-Cập nhật 07/11/2026: mã ứng dụng, dữ liệu vận hành, bản sao lưu và tài liệu được đặt riêng. Cả ba ứng dụng dùng chung API FastAPI và một DB chính.
+Cập nhật 07/11/2026, bổ sung 14/11/2026 (schema 5, ảnh tải lên, nhật ký Admin, thư mục `docs/project/`): mã ứng dụng, dữ liệu vận hành, bản sao lưu và tài liệu được đặt riêng. Cả ba ứng dụng dùng chung API FastAPI và một DB chính.
 
 ```text
 nhom12_Quan1Tourism/
@@ -33,6 +33,7 @@ nhom12_Quan1Tourism/
 │   ├── deployment/                # Cài đặt, vận hành, sao lưu
 │   ├── diagrams/                  # Nguồn sơ đồ
 │   ├── mobile/                    # Sơ đồ, checklist và kết quả thiết bị
+│   ├── project/                   # Phân công, tiến độ phần mở rộng A/B/C/G, hướng dẫn nắm backend
 │   ├── requirements/              # Tài liệu yêu cầu
 │   ├── testing/                   # Test plan, kết quả, công cụ fixture
 │   └── final-report/              # Tài liệu bàn giao
@@ -44,7 +45,7 @@ nhom12_Quan1Tourism/
 
 ## DB chính và kết nối
 
-`backend/data/saigon_stories.db` đã được thay bằng snapshot kiểm tra hợp lệ của `local-dev.db`, giữ nguyên schema, ID, tài khoản/mật khẩu, trạng thái nội dung và dữ liệu bảy bảng. DB chính dùng `user_version=2`. Trước khi khởi động lại API, đã đối chiếu toàn bộ schema và từng dòng dữ liệu với nguồn; không seed hoặc tự công bố thêm địa điểm.
+`backend/data/saigon_stories.db` đã được thay bằng snapshot kiểm tra hợp lệ của `local-dev.db`, giữ nguyên schema, ID, tài khoản/mật khẩu, trạng thái nội dung và dữ liệu bảy bảng. Tại thời điểm chuyển (07/11) DB chính ở `user_version=2`; sau đó đã nâng lên `user_version=5` (migration 004 ghi công ảnh, 005 nhật ký Admin, thêm bảng `admin_audit_log` thành bảng thứ tám) và API từ chối DB thấp hơn, xem [RUNNING](RUNNING.md). Trước khi khởi động lại API, đã đối chiếu toàn bộ schema và từng dòng dữ liệu với nguồn; không seed hoặc tự công bố thêm địa điểm.
 
 Các DB local-dev/demo/preview và bản backup rời cũ đã được xóa sau khi lưu ZIP dự phòng ở `backups/`. Trong `backend/data/` chỉ giữ DB chính và `.gitkeep`. SQL tham khảo thống kê chuyển từ `backend/data/schema_analytics.sql` sang `docs/analysis-design/analytics-schema-reference.sql`; migration thực tế vẫn nằm tại `backend/migrations/`.
 

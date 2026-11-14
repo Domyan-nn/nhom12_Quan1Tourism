@@ -1,10 +1,10 @@
 # Tài liệu dự án
 
-Mục lục cho bộ tài liệu nộp môn Công nghệ phần mềm. Cập nhật 09/11/2026.
+Mục lục cho bộ tài liệu nộp môn Công nghệ phần mềm. Cập nhật 14/11/2026.
 
 | Nhóm | Tài liệu | Nội dung |
 | --- | --- | --- |
-| Yêu cầu | [PRD](../PRD_Saigon_Stories_Quan1_SQLite.docx) (bản 1.1) | Lịch sử phiên bản, thuật ngữ, vấn đề, người dùng, chỉ số đánh giá, phạm vi, F01–F12, BR01–BR19, NFR01–NFR11, đặc tả UC01–UC12 |
+| Yêu cầu | [PRD](../PRD_Saigon_Stories_Quan1_SQLite.docx) (bản 1.1; bản 1.2 đang chờ cập nhật, xem [requirements/](requirements/README.md)) | Lịch sử phiên bản, thuật ngữ, vấn đề, người dùng, chỉ số đánh giá, phạm vi, F01–F12, BR01–BR19, NFR01–NFR11, đặc tả UC01–UC12 |
 | | [requirements/](requirements/README.md) | Quy ước quản lý phiên bản PRD |
 | Phân tích – thiết kế | [use-cases.md](analysis-design/use-cases.md) | Danh sách use case |
 | | [architecture.md](analysis-design/architecture.md) | Kiến trúc đối chiếu mã nguồn |
@@ -25,6 +25,9 @@ Mục lục cho bộ tài liệu nộp môn Công nghệ phần mềm. Cập nh�
 | Quản lý dự án | [CONTRIBUTING.md](../CONTRIBUTING.md) | Quy ước nhánh, commit, PR, review, CI, migration, phiên bản |
 | | [.github/](../.github/) | CI GitHub Actions, mẫu PR, mẫu issue |
 | | [phan-cong-ABCG-2026-11-10.md](project/phan-cong-ABCG-2026-11-10.md) | Phân công 3 người cho phần mở rộng A, B, C, G và bảng theo dõi hằng ngày |
+| | [phan-cong-hoan-thien-2026-11-13.md](project/phan-cong-hoan-thien-2026-11-13.md) | Kế hoạch hoàn thiện, việc còn lại đến khi nộp |
+| | [b-near-me.md](project/b-near-me.md), [c-audit-log.md](project/c-audit-log.md) | Yêu cầu, thiết kế, tiến độ và giới hạn của phần mở rộng B và C |
+| | [huong-dan-nam-backend-api-ci.md](project/huong-dan-nam-backend-api-ci.md) | Tài liệu để thành viên nắm backend, API, CI khi bảo vệ |
 | Báo cáo | `final-report/` | Báo cáo cuối kỳ (chưa có) |
 
 Các tệp `testing/*-2026-11-0x.md` và `mobile/testing/day*.md` là nhật ký từng đợt tích hợp, giữ làm lịch sử.

@@ -1,6 +1,6 @@
 # Ma trận truy vết yêu cầu
 
-Cập nhật 09/11/2026, `main` `c0c01ad`. Nối yêu cầu trong PRD bản 1.1 (F, BR, NFR) với use case, API, mã nguồn và [ca kiểm thử](test-cases.md). Trạng thái lấy từ lượt chạy tự động 09/11 (mọi bộ exit 0) và [phiếu thực địa mobile](../mobile/testing/mobile-field-test.md).
+Cập nhật 14/11/2026, `main` `99e3d88` (bản gốc 09/11, `c0c01ad`). Nối yêu cầu trong PRD bản 1.1 (F, BR, NFR) với use case, API, mã nguồn và [ca kiểm thử](test-cases.md). Trạng thái lấy từ lượt chạy tự động 09/11 (mọi bộ exit 0), riêng backend, guest Node/Vitest, build web và mobile Jest chạy lại 14/11 (Playwright và thiết bị chưa chạy lại; xem [test-results.md](test-results.md)) và [phiếu thực địa mobile](../mobile/testing/mobile-field-test.md).
 
 Đường dẫn mã: `be/` = `backend/app/`, `admin/` = `apps/admin-web/src/`, `guest/` = `apps/guest-web/src/`, `mobile/` = `apps/mobile/src/`. API đều có tiền tố `/api/v1`.
 
