@@ -6,7 +6,7 @@ Người kiểm tra tiến độ: **Domyan-nn**, mỗi tối lúc 21:00 theo [b�
 
 | Người | Phần chính | Lý do chọn | Ngày 3 làm thêm |
 | --- | --- | --- | --- |
-| **Domyan-nn** | **A. Upload ảnh và ghi công ảnh** (backend, migration 004, Admin, hiển thị ở web/mobile) — làm cùng Claude | Phụ trách tích hợp; phần A đụng nhiều nơi nhất | **G. Chạy bản build bằng một lệnh** (cùng sửa `backend/app/main.py` như A nên để một người làm, tránh xung đột); merge cuối |
+| **Domyan-nn** | **A. Upload ảnh và ghi công ảnh** (backend, migration 004, Admin, hiển thị ở web/mobile) | Phụ trách tích hợp; phần A đụng nhiều nơi nhất | **G. Chạy bản build bằng một lệnh** (cùng sửa `backend/app/main.py` như A nên để một người làm, tránh xung đột); merge cuối |
 | **LeeNaimThwuan** | **B. "Gần tôi"**: sắp xếp danh sách theo khoảng cách trên web khách và mobile | Đã làm mobile (UC03, UC12 mobile, marker bản đồ) và guest web | Thử B và phần hiển thị ghi công ảnh của A trên điện thoại thật, quay video làm minh chứng |
 | **qannee** | **C. Nhật ký thao tác Admin** (migration 005, ghi log ở các route quản trị, tab Nhật ký) | Đã làm backend thống kê UC12 và hợp đồng API | Review PR của B; bổ sung ca kiểm thử và truy vết cho C |
 
@@ -67,9 +67,9 @@ Mỗi tối người phụ trách ghi link PR/commit và tình trạng; Domyan-n
 
 | Ngày | Người | Mục tiêu cuối ngày | Bằng chứng (PR, commit, ảnh) | Tự đánh giá | Kiểm tra |
 | --- | --- | --- | --- | --- | --- |
-| 10/11 | Domyan-nn | Migration 004 + API upload có test đạt | Xong sớm 09/11 trên nhánh `feat/a-image-upload` (cả phần Admin, web, mobile); xem test-results 09/11 | Đạt | ☐ |
-| 10/11 | LeeNaimThwuan | Hàm sắp xếp + test; nút Gần tôi trên web | | | ☐ |
-| 10/11 | qannee | Bảng log + ghi log danh mục/auth + test | | | ☐ |
+| 10/11 | Domyan-nn | Migration 004 + API upload có test đạt | Xong sớm 09/11 trên nhánh `feat/a-image-upload` (cả phần Admin, web, mobile); xem test-results 09/11 | Đạt | ☑ Đạt (kiểm 11/11): đã có trên `main`, CI xanh |
+| 10/11 | LeeNaimThwuan | Hàm sắp xếp + test; nút Gần tôi trên web | Nhánh `feat/b-near-me`, 4 commit 10/11 22:54–22:58 (`49fab59`, `65f2fc9`, `c6f0d0d`, `b30e5ac`); [PR #4](https://github.com/Domyan-nn/nhom12_Quan1Tourism/pull/4), CI xanh | | ☑ Đạt (kiểm 11/11): chạy lại trên PR — guest 40 Node + 20 Vitest, build đạt; mobile Jest 134 + 4 bỏ qua. Còn thiếu: mô tả PR (đang để mẫu trống), issue, người review |
+| 10/11 | qannee | Bảng log + ghi log danh mục/auth + test | Chưa có nhánh `feat/c-audit-log`, commit hay PR trên GitHub (kiểm 11/11 07:10) | | ☒ Chưa đạt: trễ một ngày, cần báo nhóm và cắt phạm vi theo mục 5 |
 | 11/11 | Domyan-nn | PR A mở, Playwright đạt, đã merge | | | ☐ |
 | 11/11 | LeeNaimThwuan | PR B mở, mobile + Playwright đạt | | | ☐ |
 | 11/11 | qannee | Log đủ các route, API + tab Nhật ký | | | ☐ |
