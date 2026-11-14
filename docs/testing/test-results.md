@@ -1,5 +1,21 @@
 # Kết quả kiểm thử
 
+## Chạy lại các bộ tự động trên `main` `99e3d88` — 14/11/2026
+
+Bản clone sạch của `main` (commit `99e3d88`, 12/11, gồm phần mở rộng A và C), chạy bằng Python 3.12.3 và Node v22.23.4 trên Linux (CI dùng Node 26 và thêm job Windows/Edge). Mọi bộ dùng SQLite tạm; không đụng DB chính.
+
+| Bộ kiểm thử | Kết quả |
+| --- | --- |
+| Backend `unittest discover -s backend/tests` | **132/132 đạt** (gồm `test_audit_log.py` 19 ca) |
+| Guest web `npm test` | Node **40/40**, Vitest **20/20** (gồm `nearMe.test.js`) |
+| Build guest-web, admin-web | Thành công |
+| Mobile `npm test -- --runInBand` | 17 bộ đạt, 1 bộ bỏ qua; **134 đạt**, 4 bỏ qua (ca HTTP cần fixture API) |
+| Playwright e2e (Edge) | **Chưa chạy lại**, gồm ca tab Nhật ký (`TC-AUD-06`) và ca Gần tôi |
+| Điện thoại thật (GPS, TTS, UC12, Gần tôi, ghi công ảnh) | **Chưa kiểm thử**; phiếu thực địa vẫn để trống |
+| Kết quả CI trên GitHub | Chưa kiểm tra |
+
+Phần mở rộng C: chi tiết thiết kế, giới hạn và việc còn lại ở [c-audit-log.md](../project/c-audit-log.md). DB chính `backend/data/saigon_stories.db` trên từng máy demo phải được migrate lên schema 5 (RUNNING.md) trước khi bật API mới.
+
 ## Phần mở rộng A: upload ảnh và ghi công ảnh — 09/11/2026
 
 Nhánh `feat/a-image-upload` tách từ `main` `bfe907c`, thay đổi chưa commit. Phân công ở [phan-cong-ABCG-2026-11-10.md](../project/phan-cong-ABCG-2026-11-10.md).

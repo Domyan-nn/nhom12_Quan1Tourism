@@ -1,6 +1,6 @@
 # Từ điển dữ liệu theo mã nguồn 06/11/2026
 
-Đối chiếu PRD §7.1–7.2 và schema thực tế; không thay schema/migration trong đợt này. Nguồn: `001_initial.sql`, `002_analytics_constraints.sql`, `prepare_category_bilingual.py`, validators/routes và services. Database mới đi qua init (001 → analytics 002 → danh mục song ngữ). `user_version=2` chỉ xác nhận phiên bản analytics; vẫn phải kiểm tra cột danh mục song ngữ.
+Đối chiếu PRD §7.1–7.2 và schema thực tế; cập nhật 14/11/2026 theo migration 001–005. Nguồn: `001_initial.sql`, `002_analytics_constraints.sql`, `003_category_bilingual.sql`, `004_poi_image_credit.sql`, `005_admin_audit_log.sql`, validators/routes và services. Database mới đi qua init (001 → 005) và có `user_version=5`; từ migration 004, `user_version` là phiên bản schema chung (xem migrations/README).
 
 | Bảng | Trường và kiểu | Khóa/ràng buộc và nghiệp vụ |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Kế hoạch kiểm thử — Saigon Stories Quận 1
 
-Phiên bản 09/11/2026, áp dụng cho nhánh `main` từ commit `c0c01ad`. Nguồn yêu cầu: PRD (F01–F12, BR01–BR19, NFR01–NFR08). Danh sách ca ở [test-cases.md](test-cases.md), ma trận truy vết ở [traceability-matrix.md](traceability-matrix.md), kết quả theo đợt ở [test-results.md](test-results.md).
+Phiên bản 09/11/2026, cập nhật 14/11/2026 (thêm ca phần mở rộng A, B, C); áp dụng cho nhánh `main` từ commit `c0c01ad`, đã chạy lại trên `99e3d88`. Nguồn yêu cầu: PRD (F01–F12, BR01–BR19, NFR01–NFR08). Danh sách ca ở [test-cases.md](test-cases.md), ma trận truy vết ở [traceability-matrix.md](traceability-matrix.md), kết quả theo đợt ở [test-results.md](test-results.md).
 
 ## 1. Mục tiêu
 

@@ -10,7 +10,7 @@ Nguyên tắc xuyên suốt: **không trình bày điều gì bạn chưa tự c
 | --- | --- | --- | --- |
 | 1 | 1,5 giờ | Chạy và quan sát | Tự bật API trên bản sao DB, gọi 5 endpoint trong Swagger, đọc mã lỗi |
 | 2 | 3 giờ | Lần theo 4 luồng request | Vẽ tay luồng từ client đến SQLite cho 4 luồng ở mục 3, không nhìn tài liệu |
-| 3 | 1,5 giờ | Database và migration | Giải thích 7 bảng, ràng buộc, `user_version`, vì sao API không tự migration |
+| 3 | 1,5 giờ | Database và migration | Giải thích 8 bảng, ràng buộc, `user_version`, vì sao API không tự migration |
 | 4 | 2 giờ | Test và CI | Tự viết 1 test, cố ý làm hỏng code để thấy test và CI đỏ, rồi sửa lại |
 
 Sau đó: tự trả lời bộ câu hỏi ở mục 7 thành tiếng, mỗi câu dưới 1 phút.
@@ -32,7 +32,7 @@ Sau đó: tự trả lời bộ câu hỏi ở mục 7 thành tiếng, mỗi câ
         │ 4. Quy tắc nghiệp vụ                services/*.py
         │ 5. Câu SQL                          db/*_repository.py
         ▼
-      SQLite  backend/data/saigon_stories.db  (1 tệp, schema bản 4)
+      SQLite  backend/data/saigon_stories.db  (1 tệp, schema bản 5)
       Ảnh tải lên  storage/uploads/pois/
 ```
 
@@ -84,7 +84,7 @@ Mở **http://127.0.0.1:8001/docs**. Đây là Swagger UI do FastAPI tự sinh t
 
 | # | Thao tác | Kết quả mong đợi | Hỏi chính mình |
 | --- | --- | --- | --- |
-| 1 | `GET /api/v1/health` | `{"status":"ok"}` | Vì sao health không kiểm DB? (đọc docstring ở [main.py:101](../../backend/app/main.py:101)) |
+| 1 | `GET /api/v1/health` | `{"status":"ok"}` | Vì sao health không kiểm DB? (đọc docstring ở [main.py:101](../../backend/app/main.py#L101)) |
 | 2 | `GET /api/v1/pois`, rồi thêm `q=ben thanh` | 5 địa điểm; tìm không dấu vẫn ra Chợ Bến Thành | Bỏ dấu ở đâu? ([text.py](../../backend/app/core/text.py)) |
 | 3 | `GET /api/v1/pois/khong-co` | 404, `POI_NOT_FOUND` | Vì sao nháp/ẩn cũng trả 404 thay vì 403? |
 | 4 | `GET /api/v1/admin/me` không có token | 401, `AUTH_REQUIRED` | Ai chặn? (`require_admin`) |
@@ -102,60 +102,60 @@ Với mỗi luồng: mở các tệp theo đúng thứ tự, đọc, rồi **g�
 ### Luồng A — Khách xem danh sách địa điểm (UC01, BR01, BR02)
 
 1. [public.py](../../backend/app/api/routes/public.py): `GET /api/v1/pois` nhận `q` và `category_id`, xin kết nối qua `Depends(get_db)`.
-2. [dependencies.py:15](../../backend/app/api/dependencies.py:15) `get_db`: mở kết nối, `yield` cho route dùng, `finally` đóng lại.
-3. [connection.py:72](../../backend/app/db/connection.py:72) `connect`: mở tệp có sẵn (`mode=rw`, không tự tạo), **bật `foreign_keys`** vì SQLite mặc định tắt, chờ khóa tối đa 10 giây.
-4. [poi_repository.py:8](../../backend/app/db/poi_repository.py:8) `list_pois`: SQL luôn có `WHERE status = 'published'` → **BR01: khách không bao giờ thấy nháp/ẩn**. Tham số truyền bằng `?`, không ghép chuỗi → chống SQL injection. Tìm theo tên làm bằng Python sau khi bỏ dấu.
+2. [dependencies.py:15](../../backend/app/api/dependencies.py#L15) `get_db`: mở kết nối, `yield` cho route dùng, `finally` đóng lại.
+3. [connection.py:79](../../backend/app/db/connection.py#L79) `connect`: mở tệp có sẵn (`mode=rw`, không tự tạo), **bật `foreign_keys`** vì SQLite mặc định tắt, chờ khóa tối đa 10 giây.
+4. [poi_repository.py:8](../../backend/app/db/poi_repository.py#L8) `list_pois`: SQL luôn có `WHERE status = 'published'` → **BR01: khách không bao giờ thấy nháp/ẩn**. Tham số truyền bằng `?`, không ghép chuỗi → chống SQL injection. Tìm theo tên làm bằng Python sau khi bỏ dấu.
 
 Câu nên nói: *"Quy tắc chỉ hiện địa điểm công khai nằm ngay trong câu SQL của repository công khai, nên không route nào của khách có thể lỡ trả về bản nháp."*
 
 ### Luồng B — Admin đăng nhập và dùng phiên (UC05, BR09, BR10, NFR01)
 
 1. [routes/auth.py](../../backend/app/api/routes/auth.py) `POST /login` gọi `auth.login`; sai trả 401, bị khóa tạm trả 429.
-2. [services/auth.py:31](../../backend/app/services/auth.py:31) `login`:
+2. [services/auth.py:32](../../backend/app/services/auth.py#L32) `login`:
    - chuẩn hóa tên đăng nhập, hỏi bộ đếm [login_throttle.py](../../backend/app/services/login_throttle.py) (5 lần sai trong 15 phút);
    - tên không tồn tại vẫn chạy băm mật khẩu "giả" (`consume_password_work`) để thời gian trả lời giống nhau → kẻ tấn công không đoán được tài khoản nào có thật;
    - đúng thì sinh token ngẫu nhiên, **chỉ lưu bản băm SHA-256 của token** vào `admin_sessions`, hạn 8 giờ.
-3. [security.py:17](../../backend/app/core/security.py:17): mật khẩu băm **PBKDF2-SHA256, 600.000 vòng, salt 16 byte**, so sánh bằng `hmac.compare_digest` (chống đo thời gian).
-4. Mọi request Admin sau đó: [dependencies.py:23](../../backend/app/api/dependencies.py:23) `require_admin` đọc header `Authorization: Bearer <token>`, băm lại, tìm phiên còn hạn, chưa thu hồi. Không có thì 401.
+3. [security.py:17](../../backend/app/core/security.py#L17): mật khẩu băm **PBKDF2-SHA256, 600.000 vòng, salt 16 byte**, so sánh bằng `hmac.compare_digest` (chống đo thời gian).
+4. Mọi request Admin sau đó: [dependencies.py:23](../../backend/app/api/dependencies.py#L23) `require_admin` đọc header `Authorization: Bearer <token>`, băm lại, tìm phiên còn hạn, chưa thu hồi. Không có thì 401.
 5. Các router Admin gắn `dependencies=[Depends(require_admin)]` ngay khi khai báo (ví dụ đầu [admin_pois.py](../../backend/app/api/routes/admin_pois.py)) → không thể quên kiểm quyền ở từng endpoint.
 
 Câu nên nói: *"Lộ database thì kẻ tấn công cũng không dùng được token, vì DB chỉ giữ bản băm."*
 
 ### Luồng C — Admin công bố địa điểm (UC09, BR03, BR04)
 
-1. `POST /api/v1/admin/pois/{id}/publish` → [admin_pois.py:260](../../backend/app/api/routes/admin_pois.py:260) `change_status(db, id, ("draft","hidden"), "published")`.
+1. `POST /api/v1/admin/pois/{id}/publish` → [admin_pois.py:273](../../backend/app/api/routes/admin_pois.py#L273) `change_status(db, id, ("draft","hidden"), "published")`.
 2. `BEGIN IMMEDIATE`: khóa ghi ngay từ đầu, để hai Admin bấm cùng lúc không chen nhau.
 3. Kiểm **máy trạng thái**: chỉ nháp/ẩn → công khai; công khai → ẩn. Sai thì 409 `INVALID_STATUS_TRANSITION`.
-4. [admin_pois.py:229](../../backend/app/api/routes/admin_pois.py:229) `publish_problems`: kiểm lại tên, địa chỉ, danh mục, tọa độ, bán kính và **ít nhất một bài thuyết minh hợp lệ**. Thiếu thì 422 `POI_NOT_PUBLISHABLE` kèm danh sách mục thiếu.
+4. [admin_pois.py:242](../../backend/app/api/routes/admin_pois.py#L242) `publish_problems`: kiểm lại tên, địa chỉ, danh mục, tọa độ, bán kính và **ít nhất một bài thuyết minh hợp lệ**. Thiếu thì 422 `POI_NOT_PUBLISHABLE` kèm danh sách mục thiếu.
 
 Vẽ được sơ đồ: `draft ──publish──▶ published ──hide──▶ hidden ──publish──▶ published`.
 
 ### Luồng D — Thống kê ẩn danh theo đồng ý (UC10–UC12, BR13–BR18)
 
 1. Khách bấm Đồng ý → client tự sinh UUID ngẫu nhiên, gửi `POST /api/v1/analytics/heartbeat` mỗi 30 giây khi trang đang hiển thị. **Không có tên, số điện thoại, tọa độ.**
-2. [analytics_service.py:73](../../backend/app/services/analytics_service.py:73) `record_heartbeat`:
+2. [analytics_service.py:73](../../backend/app/services/analytics_service.py#L73) `record_heartbeat`:
    - phiên mới → tạo phiên và 1 lượt truy cập;
    - cách lần trước ≥ 30 phút → thêm lượt mới (BR14);
    - phiên đã rút → trả 409, không kích hoạt lại.
-3. [analytics_service.py:117](../../backend/app/services/analytics_service.py:117) `revoke_session` (BR18): tách UUID khỏi các lượt cũ (số lượt theo ngày vẫn đúng), đặt `consent_granted = 0`. Gọi lặp lại vẫn thành công (idempotent). Nếu UUID chưa từng có thì tạo "bia mộ" để heartbeat đến muộn không tạo lại phiên.
-4. [analytics_service.py:145](../../backend/app/services/analytics_service.py:145): "đang hoạt động" = phiên chưa rút, có tín hiệu trong 90 giây (BR17).
-5. [analytics_service.py:164](../../backend/app/services/analytics_service.py:164) + [analytics_retention.py](../../backend/app/services/analytics_retention.py): xóa dữ liệu quá 30 ngày lúc khởi động và mỗi 00:00 giờ Việt Nam.
+3. [analytics_service.py:117](../../backend/app/services/analytics_service.py#L117) `revoke_session` (BR18): tách UUID khỏi các lượt cũ (số lượt theo ngày vẫn đúng), đặt `consent_granted = 0`. Gọi lặp lại vẫn thành công (idempotent). Nếu UUID chưa từng có thì tạo "bia mộ" để heartbeat đến muộn không tạo lại phiên.
+4. [analytics_service.py:145](../../backend/app/services/analytics_service.py#L145): "đang hoạt động" = phiên chưa rút, có tín hiệu trong 90 giây (BR17).
+5. [analytics_service.py:164](../../backend/app/services/analytics_service.py#L164) + [analytics_retention.py](../../backend/app/services/analytics_retention.py): xóa dữ liệu quá 30 ngày lúc khởi động và mỗi 00:00 giờ Việt Nam.
 
 Câu nên nói: *"Số đang hoạt động là ước lượng: khách đóng tab thì phải đợi tối đa 90 giây mới hết được tính."*
 
 ### Luồng phụ — Upload ảnh (phần mở rộng A)
 
-[admin_pois.py:140](../../backend/app/api/routes/admin_pois.py:140) và [services/media.py](../../backend/app/services/media.py): kiểm `Content-Type`, đọc từng khúc và dừng ngay khi vượt 2 MB, **kiểm chữ ký tệp** (byte đầu của JPG/PNG/WebP) để chống đổi đuôi. Tên tệp là UUID mới, ghi kiểu "tạo mới, cấm ghi đè". `path_for` từ chối mọi đường dẫn có `../`. Ảnh cũ bị xóa khi thay ảnh.
+[admin_pois.py:145](../../backend/app/api/routes/admin_pois.py#L145) và [services/media.py](../../backend/app/services/media.py): kiểm `Content-Type`, đọc từng khúc và dừng ngay khi vượt 2 MB, **kiểm chữ ký tệp** (byte đầu của JPG/PNG/WebP) để chống đổi đuôi. Tên tệp là UUID mới, ghi kiểu "tạo mới, cấm ghi đè". `path_for` từ chối mọi đường dẫn có `../`. Ảnh cũ bị xóa khi thay ảnh.
 
 ### Xử lý lỗi chung
 
-[main.py:76](../../backend/app/main.py:76): mọi lỗi trả cùng một dạng `{"error": {"code", "message", "details"}}`. Client dựa vào `code`, không dựa vào câu chữ. Lỗi dữ liệu vào (422) cố ý **không lặp lại body**, để mật khẩu không bao giờ xuất hiện trong phản hồi lỗi.
+[main.py:77](../../backend/app/main.py#L77): mọi lỗi trả cùng một dạng `{"error": {"code", "message", "details"}}`. Client dựa vào `code`, không dựa vào câu chữ. Lỗi dữ liệu vào (422) cố ý **không lặp lại body**, để mật khẩu không bao giờ xuất hiện trong phản hồi lỗi.
 
 ---
 
 ## 4. Buổi 3 — Database và migration
 
-### 7 bảng
+### 8 bảng
 
 | Bảng | Lưu gì | Ràng buộc đáng nói |
 | --- | --- | --- |
@@ -166,6 +166,7 @@ Câu nên nói: *"Số đang hoạt động là ước lượng: khách đóng t
 | `poi_narrations` | Bài thuyết minh | `UNIQUE (poi_id, locale)` → mỗi ngôn ngữ một bài |
 | `anonymous_sessions` | Phiên thống kê ẩn danh | UUID v4 kiểm bằng CHECK, thời gian định dạng cố định |
 | `visit_events` | Lượt truy cập | Rút đồng ý thì `session_id` thành NULL (`SET NULL`) |
+| `admin_audit_log` | Nhật ký thao tác Admin (migration 005) | `admin_id` `RESTRICT`: tài khoản đã có nhật ký không xóa được, chỉ khóa |
 
 Xem [001_initial.sql](../../backend/migrations/001_initial.sql) và [data-dictionary.md](../analysis-design/data-dictionary.md).
 
@@ -173,11 +174,11 @@ Xem [001_initial.sql](../../backend/migrations/001_initial.sql) và [data-dictio
 
 ### Migration và `user_version`
 
-- `PRAGMA user_version` là số phiên bản schema ghi ngay trong tệp SQLite. Hiện là **4**.
-- 001 tạo bảng → 002 siết ràng buộc thống kê → 003 thêm tên danh mục tiếng Anh → 004 thêm `pois.image_credit`. Xem [migrations/README.md](../../backend/migrations/README.md).
-- Khi khởi động, [connection.py:57](../../backend/app/db/connection.py:57) **từ chối chạy** nếu DB cũ hơn bản 4, và **không bao giờ tự migration**. Lý do: tự nâng cấp DB đang chứa dữ liệu thật mà không sao lưu là rủi ro mất dữ liệu. Nâng cấp phải chạy script có `--check` (chỉ xem) và `--backup` (bắt buộc sao lưu).
+- `PRAGMA user_version` là số phiên bản schema ghi ngay trong tệp SQLite. Hiện là **5**.
+- 001 tạo bảng → 002 siết ràng buộc thống kê → 003 thêm tên danh mục tiếng Anh → 004 thêm `pois.image_credit` → 005 thêm bảng `admin_audit_log`. Xem [migrations/README.md](../../backend/migrations/README.md).
+- Khi khởi động, [connection.py:57](../../backend/app/db/connection.py#L57) **từ chối chạy** nếu DB cũ hơn bản 5 (thiếu `pois.image_credit` hoặc bảng `admin_audit_log`), và **không bao giờ tự migration**. Lý do: tự nâng cấp DB đang chứa dữ liệu thật mà không sao lưu là rủi ro mất dữ liệu. Nâng cấp phải chạy script có `--check` (chỉ xem) và `--backup` (bắt buộc sao lưu).
 
-Bài tập: chạy `--check` của migration 004 trên bản sao ở buổi 1. Script dừng với thông báo `Migration 004 already applied (user_version = 4)` và mã thoát 1, không ghi gì. Giải thích vì sao từ chối chạy lại lại là hành vi đúng:
+Bài tập: chạy `--check` của migration 005 trên bản sao ở buổi 1. Script dừng với thông báo `Migration 005 already applied (user_version = 5)` và mã thoát 1, không ghi gì. Giải thích vì sao từ chối chạy lại lại là hành vi đúng:
 
 ```powershell
 .\.venv\Scripts\python.exe backend/scripts/migrate_004_poi_image_credit.py --database "$env:TEMP\saigon-hoc.db" --check
@@ -216,7 +217,7 @@ Chạy tất cả (113 test, khoảng 1 phút):
 
 Làm trên nhánh nháp, **không commit**:
 
-1. Trong [poi_repository.py:9](../../backend/app/db/poi_repository.py:9) (`list_pois`), đổi `WHERE status = 'published'` thành `WHERE 1 = 1`, tức là bỏ lọc trạng thái.
+1. Trong [poi_repository.py:9](../../backend/app/db/poi_repository.py#L9) (`list_pois`), đổi `WHERE status = 'published'` thành `WHERE 1 = 1`, tức là bỏ lọc trạng thái.
 2. Chạy lại `test_public_api.py` → cả 2 test đỏ (`FAILED (failures=2)`, đã thử 11/11). Đọc thông báo lỗi: dòng `assert` nào bắt được, vì sao.
 3. Hoàn tác bằng `git checkout -- backend/app/db/poi_repository.py`, chạy lại → xanh.
 
@@ -268,7 +269,7 @@ Nói trung thực về thực tế: phần A commit thẳng lên `main`; PR #4 m
 **Kiến trúc**
 
 1. *Vì sao chọn FastAPI và SQLite?* FastAPI: nhẹ, tự sinh tài liệu `/docs`, kiểm dữ liệu bằng Pydantic. SQLite: một tệp, không cần cài máy chủ DB, đủ cho một Admin và lượng khách demo, dễ sao lưu. Giới hạn: một tiến trình ghi tại một thời điểm, không hợp tải lớn.
-2. *Vì sao không dùng ORM?* Schema nhỏ (7 bảng). SQL tay giúp thấy rõ câu lệnh, kiểm soát giao dịch `BEGIN IMMEDIATE`. Đánh đổi: phải tự viết câu SQL lặp lại.
+2. *Vì sao không dùng ORM?* Schema nhỏ (8 bảng). SQL tay giúp thấy rõ câu lệnh, kiểm soát giao dịch `BEGIN IMMEDIATE`. Đánh đổi: phải tự viết câu SQL lặp lại.
 3. *Các lớp trong backend?* Route → service → repository → SQLite (mục 1). Điểm yếu tự nhận: phần địa điểm còn viết SQL ngay trong route `admin_pois.py`, chưa tách sang service như danh mục.
 4. *Ba client dùng chung API thế nào?* Cùng tiền tố `/api/v1`; web qua proxy Vite, mobile gọi thẳng IP LAN.
 
@@ -330,7 +331,7 @@ Tự nêu trước thì được đánh giá là hiểu hệ thống. Bị hỏi
 
 - [ ] Tự bật API trên bản sao DB, không nhìn hướng dẫn
 - [ ] Vẽ tay luồng A–D, mỗi luồng chỉ ra đúng tệp và hàm
-- [ ] Giải thích 7 bảng và 3 ràng buộc quan trọng nhất
+- [ ] Giải thích 8 bảng và 3 ràng buộc quan trọng nhất
 - [ ] Làm 3 bài "làm hỏng có chủ đích" và kể được test nào bắt lỗi
 - [ ] Tự viết và chạy xanh 1 test mới
 - [ ] Mở tab Actions, giải thích 5 job và vì sao e2e chạy sau
