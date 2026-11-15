@@ -29,6 +29,7 @@ Mục lục cho bộ tài liệu nộp môn Công nghệ phần mềm. Cập nh�
 | | [phan-cong-hoan-thien-2026-11-13.md](project/phan-cong-hoan-thien-2026-11-13.md) | Kế hoạch hoàn thiện, việc còn lại đến khi nộp |
 | | [b-near-me.md](project/b-near-me.md), [c-audit-log.md](project/c-audit-log.md) | Yêu cầu, thiết kế, tiến độ và giới hạn của phần mở rộng B và C |
 | | [huong-dan-nam-backend-api-ci.md](project/huong-dan-nam-backend-api-ci.md) | Tài liệu để thành viên nắm backend, API, CI khi bảo vệ |
+| | [huong-dan-nam-ma-nguon-3-phan.docx](project/huong-dan-nam-ma-nguon-3-phan.docx) | Bản Word chia mã nguồn thành 3 phần (Nguyên, An, Thuận): luồng chạy kèm số dòng, bài làm hỏng có chủ đích đã chạy thật, câu vấn đáp |
 | Báo cáo | `final-report/` | Báo cáo cuối kỳ (chưa có) |
 
 Các tệp `testing/*-2026-11-0x.md` và `mobile/testing/day*.md` là nhật ký từng đợt tích hợp, giữ làm lịch sử.
