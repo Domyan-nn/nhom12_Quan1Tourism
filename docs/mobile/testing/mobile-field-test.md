@@ -12,6 +12,8 @@ Thứ tự công việc và tiêu chí xong ở [kế hoạch kiểm thử còn 
 4. `apps/mobile/.env`: `EXPO_PUBLIC_USE_MOCK=false`, `EXPO_PUBLIC_API_STYLE=v1`, `EXPO_PUBLIC_API_BASE_URL=http://<IP-LAN>:8000/api`. Khởi động lại Expo sau khi sửa. Màn Khám phá **không** được hiện nhãn dữ liệu giả lập.
 5. Điền bảng thiết bị bên dưới trước ca đầu tiên. Đặt tên ảnh/video theo [quy ước minh chứng](../../testing/evidence/README.md).
 
+Đã kiểm trên máy backend ngày 15/11 (không phải trên điện thoại): API trả lời qua `http://192.168.1.31:8000`, Metro trả bundle Android qua LAN, client mobile gọi API thật 154/154 test đạt. Phần còn lại của mỗi ca là thao tác trên điện thoại thật; chi tiết ở [test-results.md](../../testing/test-results.md).
+
 Ưu tiên khi không đủ thời gian: FT-11, 13, 14, 23 (tự phát) → FT-17, 18, 19 (đồng ý/rút thống kê) → FT-24, 25 (Gần tôi) → FT-27 (ghi công ảnh) → FT-1..10 → các ca còn lại. Ca chưa thử để trống hoặc ghi "chưa thử", không ghi "đạt".
 
 ## Kết quả cập nhật ngày 07/11/2026

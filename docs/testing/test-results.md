@@ -1,22 +1,43 @@
 # Kết quả kiểm thử
+
+## Kiểm thử bổ sung không cần điện thoại — 15/11/2026
+
+Nền `main` `cddf796` (gồm A, B web và mobile, C, kết quả NFR06). Windows 11, Python 3.12, Node 26, Google Chrome 157, Microsoft Edge 157. Không có điện thoại hay Android emulator trên máy này, nên **mọi ca thực địa FT vẫn chưa thử**.
+
+| Kiểm thử | Kết quả |
+| --- | --- |
+| CI GitHub trên `cddf796` | Xanh **5/5** job: backend, guest-web, admin-web, mobile, e2e Playwright/Edge (gồm `nearMe.spec.js` và tab Nhật ký) |
+| Playwright toàn bộ trên **Google Chrome 157** (NFR10), bốn dịch vụ test và SQLite tạm | **47 đạt**, 1 bỏ qua (chẩn đoán tile OSM thật, chỉ bật khi đặt `SAIGON_TEST_REAL_OSM=1`), thoát 0 |
+| Mobile Jest với API thật: fixture `serve_api.py`, `SAIGON_TEST_API_URL`, `SAIGON_TEST_FIXTURE=gate2` | **154/154** đạt, không bỏ ca nào; 4 ca `backend.integration.test.js` gọi HTTP thật cho danh sách, chi tiết, heartbeat, rút đồng ý |
+| `expo export --platform android` | Bundle Android build được (976 module, 2,3 MB) |
+| Tổng duyệt kỹ thuật bằng `scripts/start-system.ps1` trên DB chính | Bốn dịch vụ lên (API `0.0.0.0:8000`, Admin 5174, Guest 5173, Metro 8081); `check-test-readiness.ps1` **READY** (1 cảnh báo: `EXPO_PUBLIC_API_BASE_URL` trống); qua địa chỉ LAN `192.168.1.31`: API 200, ảnh không tồn tại 404, `audit-log` không token 401; hai proxy Vite 200; Metro trả bundle Android qua LAN 200 (5,4 MB, 16 giây, có mã Gần tôi); `stop-system.ps1` dừng đủ bốn dịch vụ |
+
+**Phát hiện**
+
+1. `start-system.ps1` từ chối chạy (`Service state exists`) vì tệp `storage/runtime/services.json` còn từ ngày 07/11, dù không dịch vụ nào chạy. Cách xử lý: chạy `stop-system.ps1` trước (an toàn: chỉ dừng tiến trình khớp cả PID và thời điểm khởi động). Đã thêm vào mục sự cố của [demo-guide.md](../deployment/demo-guide.md). Nên chạy `stop-system.ps1` sau mỗi buổi và trước buổi bảo vệ.
+2. `apps/mobile/.env` trên máy backend để trống `EXPO_PUBLIC_API_BASE_URL`. Khi thử bằng điện thoại thật nên đặt `http://192.168.1.31:8000/api` (hoặc IP LAN của máy chạy backend) rồi khởi động lại Expo.
+3. Từ lượt cài mới trên máy khác (14/11): chưa có công cụ đặt lại mật khẩu Admin; máy nhiều địa chỉ LAN cần `-LanAddress`.
+
+**Còn lại, cần điện thoại thật:** FT-1..6, 8..27 (tra cứu, bản đồ, TTS, tự phát GPS, đồng ý/rút thống kê, Gần tôi, ghi công ảnh). Các ca này **không** được ghi đạt dựa trên kết quả tự động ở trên.
+
 ## Cài mới toàn hệ thống trên máy khác (TC-NFR06) — 14/11/2026
 
-Người thử: [Nguyễn Quốc An]. Commit `main`: `[27721c0]`., Node v26.13.0. Clone mới vào thư mục trống, làm theo [RUNNING.md](../../RUNNING.md).
+Người thử: Nguyễn Quốc An (qannee). Commit `main`: `27721c0` (nay là `cde9dfc`, cùng nội dung). Node v26.13.0. Clone mới vào thư mục trống, làm theo [RUNNING.md](../../RUNNING.md).
 
-**Cách tạo DB:** clone mới không có `backend/data/saigon_stories.db` (Git bỏ qua `*.db`). Máy này không có snapshot của nhóm để phục hồi, nên tạo DB mới bằng `init_db.py` rồi `seed_db.py --username admin`, [ĐIỀN: có/không] chạy `enrich_demo_content.py` và `add_demo_images.py`, rồi công bố địa điểm qua Admin. Vì vậy kết quả **không chứng minh** việc phục hồi snapshot đã duyệt của nhóm và nội dung demo không phải bản đã duyệt.
+**Cách tạo DB:** clone mới không có `backend/data/saigon_stories.db` (Git bỏ qua `*.db`). Máy này không có snapshot của nhóm để phục hồi, nên tạo DB mới bằng `init_db.py` rồi `seed_db.py --username admin` (chưa ghi rõ có chạy `enrich_demo_content.py` và `add_demo_images.py` hay không), rồi công bố địa điểm qua Admin. Vì vậy kết quả **không chứng minh** việc phục hồi snapshot đã duyệt của nhóm và nội dung demo không phải bản đã duyệt.
 
 | Bước | Kết quả |
 | --- | --- |
-| Clone, tạo `.venv`, `pip install -r backend/requirements-dev.txt`, `npm ci` cho admin-web, guest-web, mobile | [đạt] |
+| Clone, tạo `.venv`, `pip install -r backend/requirements-dev.txt`, `npm ci` cho admin-web, guest-web, mobile | Đạt |
 | Kiểm tra DB trước khi tạo | Lỗi: `sqlite3.OperationalError: unable to open database file`. Nguyên nhân: `backend/data/` chỉ có `.gitkeep`, DB không nằm trong Git. Không phải lỗi mã nguồn |
-| `init_db.py` rồi `seed_db.py --username admin` | [đạt]; `PRAGMA user_version` = 5 |
-| `scripts/start-system.ps1` | [đạt] |
+| `init_db.py` rồi `seed_db.py --username admin` | Đạt; `PRAGMA user_version` = 5 |
+| `scripts/start-system.ps1` | Đạt |
 | Đăng nhập Admin web (5174) | Đạt sau khi đặt lại mật khẩu (xem Ghi chú 1) |
-| Công bố địa điểm qua Admin | [số địa điểm đã công bố: 6, số bài VI/EN mỗi địa điểm: 2] |
+| Công bố địa điểm qua Admin | Ghi chép ghi 6 địa điểm, mỗi điểm 2 bài VI/EN; ảnh chụp lần kiểm tra cuối cho thấy **5** địa điểm công khai, mỗi điểm có bài VI và EN |
 | `scripts/check-test-readiness.ps1` lần 1 (DB mới, 1 địa điểm công khai) | **NOT READY**: 1 lỗi chặn (`Only 1 published places; PRD demo needs at least 5`), 1 cảnh báo (`apps/mobile/.env missing`). Các mục còn lại đạt: schema 5, 2 danh mục, 1 Admin, tệp ảnh tải lên đủ, API trả lời qua 127.0.0.1 và qua hai địa chỉ LAN |
-| `scripts/check-test-readiness.ps1` lần cuối | [READY: 0 blocking problems, 1 warning(s).] |
+| `scripts/check-test-readiness.ps1` lần cuối | **READY**: 0 lỗi chặn, 1 cảnh báo (`apps/mobile/.env missing`); khớp ảnh minh chứng |
 
-Minh chứng: [`docs/testing/evidence/NFR06_cai-moi-may-an_20261114.png`].
+Minh chứng: [`NFR06_cai-moi-may-an_20261114.png`](evidence/NFR06_cai-moi-may-an_20261114.png).
 
 **Ghi chú**
 

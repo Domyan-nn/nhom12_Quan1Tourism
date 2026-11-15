@@ -19,7 +19,7 @@ Cập nhật 14/11/2026, `main` `99e3d88` (bản gốc 09/11, `c0c01ad`). Nối 
 | F09 | Chỉ công bố khi đủ BR04 và có một bài; Ẩn làm địa điểm biến mất khỏi API khách | UC07, UC09 | BR01, BR03, BR04, BR12 | `POST /admin/pois/{id}/publish`, `POST /admin/pois/{id}/hide`, `DELETE /admin/pois/{id}` | `be/api/routes/admin_pois.py` (`change_status`, `publish_problems`); `admin/features/admin/places/PublicationPanel.jsx` | TC-09-01 → TC-09-05, TC-07-03 | Đạt |
 | F10 | Hôm nay, 7 ngày và khoảng tối đa 30 ngày; phân biệt 0 với lỗi truy vấn | UC10 | BR13–BR16, BR18, BR19 | `GET /admin/stats/visits` | `be/api/routes/admin_stats.py`, `be/services/analytics_service.py`, `be/services/analytics_retention.py`; `admin/features/admin/analytics/Dashboard.jsx`, `VisitsChart.jsx` | TC-10-01 → TC-10-06 | Đạt |
 | F11 | Đếm mã phiên chưa rút có last_seen trong 90 giây; làm mới 30 giây; nêu giới hạn ước lượng | UC11 | BR13, BR15, BR17–BR19 | `GET /admin/stats/active` | `be/services/analytics_service.py`; `admin/features/admin/analytics/Dashboard.jsx` | TC-11-01, TC-11-02 | Đạt |
-| F12 | Chỉ thu khi đồng ý; rút dừng gửi ngay; thử lại yêu cầu rút khi mất mạng | UC12 | BR13–BR15, BR17, BR18 | `POST /analytics/heartbeat`, `POST /analytics/revoke` | `be/api/routes/analytics.py`, `be/services/analytics_service.py`, `be/schemas/analytics.py`; `guest/features/privacy/`; `mobile/features/privacy/`, `mobile/services/analyticsApi.js` | TC-12-01 → TC-12-08 | Web đạt; mobile tự động đạt, trên điện thoại với API thật chưa thử (TC-12-08) |
+| F12 | Chỉ thu khi đồng ý; rút dừng gửi ngay; thử lại yêu cầu rút khi mất mạng | UC12 | BR13–BR15, BR17, BR18 | `POST /analytics/heartbeat`, `POST /analytics/revoke` | `be/api/routes/analytics.py`, `be/services/analytics_service.py`, `be/schemas/analytics.py`; `guest/features/privacy/`; `mobile/features/privacy/`, `mobile/services/analyticsApi.js` | TC-12-01 → TC-12-08 | Web đạt; mobile tự động đạt, client mobile qua HTTP thật đạt 15/11; trên điện thoại chưa thử (TC-12-08) |
 
 ## 2. Quy tắc nghiệp vụ BR01–BR19
 
@@ -54,11 +54,11 @@ Cập nhật 14/11/2026, `main` `99e3d88` (bản gốc 09/11, `c0c01ad`). Nối 
 | NFR03 | Kiểm tra dữ liệu ở client và backend; UNIQUE (poi_id, locale); không xóa danh mục đang dùng | TC-NFR03, TC-DB-01 → TC-DB-07 | Đạt |
 | NFR04 | Dùng được trên điện thoại và máy tính; có loading, rỗng, lỗi | TC-NFR04 | Đạt (web 375/768/1440 px); mobile theo phản hồi người dùng |
 | NFR05 | ≥ 5 địa điểm, 2 danh mục, mỗi địa điểm ≥ 1 bài, ≥ 1 địa điểm hai ngôn ngữ | TC-NFR05 | Đạt |
-| NFR06 | Hướng dẫn cài đặt, cấu hình SQLite, tài khoản demo, dữ liệu mẫu, sao lưu, chạy web/mobile | TC-NFR06 | Đạt; cài mới trên máy khác thử 14/11 (DB tạo mới, `check-test-readiness.ps1` ra `READY` [ĐIỀN: xóa nếu chưa đạt]); phục hồi snapshot trên máy khác chưa thử |
+| NFR06 | Hướng dẫn cài đặt, cấu hình SQLite, tài khoản demo, dữ liệu mẫu, sao lưu, chạy web/mobile | TC-NFR06 | Đạt; cài mới trên máy khác thử 14/11 (DB tạo mới, `check-test-readiness.ps1` ra `READY`, có ảnh minh chứng); phục hồi snapshot trên máy khác chưa thử |
 | NFR07 | Ghi kết quả luồng chính, ngoại lệ, phân quyền, thống kê; thử GPS/TTS thật | TC-NFR07 | Một phần: còn thiếu minh chứng thiết bị |
 | NFR08 | 95% của 20 request danh sách dưới 3 giây | TC-NFR08 | Đạt 06/11 (20/20) |
 | NFR09 | Tiếp cận: bàn phím, nhãn ô nhập, không chỉ dựa vào màu, biểu đồ có bảng số liệu (thêm ở PRD 1.1) | TC-10-05 (đọc biểu đồ bằng Tab), TC-02-01 (marker chọn được bằng Enter) | Một phần: chưa có ca riêng cho toàn bộ yêu cầu |
-| NFR10 | Nền tảng: Chrome/Edge, 375–1.440 px, Android/iOS qua Expo Go SDK 58, giao diện VI/EN (thêm ở PRD 1.1) | TC-NFR04 | Web đạt trên Edge; Chrome và điện thoại chưa ghi kết quả riêng |
+| NFR10 | Nền tảng: Chrome/Edge, 375–1.440 px, Android/iOS qua Expo Go SDK 58, giao diện VI/EN (thêm ở PRD 1.1) | TC-NFR04 | Web đạt trên Edge (CI) và Chrome 157 (15/11, 47 ca Playwright); điện thoại chưa ghi kết quả riêng |
 | NFR11 | Quyền riêng tư: chỉ thu khi đồng ý, không thu tên/số điện thoại/tọa độ, thông báo mục đích và cách rút (thêm ở PRD 1.1) | TC-12-01 → TC-12-08 | Kỹ thuật đạt; chưa đối chiếu pháp lý |
 
 ## 4. Khoảng trống còn mở
@@ -69,7 +69,7 @@ Cập nhật 14/11/2026, `main` `99e3d88` (bản gốc 09/11, `c0c01ad`). Nối 
 | HTTPS khi truy cập công khai | NFR01 | Ngoài phạm vi demo LAN; nêu là giới hạn trong báo cáo |
 | Upload ảnh và ghi công tác giả trên ảnh | F07 | Đã làm 09/11 (phần mở rộng A); còn thử hiển thị ghi công trên điện thoại thật (TC-07-09, FT-27) |
 | Nhật ký thao tác Admin (phần mở rộng C) | UC05–UC09, BR09, BR10 | Đã làm 12/11; `TC-AUD-01..06`, `TC-DB-11` đạt (TC-AUD-06 qua job e2e của CI). DB chính đã migrate lên schema 5 ngày 14/11 (bản trước: `backups/before-migration-005-20261114T071912Z.db`); máy demo khác tự migrate. Còn thêm vào PRD (bảng thứ 8, mục 7.1) |
-| Gần tôi (phần mở rộng B) | BR07 | Web đã merge (PR #4); mobile và Playwright ở PR #7 (CI xanh, chờ duyệt). Còn merge PR #7 và thử trên điện thoại (TC-NEAR-07) |
+| Gần tôi (phần mở rộng B) | BR07 | Web và mobile đã merge (PR #4, PR #7); TC-NEAR-01..06 đạt 15/11. Còn thử trên điện thoại (TC-NEAR-07) |
 | Cài mới toàn hệ thống trên máy khác | NFR06 | Đã thử 14/11 theo RUNNING.md, kết quả ở [test-results.md](test-results.md). Còn lại: thử phục hồi snapshot của nhóm trên máy khác |
 
 ## 5. Phần mở rộng ngoài F01–F12
@@ -77,6 +77,6 @@ Cập nhật 14/11/2026, `main` `99e3d88` (bản gốc 09/11, `c0c01ad`). Nối 
 | Phần | Yêu cầu | Quy tắc | API / mã nguồn chính | Ca kiểm thử | Trạng thái 14/11 |
 | --- | --- | --- | --- | --- | --- |
 | A. Upload ảnh và ghi công ảnh | Admin tải JPG/PNG/WebP ≤ 2 MB, ghi công ≤ 300 ký tự hiện dưới ảnh ở web và mobile | BR04, NFR01 | `PUT/DELETE /admin/pois/{id}/image`, `GET /api/media/pois/{file}`; `be/services/media.py`, migration 004 | TC-07-06 → TC-07-09, TC-DB-10 | Tự động đạt; điện thoại (TC-07-09) chưa thử |
-| B. Gần tôi | Sắp danh sách Khám phá theo khoảng cách trên máy khách, không gửi tọa độ | BR07, NFR11 | Không có API mới; `guest/features/nearMe/`, `mobile/features/places/nearMe*.js`, `useNearMe.js` | TC-NEAR-01 → TC-NEAR-07 | Web đạt; mobile đạt CI PR #7 (chưa merge); điện thoại chưa thử |
+| B. Gần tôi | Sắp danh sách Khám phá theo khoảng cách trên máy khách, không gửi tọa độ | BR07, NFR11 | Không có API mới; `guest/features/nearMe/`, `mobile/features/places/nearMe*.js`, `useNearMe.js` | TC-NEAR-01 → TC-NEAR-07 | Web và mobile đạt (15/11); điện thoại chưa thử |
 | C. Nhật ký thao tác Admin | Mỗi thao tác quản trị thành công ghi một dòng; tab Nhật ký | BR09, BR10 | `GET /admin/audit-log`; `be/services/audit.py`, migration 005 | TC-AUD-01 → TC-AUD-06, TC-DB-11 | Đạt |
 | G. Chạy bản build bằng một lệnh | — | — | Chưa làm | — | Chưa làm; theo quy tắc cắt phạm vi 13/11, ghi là hướng phát triển nếu nhóm chốt cắt |
