@@ -1,4 +1,28 @@
 # Kết quả kiểm thử
+## Cài mới toàn hệ thống trên máy khác (TC-NFR06) — 14/11/2026
+
+Người thử: [Nguyễn Quốc An]. Commit `main`: `[27721c0]`., Node v26.13.0. Clone mới vào thư mục trống, làm theo [RUNNING.md](../../RUNNING.md).
+
+**Cách tạo DB:** clone mới không có `backend/data/saigon_stories.db` (Git bỏ qua `*.db`). Máy này không có snapshot của nhóm để phục hồi, nên tạo DB mới bằng `init_db.py` rồi `seed_db.py --username admin`, [ĐIỀN: có/không] chạy `enrich_demo_content.py` và `add_demo_images.py`, rồi công bố địa điểm qua Admin. Vì vậy kết quả **không chứng minh** việc phục hồi snapshot đã duyệt của nhóm và nội dung demo không phải bản đã duyệt.
+
+| Bước | Kết quả |
+| --- | --- |
+| Clone, tạo `.venv`, `pip install -r backend/requirements-dev.txt`, `npm ci` cho admin-web, guest-web, mobile | [đạt] |
+| Kiểm tra DB trước khi tạo | Lỗi: `sqlite3.OperationalError: unable to open database file`. Nguyên nhân: `backend/data/` chỉ có `.gitkeep`, DB không nằm trong Git. Không phải lỗi mã nguồn |
+| `init_db.py` rồi `seed_db.py --username admin` | [đạt]; `PRAGMA user_version` = 5 |
+| `scripts/start-system.ps1` | [đạt] |
+| Đăng nhập Admin web (5174) | Đạt sau khi đặt lại mật khẩu (xem Ghi chú 1) |
+| Công bố địa điểm qua Admin | [số địa điểm đã công bố: 6, số bài VI/EN mỗi địa điểm: 2] |
+| `scripts/check-test-readiness.ps1` lần 1 (DB mới, 1 địa điểm công khai) | **NOT READY**: 1 lỗi chặn (`Only 1 published places; PRD demo needs at least 5`), 1 cảnh báo (`apps/mobile/.env missing`). Các mục còn lại đạt: schema 5, 2 danh mục, 1 Admin, tệp ảnh tải lên đủ, API trả lời qua 127.0.0.1 và qua hai địa chỉ LAN |
+| `scripts/check-test-readiness.ps1` lần cuối | [READY: 0 blocking problems, 1 warning(s).] |
+
+Minh chứng: [`docs/testing/evidence/NFR06_cai-moi-may-an_20261114.png`].
+
+**Ghi chú**
+
+1. **Quên mật khẩu Admin.** `seed_db.py` không đổi mật khẩu của tài khoản đã có, và repo không có công cụ đặt lại mật khẩu. Máy này đặt lại bằng cách ghi đè `admin_accounts.password_hash` trực tiếp trong SQLite bằng hàm `password_hash` của `seed_db.py`, sau khi dừng hệ thống và sao lưu bằng `backup_db.py`, đồng thời xóa phiên cũ trong `admin_sessions`. Đây không phải quy trình chính thức; RUNNING.md hiện không có hướng dẫn đặt lại mật khẩu.
+2. **Hai địa chỉ LAN.** Máy có hai IPv4 có gateway (một địa chỉ dạng mạng ảo, một địa chỉ Wi-Fi/LAN thường). Khi thử điện thoại nên chỉ định `-LanAddress` cho `start-system.ps1` để không tự chọn nhầm địa chỉ.
+3. **Chưa chạy** trên máy này: các bộ test tự động trong RUNNING.md (unittest, Vitest, build, Playwright, Jest) và mọi ca thực địa trên điện thoại. Kết quả `READY` chỉ cho biết máy đủ điều kiện kỹ thuật để thử.
 
 ## Chạy lại các bộ tự động trên `main` `99e3d88` — 14/11/2026
 
