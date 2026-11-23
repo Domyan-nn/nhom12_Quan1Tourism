@@ -21,6 +21,8 @@ export default function ExploreScreen({ navigation }) {
   const [q, setQ] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [result, setResult] = useState({ status: 'loading', items: [], offline: false, error: null });
+  const [retrySuccess, setRetrySuccess] = useState(false);
+  const retryRequested = useRef(false);
   const seq = useRef(0);
   const nearMe = useNearMe();
   const rows = useMemo(
@@ -33,9 +35,17 @@ export default function ExploreScreen({ navigation }) {
     setResult((r) => ({ ...r, status: r.items.length ? 'ready' : 'loading', error: null }));
     try {
       const items = await publicApi.listPois({ q, categoryId });
-      if (id === seq.current) setResult({ status: 'ready', items, offline: false, error: null });
+      if (id === seq.current) {
+        setResult({ status: 'ready', items, offline: false, error: null });
+        if (retryRequested.current) {
+          setRetrySuccess(true);
+          retryRequested.current = false;
+        }
+      }
     } catch (err) {
       if (id !== seq.current) return;
+      retryRequested.current = false;
+      setRetrySuccess(false);
       // NFR02/UC01-E2: lỗi truy cập -> nếu đã có dữ liệu tải trước thì vẫn cho xem (lọc cục bộ), kèm báo lỗi.
       if (data.pois.length > 0) {
         setResult({ status: 'ready', items: filterPois(data.pois, { q, categoryId }), offline: true, error: err });
@@ -44,6 +54,13 @@ export default function ExploreScreen({ navigation }) {
       }
     }
   }, [q, categoryId, data.pois]);
+
+  const retry = useCallback(() => {
+    setRetrySuccess(false);
+    retryRequested.current = true;
+    data.reload();
+    search();
+  }, [data, search]);
 
   // Debounce 300 ms khi gõ từ khóa.
   useEffect(() => {
@@ -88,12 +105,13 @@ export default function ExploreScreen({ navigation }) {
 
       {USE_MOCK ? <Banner>{t.mock}</Banner> : null}
       {result.offline ? <Banner kind="error">{`${errorText(t, result.error)} ${t.cached}`}</Banner> : null}
+      {retrySuccess ? <Banner kind="ok">hello</Banner> : null}
       {data.status === 'error' && result.status === 'ready' ? <ErrorState message={errorText(t, data.error)} onRetry={data.reload} /> : null}
 
       {result.status === 'loading' ? (
         <Loading />
       ) : result.status === 'error' ? (
-        <ErrorState message={errorText(t, result.error)} onRetry={() => { data.reload(); search(); }} />
+        <ErrorState message={errorText(t, result.error)} onRetry={retry} />
       ) : (
         <FlatList
           data={rows}

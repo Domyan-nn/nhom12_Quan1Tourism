@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import useAsync from '../hooks/useAsync.js';
 import { listCategories, listPois } from '../api/index.js';
 import { useLanguage } from '../i18n/LanguageContext.jsx';
@@ -18,8 +18,24 @@ export default function ExplorePage() {
   const { t, language } = useLanguage();
   const [q, setQ] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const retryRequested = useRef(false);
+  const [retrySuccess, setRetrySuccess] = useState(false);
   const cats = useAsync(() => listCategories(), []);
-  const pois = useAsync(() => listPois({ q, categoryId }), [q, categoryId]);
+  const pois = useAsync(
+    () => listPois({ q, categoryId }),
+    [q, categoryId],
+    () => {
+      if (retryRequested.current) {
+        setRetrySuccess(true);
+        retryRequested.current = false;
+      }
+    },
+  );
+  const retryPois = () => {
+    setRetrySuccess(false);
+    retryRequested.current = true;
+    pois.retry();
+  };
   const localizedName = (category) => language === 'en' ? category?.name_en || category?.name : category?.name;
   const catName = (id) => localizedName(cats.data?.find((c) => c.id === id));
   const nearMe = useNearMe();
@@ -61,7 +77,8 @@ export default function ExplorePage() {
       </div>
 
       {pois.status === 'loading' && <Loading />}
-      {pois.status === 'error' && <ErrorState error={pois.error} onRetry={pois.retry} />}
+      {retrySuccess && <p role="status">hello</p>}
+      {pois.status === 'error' && <ErrorState error={pois.error} onRetry={retryPois} />}
       {pois.status === 'success' && pois.data.length === 0 && (
         <Empty title={t.empty} hint={t.emptyHint} />
       )}
