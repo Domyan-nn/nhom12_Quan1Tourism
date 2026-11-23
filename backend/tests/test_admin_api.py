@@ -175,6 +175,32 @@ class AdminAPITests(unittest.TestCase):
         self.assertEqual(self.client.post("/api/v1/admin/login", json=wrong).status_code, 401)
         self.login()
 
+    def test_password_older_than_one_day_must_be_changed(self):
+        token = self.login()
+        self.assertFalse(self.client.get("/api/v1/admin/me", headers=self.headers(token)).json()["password_expired"])
+        old = (datetime.now(timezone.utc) - timedelta(days=1, seconds=1)).isoformat(timespec="seconds")
+        with closing(connect(self.database)) as db, db:
+            db.execute("UPDATE admin_accounts SET updated_at=?", (old,))
+        login = self.client.post("/api/v1/admin/login", json={"username": "DemoAdmin", "password": self.password}).json()
+        self.assertTrue(login["password_expired"])
+        headers = self.headers(login["access_token"])
+        self.assertTrue(self.client.get("/api/v1/admin/me", headers=headers).json()["password_expired"])
+        blocked = self.client.get("/api/v1/admin/categories", headers=headers)
+        self.assertEqual((blocked.status_code, blocked.json()["error"]["code"]), (403, "PASSWORD_EXPIRED"))
+
+        change = "/api/v1/admin/change-password"
+        wrong = self.client.post(change, headers=headers, json={"current_password": "wrong-password", "new_password": "new-password-123"})
+        self.assertEqual(wrong.json()["error"]["code"], "INVALID_CURRENT_PASSWORD")
+        same = self.client.post(change, headers=headers, json={"current_password": self.password, "new_password": self.password})
+        self.assertEqual(same.json()["error"]["code"], "PASSWORD_REUSED")
+        self.assertEqual(self.client.post(change, headers=headers, json={"current_password": self.password, "new_password": "short"}).status_code, 422)
+        ok = self.client.post(change, headers=headers, json={"current_password": self.password, "new_password": "new-password-123"})
+        self.assertEqual(ok.status_code, 204, ok.text)
+        self.assertFalse(self.client.get("/api/v1/admin/me", headers=headers).json()["password_expired"])
+        self.assertEqual(self.client.get("/api/v1/admin/categories", headers=headers).status_code, 200)
+        self.assertEqual(self.client.post("/api/v1/admin/login", json={"username": "DemoAdmin", "password": self.password}).status_code, 401)
+        self.assertEqual(self.client.post("/api/v1/admin/login", json={"username": "DemoAdmin", "password": "new-password-123"}).status_code, 200)
+
     def test_login_removes_long_expired_sessions_only(self):
         token = self.login()
         old = datetime.now(timezone.utc) - timedelta(days=auth_service.STALE_SESSION_DAYS + 1)

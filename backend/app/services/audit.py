@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from app.db import audit_repository as repository
 
 ACTIONS = frozenset({
-    "auth.login", "auth.logout",
+    "auth.login", "auth.logout", "auth.password_change",
     "category.create", "category.update", "category.delete",
     "poi.create", "poi.update", "poi.delete", "poi.publish", "poi.hide", "poi.image_upload", "poi.image_delete",
     "narration.create", "narration.update", "narration.delete",

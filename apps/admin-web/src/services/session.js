@@ -16,8 +16,8 @@ export function loadSession(now = Date.now()) {
   return null;
 }
 
-export function saveSession({ access_token, expires_at, username }) {
-  try { window.sessionStorage.setItem(KEY, JSON.stringify({ access_token, expires_at, username })); }
+export function saveSession({ access_token, expires_at, username, password_expired }) {
+  try { window.sessionStorage.setItem(KEY, JSON.stringify({ access_token, expires_at, username, password_expired })); }
   catch { /* Trình duyệt chặn lưu trữ: vẫn dùng được, chỉ mất phiên khi tải lại. */ }
 }
 

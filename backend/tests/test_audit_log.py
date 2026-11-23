@@ -3,6 +3,7 @@ import os
 import sqlite3
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
@@ -68,7 +69,7 @@ class AuditTestCase(unittest.TestCase):
     def second_admin(self, username="second-admin", password="second-admin-test-only"):
         with closing(connect(self.database)) as db, db:
             db.execute("INSERT INTO admin_accounts (id, username, password_hash, created_at, updated_at) VALUES (?,?,?,?,?)",
-                       ("admin-2", username, password_hash(password), "2026-11-12T00:00:00+00:00", "2026-11-12T00:00:00+00:00"))
+                       ("admin-2", username, password_hash(password), datetime.now(timezone.utc).isoformat(timespec="seconds"), datetime.now(timezone.utc).isoformat(timespec="seconds")))
         response = self.client.post(BASE + "/login", json={"username": username, "password": password})
         self.assertEqual(response.status_code, 200, response.text)
         return self.headers(response.json()["access_token"])
