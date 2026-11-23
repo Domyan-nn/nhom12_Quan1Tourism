@@ -68,6 +68,17 @@ test('chưa bấm Gần tôi: giữ thứ tự của API, không hỏi quyền, 
   expect(Location.requestForegroundPermissionsAsync).not.toHaveBeenCalled();
 });
 
+test('UC01 bước 2: Thử lại thành công thì hiện hello', async () => {
+  mockListPois
+    .mockRejectedValueOnce(new Error('network'))
+    .mockResolvedValue(LIST);
+  await mount();
+  const error = screen.root.findAllByType('ErrorState')[0];
+  await act(async () => { await error.props.onRetry(); });
+  await flush();
+  expect(banners()).toContain('hello');
+});
+
 test('bấm Gần tôi: sắp theo khoảng cách và hiện khoảng cách; bấm lại thì về thứ tự cũ', async () => {
   await mount();
   await press(nearChip());

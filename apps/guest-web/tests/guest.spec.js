@@ -71,6 +71,7 @@ test('network error shows retry and recovers without mock fallback', async ({ pa
   await page.unroute('**/api/v1/pois*');
   await page.getByRole('button', { name: 'Thử lại', exact: true }).click();
   await expect(page.locator('.card')).toHaveCount(2);
+  await expect(page.getByRole('status')).toHaveText('hello');
 });
 
 test('missing, draft and hidden detail show unavailable', async ({ page }) => {
