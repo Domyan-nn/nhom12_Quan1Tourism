@@ -10,7 +10,7 @@ const strings = {
     loading: 'Đang tải…', empty: 'Chưa có thao tác nào được ghi lại.', shown: 'Hiển thị {n} dòng mới nhất.',
     NETWORK_ERROR: 'Không kết nối được API.', SERVER_ERROR: 'Không thể tải nhật ký.', DATABASE_ERROR: 'Không thể tải nhật ký.',
     actions: {
-      'auth.login': 'Đăng nhập', 'auth.logout': 'Đăng xuất',
+      'auth.login': 'Đăng nhập', 'auth.logout': 'Đăng xuất', 'auth.password_change': 'Đổi mật khẩu',
       'category.create': 'Thêm danh mục', 'category.update': 'Sửa danh mục', 'category.delete': 'Xóa danh mục',
       'poi.create': 'Thêm địa điểm', 'poi.update': 'Sửa địa điểm', 'poi.delete': 'Xóa địa điểm', 'poi.publish': 'Công bố địa điểm', 'poi.hide': 'Ẩn địa điểm',
       'poi.image_upload': 'Tải ảnh địa điểm', 'poi.image_delete': 'Xóa ảnh địa điểm',
@@ -23,7 +23,7 @@ const strings = {
     loading: 'Loading…', empty: 'No actions have been recorded yet.', shown: 'Showing the latest {n} rows.',
     NETWORK_ERROR: 'Cannot reach the API.', SERVER_ERROR: 'Unable to load the activity log.', DATABASE_ERROR: 'Unable to load the activity log.',
     actions: {
-      'auth.login': 'Signed in', 'auth.logout': 'Signed out',
+      'auth.login': 'Signed in', 'auth.logout': 'Signed out', 'auth.password_change': 'Changed password',
       'category.create': 'Added category', 'category.update': 'Edited category', 'category.delete': 'Deleted category',
       'poi.create': 'Added place', 'poi.update': 'Edited place', 'poi.delete': 'Deleted place', 'poi.publish': 'Published place', 'poi.hide': 'Hid place',
       'poi.image_upload': 'Uploaded place image', 'poi.image_delete': 'Removed place image',

@@ -4,6 +4,7 @@ import base64
 import binascii
 import hashlib
 import hmac
+import os
 import secrets
 import unicodedata
 
@@ -26,6 +27,14 @@ def verify_password(password: str, encoded: str) -> bool:
         return hmac.compare_digest(actual, expected)
     except (ValueError, OverflowError, binascii.Error):
         return False
+
+
+def hash_password(password: str) -> str:
+    """Same PBKDF2-SHA256 format as scripts/seed_db.py, with a fresh random salt."""
+    salt = os.urandom(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, PBKDF2_ITERATIONS)
+    b64 = lambda value: base64.b64encode(value).decode("ascii")
+    return f"pbkdf2_sha256${PBKDF2_ITERATIONS}${b64(salt)}${b64(digest)}"
 
 
 def consume_password_work(password: str) -> None:

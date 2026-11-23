@@ -4,7 +4,7 @@ import sqlite3
 
 
 def find_account(db: sqlite3.Connection, username: str):
-    return db.execute("SELECT id, username, password_hash, is_active FROM admin_accounts WHERE username = ?", (username,)).fetchone()
+    return db.execute("SELECT id, username, password_hash, is_active, updated_at FROM admin_accounts WHERE username = ?", (username,)).fetchone()
 
 
 def create_session(db: sqlite3.Connection, session_id: str, admin_id: str, token_digest: str, issued: str, expires: str) -> None:
@@ -14,10 +14,15 @@ def create_session(db: sqlite3.Connection, session_id: str, admin_id: str, token
 
 def find_session(db: sqlite3.Connection, token_digest: str):
     return db.execute(
-        "SELECT s.id, s.issued_at, s.expires_at, s.revoked_at, a.id AS admin_id, a.username, a.is_active "
+        "SELECT s.id, s.issued_at, s.expires_at, s.revoked_at, a.id AS admin_id, a.username, a.is_active, a.password_hash, a.updated_at "
         "FROM admin_sessions s JOIN admin_accounts a ON a.id = s.admin_id WHERE s.token_hash = ?",
         (token_digest,),
     ).fetchone()
+
+
+def update_password(db: sqlite3.Connection, admin_id: str, digest: str, changed: str) -> None:
+    # updated_at của admin_accounts chỉ đổi khi đổi mật khẩu, nên dùng làm mốc "lần đổi mật khẩu gần nhất".
+    db.execute("UPDATE admin_accounts SET password_hash = ?, updated_at = ? WHERE id = ?", (digest, changed, admin_id))
 
 
 def revoke_session(db: sqlite3.Connection, session_id: str, revoked: str) -> None:

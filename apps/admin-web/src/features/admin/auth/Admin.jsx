@@ -20,6 +20,8 @@ export default function Admin({ t, language }) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
   const expire = useCallback(() => { clearSession(); setSession(null); setError('AUTH_REQUIRED'); }, []);
 
@@ -29,7 +31,7 @@ export default function Admin({ t, language }) {
     if (!stored) return undefined;
     let active = true;
     request('/admin/me', { token: stored.access_token })
-      .then((me) => { if (active) setSession({ ...stored, username: me.username }); })
+      .then((me) => { if (active) setSession({ ...stored, username: me.username, password_expired: me.password_expired }); })
       .catch((err) => {
         if (!active) return;
         // 401: phiên hết hạn/bị thu hồi. Lỗi khác: giữ bản lưu để lần tải sau thử lại.
@@ -69,6 +71,19 @@ export default function Admin({ t, language }) {
     finally { setBusy(false); }
   }
 
+  // Mật khẩu quá 1 ngày chưa đổi: phải đổi xong mới vào được các tab quản trị.
+  async function changePassword(e) {
+    e.preventDefault(); setBusy(true); setError('');
+    try {
+      await request('/admin/change-password', { method: 'POST', token: session.access_token, body: { current_password: currentPassword, new_password: newPassword } });
+      const next = { ...session, password_expired: false };
+      saveSession(next);
+      setSession(next);
+      setCurrentPassword(''); setNewPassword('');
+    } catch (err) { if (err.status === 401) expire(); else setError(err.code || 'SERVER_ERROR'); }
+    finally { setBusy(false); }
+  }
+
   async function logout() {
     setBusy(true); setError('');
     try {
@@ -93,6 +108,23 @@ export default function Admin({ t, language }) {
           <label>{t.password}<input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></label>
           {error && <p role="alert" className="error">{errorMessage}</p>}
           <button disabled={busy}>{busy ? t.signing : t.signIn}</button>
+        </form>
+      </section>
+    </main>;
+  }
+
+  if (session.password_expired) {
+    return <main className="container admin-page">
+      <section className="panel login">
+        <p className="eyebrow">{t.signedIn} · {session.username}</p>
+        <h1>{t.changePassword}</h1>
+        <p>{t.PASSWORD_EXPIRED}</p>
+        <form onSubmit={changePassword}>
+          <label>{t.currentPassword}<input type="password" autoComplete="current-password" required value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} /></label>
+          <label>{t.newPassword}<input type="password" autoComplete="new-password" required minLength={8} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} /></label>
+          {error && <p role="alert" className="error">{errorMessage}</p>}
+          <button disabled={busy}>{busy ? t.saving : t.changePassword}</button>
+          <button type="button" className="secondary" onClick={logout} disabled={busy}>{t.logout}</button>
         </form>
       </section>
     </main>;

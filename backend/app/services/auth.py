@@ -12,6 +12,8 @@ from app.services.login_throttle import LoginThrottle
 SESSION_HOURS = 8
 # Phiên hết hạn quá lâu chỉ làm bảng admin_sessions phình ra; xóa khi có lần đăng nhập mới.
 STALE_SESSION_DAYS = 7
+# Mật khẩu quá 1 ngày chưa đổi thì Admin phải đổi trước khi dùng các chức năng quản trị khác.
+PASSWORD_MAX_AGE = timedelta(days=1)
 throttle = LoginThrottle()
 
 
@@ -27,6 +29,16 @@ def utc_now() -> datetime:
 
 def timestamp(value: datetime) -> str:
     return value.isoformat(timespec="seconds")
+
+
+def password_expired(changed_at, now: datetime | None = None) -> bool:
+    try:
+        changed = datetime.fromisoformat(changed_at)
+    except (ValueError, TypeError):
+        return True  # Không đọc được mốc đổi mật khẩu: coi như đã hết hạn.
+    if changed.tzinfo is None:
+        return True
+    return (now or utc_now()) - changed >= PASSWORD_MAX_AGE
 
 
 def login(db: sqlite3.Connection, username: str, password: str):
@@ -50,7 +62,7 @@ def login(db: sqlite3.Connection, username: str, password: str):
         repository.create_session(db, str(uuid.uuid4()), account["id"], security.token_hash(token), timestamp(now), timestamp(expires))
         repository.delete_sessions_expired_before(db, timestamp(now - timedelta(days=STALE_SESSION_DAYS)))
         audit.record(db, account["id"], "auth.login", "admin", account["id"])  # only a successful login is logged
-    return {"access_token": token, "expires_at": timestamp(expires)}
+    return {"access_token": token, "expires_at": timestamp(expires), "password_expired": password_expired(account["updated_at"], now)}
 
 
 def current_session(db: sqlite3.Connection, token: str):
@@ -65,6 +77,19 @@ def current_session(db: sqlite3.Connection, token: str):
     except (ValueError, TypeError, OverflowError):
         return None
     return session
+
+
+def change_password(db: sqlite3.Connection, session, current_password: str, new_password: str) -> str | None:
+    """Trả về mã lỗi, hoặc None nếu đổi thành công."""
+    if not security.verify_password(current_password, session["password_hash"]):
+        return "INVALID_CURRENT_PASSWORD"
+    if new_password == current_password:
+        return "PASSWORD_REUSED"
+    now = timestamp(utc_now())
+    with db:
+        repository.update_password(db, session["admin_id"], security.hash_password(new_password), now)
+        audit.record(db, session["admin_id"], "auth.password_change", "admin", session["admin_id"])
+    return None
 
 
 def logout(db: sqlite3.Connection, session_id: str, admin_id: str) -> None:

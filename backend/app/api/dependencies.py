@@ -20,8 +20,15 @@ def get_db() -> Iterator[sqlite3.Connection]:
         db.close()
 
 
-def require_admin(credentials: HTTPAuthorizationCredentials = Depends(bearer), db: sqlite3.Connection = Depends(get_db)):
+def require_admin_session(credentials: HTTPAuthorizationCredentials = Depends(bearer), db: sqlite3.Connection = Depends(get_db)):
+    """Phiên hợp lệ, kể cả khi mật khẩu đã hết hạn (chỉ dùng cho me/logout/change-password)."""
     session = auth.current_session(db, credentials.credentials) if credentials else None
     if session is None:
         raise HTTPException(status_code=401, detail="AUTH_REQUIRED", headers={"WWW-Authenticate": "Bearer"})
+    return session
+
+
+def require_admin(session=Depends(require_admin_session)):
+    if auth.password_expired(session["updated_at"]):
+        raise HTTPException(status_code=403, detail="PASSWORD_EXPIRED")
     return session
